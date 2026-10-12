@@ -61,7 +61,7 @@ export class MiseEnPageAdministrationComponent {
     },
     {
       code: 'livreurs',
-      libelle: 'Livreurs',
+      libelle: 'Coursiers',
       icone: 'fa-solid fa-bicycle',
       chemin: '/administration/livreurs'
     },

@@ -129,24 +129,29 @@ export const routes: Routes = [
         path: 'livreurs',
         loadComponent: () =>
           import(
-            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
-          ).then((m) => m.LivreursAdministrationComponent),
-        title: 'Livreurs — Superadmin AYYOU'
+            './fonctionnalites/administration/livreurs/livreurs-admin.component'
+          ).then((m) => m.LivreursAdminComponent),
+        title: 'Gestion des Livreurs — Superadmin AYYOU'
+      },
+      {
+        path: 'coursiers',
+        redirectTo: 'livreurs',
+        pathMatch: 'full'
       },
       {
         path: 'statistiques',
         loadComponent: () =>
           import(
-            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
-          ).then((m) => m.StatistiquesAdministrationComponent),
-        title: 'Statistiques — Superadmin AYYOU'
+            './fonctionnalites/administration/statistiques/statistiques-admin.component'
+          ).then((m) => m.StatistiquesAdminComponent),
+        title: 'Rapports et Statistiques — Superadmin AYYOU'
       },
       {
         path: 'parametres',
         loadComponent: () =>
           import(
-            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
-          ).then((m) => m.ParametresAdministrationComponent),
+            './fonctionnalites/administration/parametres/parametres-admin.component'
+          ).then((m) => m.ParametresAdminComponent),
         title: 'Paramètres — Superadmin AYYOU'
       }
     ]
