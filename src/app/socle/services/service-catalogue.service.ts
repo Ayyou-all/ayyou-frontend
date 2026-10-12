@@ -420,4 +420,12 @@ export class ServiceCatalogueService {
       pubs.map((p) => (p.identifiant === identifiantPublication ? { ...p, estAime: !p.estAime } : p))
     );
   }
+
+  /**
+   * Publie une nouvelle vidéo depuis Ayyou Studio (Gérant restaurant) directement dans le fil d'actualité client.
+   */
+  publierVideoFil(publication: PublicationFil): void {
+    this.publicationsFil.update((liste) => [publication, ...liste]);
+  }
 }
+

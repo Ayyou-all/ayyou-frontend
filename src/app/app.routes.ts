@@ -199,6 +199,14 @@ export const routes: Routes = [
             './fonctionnalites/restaurant/gerant-analytiques/gerant-analytiques.component'
           ).then((m) => m.GerantAnalytiquesComponent),
         title: 'Performances & Analytiques — Teranga Eats'
+      },
+      {
+        path: 'ayyou-studio',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-ayyou-studio/gerant-ayyou-studio.component'
+          ).then((m) => m.GerantAyyouStudioComponent),
+        title: 'Ayyou Studio — Teranga Eats'
       }
     ]
   },

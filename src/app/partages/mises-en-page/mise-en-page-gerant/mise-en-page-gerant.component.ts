@@ -59,6 +59,12 @@ export class MiseEnPageGerantComponent {
       libelle: 'Analytiques',
       icone: 'fa-solid fa-chart-simple',
       chemin: '/gerant/analytiques'
+    },
+    {
+      code: 'ayyou-studio',
+      libelle: 'Ayyou-studio',
+      icone: 'fa-solid fa-video',
+      chemin: '/gerant/ayyou-studio'
     }
   ];
 
