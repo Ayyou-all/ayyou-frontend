@@ -105,25 +105,25 @@ export const routes: Routes = [
         path: 'utilisateurs',
         loadComponent: () =>
           import(
-            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
-          ).then((m) => m.UtilisateursAdministrationComponent),
-        title: 'Utilisateurs — Superadmin AYYOU'
+            './fonctionnalites/administration/utilisateurs/utilisateurs.component'
+          ).then((m) => m.UtilisateursComponent),
+        title: 'Gestion des Utilisateurs — Superadmin AYYOU'
       },
       {
         path: 'commandes',
         loadComponent: () =>
           import(
-            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
-          ).then((m) => m.CommandesAdministrationComponent),
-        title: 'Commandes — Superadmin AYYOU'
+            './fonctionnalites/administration/commandes/commandes-admin.component'
+          ).then((m) => m.CommandesAdminComponent),
+        title: 'Gestion des Commandes — Superadmin AYYOU'
       },
       {
         path: 'restaurants',
         loadComponent: () =>
           import(
-            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
-          ).then((m) => m.RestaurantsAdministrationComponent),
-        title: 'Restaurants — Superadmin AYYOU'
+            './fonctionnalites/administration/restaurants/restaurants-admin.component'
+          ).then((m) => m.RestaurantsAdminComponent),
+        title: 'Gestion des Restaurants — Superadmin AYYOU'
       },
       {
         path: 'livreurs',
