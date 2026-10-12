@@ -1,0 +1,101 @@
+@if (serviceAuthentification.modaleConnexionOuverte()) {
+  <div
+    class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-md transition-opacity duration-300"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="serviceAuthentification.configurationActionRequise()?.titre || 'Connexion requise'"
+    (click)="fermer()"
+  >
+    <!-- Carte modale (arrête la propagation du clic) -->
+    <div
+      class="w-full max-w-md bg-white rounded-t-[32px] sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Poignée tactile mobile -->
+      <div class="sm:hidden w-12 h-1.5 bg-slate-200 rounded-full mb-4"></div>
+
+      <!-- Bouton de fermeture discret -->
+      <button
+        type="button"
+        (click)="fermer()"
+        class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+        aria-label="Fermer la boîte de dialogue"
+      >
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+
+      <!-- Badge Mode Visiteur -->
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-5">
+        <i class="fa-regular fa-eye text-xs"></i>
+        <span>Mode Visiteur</span>
+      </div>
+
+      <!-- Icône de l'action ciblée -->
+      <div
+        class="w-18 h-18 rounded-3xl flex items-center justify-center text-3xl mb-4 shadow-sm ring-4 transition-transform hover:scale-105"
+        [ngClass]="[
+          serviceAuthentification.configurationActionRequise()?.classeFondIcone || 'bg-red-50 ring-red-100',
+          serviceAuthentification.configurationActionRequise()?.couleurIcone || 'text-[#E51824]'
+        ]"
+      >
+        <i [class]="serviceAuthentification.configurationActionRequise()?.icone || 'fa-solid fa-lock'"></i>
+      </div>
+
+      <!-- Titre contextuel -->
+      <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight font-['Outfit'] mb-2">
+        {{ serviceAuthentification.configurationActionRequise()?.titre }}
+      </h2>
+
+      <!-- Description contextuelle explicative -->
+      <p class="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-sm mb-6">
+        {{ serviceAuthentification.configurationActionRequise()?.description }}
+      </p>
+
+      <!-- Boutons d'action -->
+      <div class="w-full space-y-2.5">
+        
+        <!-- 1. Se connecter -->
+        <button
+          type="button"
+          (click)="allerVersConnexion()"
+          class="w-full py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-lg shadow-red-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+        >
+          <i class="fa-solid fa-arrow-right-to-bracket text-sm"></i>
+          <span>Se connecter</span>
+        </button>
+
+        <!-- 2. Créer un compte -->
+        <button
+          type="button"
+          (click)="allerVersInscription()"
+          class="w-full py-3 px-6 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 active:scale-[0.99] text-slate-800 font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
+        >
+          <i class="fa-solid fa-user-plus text-sm text-slate-500"></i>
+          <span>Créer un compte</span>
+        </button>
+
+        <!-- 3. Connexion rapide démo (1 clic - idéal pour test/certification) -->
+        <button
+          type="button"
+          (click)="connexionRapideClient()"
+          class="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 active:scale-[0.99] border border-amber-200/80 text-amber-900 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+          title="Connecte instantanément le compte client démo Fatou Diop et débloque l'action"
+        >
+          <i class="fa-solid fa-bolt text-amber-600"></i>
+          <span>Connexion rapide Démo (1 clic)</span>
+        </button>
+
+      </div>
+
+      <!-- Lien de fermeture : Continuer la découverte -->
+      <button
+        type="button"
+        (click)="fermer()"
+        class="mt-4 text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer py-1"
+      >
+        Continuer en mode visiteur
+      </button>
+
+    </div>
+  </div>
+}

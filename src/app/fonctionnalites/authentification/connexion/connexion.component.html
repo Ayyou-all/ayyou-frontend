@@ -119,14 +119,25 @@
           </button>
         </form>
 
-        <!-- Lien Créer mon organisation -->
-        <div class="mt-5 text-center">
-          <a
-            routerLink="/inscription"
-            class="text-sm font-bold text-[#0f2648] hover:underline cursor-pointer"
-          >
-            Créer mon organisation
-          </a>
+        <!-- Lien Créer un compte & Continuer en visiteur -->
+        <div class="mt-4 text-center space-y-2">
+          <div>
+            <a
+              routerLink="/inscription"
+              class="text-sm font-bold text-[#0f2648] hover:underline cursor-pointer"
+            >
+              Créer mon compte AYYOU
+            </a>
+          </div>
+          <div>
+            <a
+              routerLink="/accueil"
+              class="text-xs font-bold text-slate-500 hover:text-slate-900 inline-flex items-center gap-1.5 cursor-pointer py-1"
+            >
+              <i class="fa-regular fa-eye text-xs"></i>
+              <span>Continuer en mode visiteur</span>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -326,12 +337,13 @@
             </a>
           </div>
 
-          <div class="mt-2 text-center">
+          <div class="mt-4 text-center">
             <a
-              routerLink="/inscription"
-              class="text-xs font-bold text-[#0f2648] hover:underline cursor-pointer"
+              routerLink="/accueil"
+              class="text-xs font-bold text-slate-500 hover:text-slate-900 inline-flex items-center gap-1.5 cursor-pointer"
             >
-              Créer mon organisation
+              <i class="fa-regular fa-eye text-xs"></i>
+              <span>Explorer en mode visiteur sans se connecter</span>
             </a>
           </div>
         </div>

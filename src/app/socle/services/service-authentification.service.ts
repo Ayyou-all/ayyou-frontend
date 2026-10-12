@@ -7,6 +7,24 @@ import {
   Utilisateur
 } from '../modeles/utilisateur.modele';
 
+export type TypeActionConnexionRequise =
+  | 'COMMANDE'
+  | 'LIKE'
+  | 'ABONNEMENT'
+  | 'PARTAGE'
+  | 'ESPACE_PRIVE';
+
+export interface ConfigurationActionRequise {
+  type: TypeActionConnexionRequise;
+  titre: string;
+  description: string;
+  icone: string;
+  couleurIcone: string;
+  classeFondIcone: string;
+  texteBoutonAction?: string;
+  callbackApresConnexion?: () => void;
+}
+
 const CLE_STOCKAGE_UTILISATEUR = 'ayyou_utilisateur_connecte';
 const CLE_STOCKAGE_JETON = 'ayyou_jeton_acces';
 
@@ -20,8 +38,13 @@ export class ServiceAuthentification {
   readonly messageErreur = signal<string | null>(null);
   readonly messageSucces = signal<string | null>(null);
 
+  // Types et configuration pour le mode visiteur
+  readonly modaleConnexionOuverte = signal<boolean>(false);
+  readonly configurationActionRequise = signal<ConfigurationActionRequise | null>(null);
+
   // Signaux calculés
   readonly estAuthentifie = computed(() => this.utilisateurConnecte() !== null);
+  readonly estVisiteur = computed(() => this.utilisateurConnecte() === null);
   readonly roleActuel = computed(() => this.utilisateurConnecte()?.role ?? null);
 
   // Utilisateurs de démonstration par rôle métier
@@ -172,6 +195,111 @@ export class ServiceAuthentification {
       localStorage.setItem(CLE_STOCKAGE_UTILISATEUR, JSON.stringify(reponse.utilisateur));
       localStorage.setItem(CLE_STOCKAGE_JETON, reponse.jetonAcces);
     }
+  }
+
+  /**
+   * Vérifie si l'utilisateur est authentifié. Si oui, exécute l'action immédiatement.
+   * Si non (mode visiteur), ouvre la modale de connexion avec le contexte approprié.
+   * @returns true si authentifié, false si l'authentification est exigée
+   */
+  exigerAuthentification(
+    type: TypeActionConnexionRequise,
+    callbackApresConnexion?: () => void,
+    detailsPersonnalises?: Partial<ConfigurationActionRequise>
+  ): boolean {
+    if (this.estAuthentifie()) {
+      callbackApresConnexion?.();
+      return true;
+    }
+
+    const configurationsParDefaut: Record<
+      TypeActionConnexionRequise,
+      Omit<ConfigurationActionRequise, 'callbackApresConnexion'>
+    > = {
+      COMMANDE: {
+        type: 'COMMANDE',
+        titre: 'Connexion requise pour commander',
+        description:
+          'Connectez-vous ou créez votre compte pour savourer ce plat et suivre votre livraison en direct sur Dakar.',
+        icone: 'fa-solid fa-cart-shopping',
+        couleurIcone: 'text-[#E51824]',
+        classeFondIcone: 'bg-red-50 ring-red-100',
+        texteBoutonAction: 'Commander ce plat'
+      },
+      LIKE: {
+        type: 'LIKE',
+        titre: 'Aimez ce plat et soutenez le resto !',
+        description:
+          'Connectez-vous pour liker cette publication, sauvegarder vos découvertes et encourager les chefs sénégalais.',
+        icone: 'fa-solid fa-heart',
+        couleurIcone: 'text-rose-500',
+        classeFondIcone: 'bg-rose-50 ring-rose-100',
+        texteBoutonAction: 'Ajouter aux favoris'
+      },
+      ABONNEMENT: {
+        type: 'ABONNEMENT',
+        titre: 'Abonnez-vous à ce restaurant',
+        description:
+          'Connectez-vous pour suivre ce restaurant, ne rater aucune nouvelle vidéo et profiter de ses offres exclusives.',
+        icone: 'fa-solid fa-bell',
+        couleurIcone: 'text-amber-500',
+        classeFondIcone: 'bg-amber-50 ring-amber-100',
+        texteBoutonAction: "S'abonner"
+      },
+      PARTAGE: {
+        type: 'PARTAGE',
+        titre: 'Partagez avec vos proches',
+        description:
+          'Connectez-vous pour recommander vos plats préférés et faire découvrir la cuisine dakaroise à votre entourage.',
+        icone: 'fa-solid fa-share-nodes',
+        couleurIcone: 'text-blue-500',
+        classeFondIcone: 'bg-blue-50 ring-blue-100',
+        texteBoutonAction: 'Partager'
+      },
+      ESPACE_PRIVE: {
+        type: 'ESPACE_PRIVE',
+        titre: 'Connexion requise',
+        description:
+          'Cet espace est réservé aux membres connectés. Connectez-vous pour retrouver vos commandes et vos informations.',
+        icone: 'fa-solid fa-user-lock',
+        couleurIcone: 'text-slate-800',
+        classeFondIcone: 'bg-slate-100 ring-slate-200',
+        texteBoutonAction: 'Accéder à mon espace'
+      }
+    };
+
+    const configBase = configurationsParDefaut[type];
+    this.configurationActionRequise.set({
+      ...configBase,
+      ...detailsPersonnalises,
+      callbackApresConnexion
+    });
+    this.modaleConnexionOuverte.set(true);
+    return false;
+  }
+
+  /**
+   * Ferme la modale de demande de connexion.
+   */
+  fermerModaleConnexion(): void {
+    this.modaleConnexionOuverte.set(false);
+    this.configurationActionRequise.set(null);
+  }
+
+  /**
+   * Connexion express avec le profil Client de démonstration (Fatou Diop).
+   * Idéal pour les tests et la certification sans ressaisir de mot de passe.
+   */
+  connexionRapideClientVisiteur(): Observable<Utilisateur> {
+    const callback = this.configurationActionRequise()?.callbackApresConnexion;
+    return this.connecterAvecRolePredefini('CLIENT').pipe(
+      tap(() => {
+        this.fermerModaleConnexion();
+        if (callback) {
+          setTimeout(() => callback(), 150);
+        }
+      })
+    );
   }
 
   /**

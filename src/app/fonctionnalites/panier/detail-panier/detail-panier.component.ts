@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MethodePaiement, PanierRestaurant } from '../../../socle/modeles/panier.modele';
+import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
 import { ServicePanierService } from '../../../socle/services/service-panier.service';
 
@@ -17,6 +18,7 @@ export class DetailPanierComponent {
   readonly routeur = inject(Router);
   readonly servicePanier = inject(ServicePanierService);
   readonly serviceCatalogue = inject(ServiceCatalogueService);
+  readonly serviceAuthentification = inject(ServiceAuthentification);
 
   // Modal de modification de l'adresse de livraison
   readonly modalModifierAdresse = signal<boolean>(false);
@@ -126,8 +128,22 @@ export class DetailPanierComponent {
 
   /**
    * Effectue le paiement de la commande.
+   * En mode visiteur, exige la connexion.
    */
   effectuerPaiement(): void {
+    if (!this.serviceAuthentification.estAuthentifie()) {
+      this.serviceAuthentification.exigerAuthentification(
+        'COMMANDE',
+        () => this.effectuerPaiement(),
+        {
+          titre: 'Payer votre commande',
+          description:
+            'Connectez-vous pour finaliser votre commande, enregistrer votre adresse de livraison et suivre votre livreur.'
+        }
+      );
+      return;
+    }
+
     // Enregistrement de la note éventuelle
     this.servicePanier.definirNoteRestaurant(this.identifiantRestaurant(), this.noteAuRestaurant());
 

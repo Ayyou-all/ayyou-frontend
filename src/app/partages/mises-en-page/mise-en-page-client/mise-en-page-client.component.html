@@ -60,25 +60,53 @@
         }
       </a>
 
-      <!-- Profil Utilisateur -->
-      <a
-        routerLink="/profil"
-        class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
-      >
-        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
-          @if (serviceAuthentification.utilisateurConnecte()?.adressePhoto) {
-            <img [src]="serviceAuthentification.utilisateurConnecte()?.adressePhoto" alt="Avatar" class="w-full h-full object-cover" />
-          } @else {
-            <i class="fa-solid fa-user text-xs text-slate-400"></i>
-          }
-        </div>
-        <div class="text-left leading-tight hidden lg:block">
-          <div class="text-xs font-bold text-slate-900 truncate max-w-[100px]">
-            {{ serviceAuthentification.utilisateurConnecte()?.prenom || 'Fatou' }}
+      <!-- Profil Utilisateur (Connecté) OU Actions Visiteur (Non Connecté) -->
+      @if (serviceAuthentification.estAuthentifie()) {
+        <a
+          routerLink="/profil"
+          class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+        >
+          <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+            @if (serviceAuthentification.utilisateurConnecte()?.adressePhoto) {
+              <img [src]="serviceAuthentification.utilisateurConnecte()?.adressePhoto" alt="Avatar" class="w-full h-full object-cover" />
+            } @else {
+              <i class="fa-solid fa-user text-xs text-slate-400"></i>
+            }
           </div>
-          <div class="text-[10px] text-slate-400">Client</div>
+          <div class="text-left leading-tight hidden lg:block">
+            <div class="text-xs font-bold text-slate-900 truncate max-w-[100px]">
+              {{ serviceAuthentification.utilisateurConnecte()?.prenom }}
+            </div>
+            <div class="text-[10px] text-slate-400 font-medium">Client</div>
+          </div>
+        </a>
+      } @else {
+        <!-- Boutons d'accès pour le visiteur -->
+        <div class="flex items-center gap-2">
+          <!-- Badge Mode Visiteur -->
+          <div class="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600">
+            <i class="fa-regular fa-eye text-slate-400 text-xs"></i>
+            <span>Mode Visiteur</span>
+          </div>
+
+          <!-- Connexion -->
+          <a
+            routerLink="/connexion"
+            class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+          >
+            <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+            <span>Connexion</span>
+          </a>
+
+          <!-- Inscription -->
+          <a
+            routerLink="/inscription"
+            class="hidden lg:flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+          >
+            <span>S'inscrire</span>
+          </a>
         </div>
-      </a>
+      }
     </div>
   </header>
 
@@ -97,6 +125,7 @@
     @for (onglet of listeOnglets; track onglet.code) {
       <a
         [routerLink]="onglet.chemin"
+        (click)="gererClicOnglet($event, onglet)"
         class="flex flex-col items-center justify-center py-1 px-2 relative transition-all group cursor-pointer"
       >
         <!-- Icône avec indicateur actif -->
@@ -133,5 +162,10 @@
       (fermer)="serviceCatalogue.fermerDetailPlat()"
     ></app-detail-produit>
   }
+
+  <!-- ========================================================================= -->
+  <!-- MODALE DE CONNEXION REQUISE (GESTION GLOBALE MODE VISITEUR)               -->
+  <!-- ========================================================================= -->
+  <app-modale-connexion-requise></app-modale-connexion-requise>
 
 </div>
