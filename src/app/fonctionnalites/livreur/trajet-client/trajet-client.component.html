@@ -34,8 +34,10 @@
       <!-- Bouton Calques de carte (à droite) -->
       <button
         type="button"
+        (click)="basculerStyleCarte()"
         class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer shrink-0"
-        aria-label="Types de carte"
+        aria-label="Basculer le style de carte"
+        title="Basculer style clair / sombre"
       >
         <i class="fa-solid fa-layer-group text-sm"></i>
       </button>
@@ -44,83 +46,21 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 2. CARTE 3D PERSPECTIVE ISOMÉTRIQUE : DÉPLACEMENT VERS LE CLIENT           -->
-  <!-- Conforme au design pastel et 3D de l'Image 2                              -->
+  <!-- 2. CARTE GPS RÉELLE DE DAKAR : TRAJET CORNICHE OUEST / VDN VERS ALMADIES  -->
   <!-- ========================================================================= -->
-  <div class="absolute inset-0 z-10 w-full h-full bg-[#fbf5ec] overflow-hidden">
+  <div class="absolute inset-0 z-10 w-full h-full overflow-hidden">
     
-    <!-- Rendu SVG stylisé de la carte isométrique avec bâtiments beiges et route bleue -->
-    <svg class="w-full h-full object-cover" viewBox="0 0 600 900" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="roadGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#38bdf8" />
-          <stop offset="100%" stop-color="#0284c7" />
-        </linearGradient>
-      </defs>
-
-      <!-- Fond général doux -->
-      <rect width="600" height="900" fill="#f8f1e6" />
-
-      <!-- Bâtiments 3D stylisés (volumes isométriques beiges) -->
-      <!-- Bloc 1 gauche -->
-      <path d="M40,550 L120,510 L160,530 L80,570 Z" fill="#eddcc8" />
-      <path d="M40,550 L80,570 L80,680 L40,660 Z" fill="#d9be9f" />
-      <path d="M80,570 L160,530 L160,640 L80,680 Z" fill="#cbb091" />
-
-      <!-- Bloc 2 centre gauche -->
-      <path d="M140,420 L200,390 L240,410 L180,440 Z" fill="#f0e2d1" />
-      <path d="M140,420 L180,440 L180,530 L140,510 Z" fill="#ddc3a5" />
-      <path d="M180,440 L240,410 L240,500 L180,530 Z" fill="#cfb395" />
-
-      <!-- Immeubles hauts de Dakar Almadies (centre) -->
-      <path d="M340,320 L380,300 L420,320 L380,340 Z" fill="#f4e8d9" />
-      <path d="M340,320 L380,340 L380,520 L340,500 Z" fill="#e5cca8" />
-      <path d="M380,340 L420,320 L420,500 L380,520 Z" fill="#d4b992" />
-
-      <path d="M260,380 L300,360 L330,375 L290,395 Z" fill="#eddcc8" />
-      <path d="M260,380 L290,395 L290,480 L260,465 Z" fill="#ddc3a5" />
-      <path d="M290,395 L330,375 L330,460 L290,480 Z" fill="#cbb091" />
-
-      <!-- TRACÉ DE ROUTE NAVIGATION BLEU VIF ISOMÉTRIQUE -->
-      <path
-        d="M-20,620 Q180,580 250,560 T350,480 T450,320"
-        stroke="url(#roadGradient)"
-        stroke-width="16"
-        stroke-linecap="round"
-        fill="none"
-      />
-    </svg>
-
-    <!-- MARQUEUR 1 : MAISON DESTINATION CLIENT (CERCLE ROUGE EN HAUT À DROITE) -->
-    <div class="absolute top-[24%] right-[22%] z-20 flex flex-col items-center">
-      <div class="w-13 h-13 rounded-full bg-white border-2 border-[#E51824] shadow-xl flex items-center justify-center animate-pulse">
-        <i class="fa-solid fa-house text-[#E51824] text-lg"></i>
-      </div>
-      <div class="w-6 h-2 rounded-full bg-black/20 blur-2xs mt-1"></div>
-    </div>
-
-    <!-- MARQUEUR 2 : MOTO DU LIVREUR (POSITION EN DIRECT) -->
-    <div class="absolute top-[40%] left-[28%] z-20 flex flex-col items-center">
-      <div class="w-11 h-11 rounded-full bg-[#E51824] text-white shadow-xl flex items-center justify-center border-2 border-white">
-        <i class="fa-solid fa-motorcycle text-sm"></i>
-      </div>
-      <div class="w-7 h-2 rounded-full bg-black/25 blur-2xs mt-1"></div>
-    </div>
-
-    <!-- GRAND PIN 3D ROUGE CENTRÉ (CONFORME À L'IMAGE 2) -->
-    <div class="absolute top-[46%] left-[48%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center pointer-events-none">
-      <div class="w-16 h-24 bg-gradient-to-br from-[#ff5454] to-[#c70b17] rounded-t-full rounded-b-none shadow-2xl relative [clip-path:polygon(0%_0%,100%_0%,100%_70%,50%_100%,0%_70%)] flex items-center justify-center">
-        <div class="w-7 h-7 rounded-full bg-[#991b1b] -mt-3 shadow-inner"></div>
-      </div>
-      <div class="w-12 h-3.5 rounded-full bg-black/30 blur-xs mt-1"></div>
-    </div>
+    <!-- Conteneur Leaflet réel de Dakar -->
+    <div id="carte-trajet-client" class="w-full h-full z-0"></div>
 
     <!-- BOUTON FLOTTANT RECENTRER GPS (CÔTÉ DROIT) -->
     <div class="absolute right-4 top-[56%] z-30">
       <button
         type="button"
+        (click)="recentrerPosition()"
         class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-[#E51824] shadow-xl flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         aria-label="Recentrer ma position"
+        title="Recentrer sur le livreur Moussa"
       >
         <i class="fa-solid fa-crosshairs text-lg"></i>
       </button>

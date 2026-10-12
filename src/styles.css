@@ -1,5 +1,18 @@
 /* Styles globaux pour la plateforme AYYOU */
 @import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+/* Réinitialisation propre des marqueurs Leaflet HTML */
+.leaflet-div-icon,
+.marqueur-leaflet-sans-style {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Mode sombre élégant pour les tuiles OpenStreetMap sans clé API */
+.tuile-carte-sombre {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) !important;
+}
 
 :root {
   --police-titres: 'Outfit', sans-serif;
