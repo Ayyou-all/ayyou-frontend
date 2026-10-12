@@ -1,0 +1,176 @@
+<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] flex">
+
+  <!-- ========================================================================= -->
+  <!-- 1. BARRE LATÉRALE BUREAU & TIROIR MOBILE (FIDÈLE À LA MAQUETTE SUPERADMIN) -->
+  <!-- ========================================================================= -->
+  
+  <!-- Fond sombre pour mobile lorsque le tiroir est ouvert -->
+  @if (menuMobileOuvert()) {
+    <div
+      (click)="fermerMenuMobile()"
+      class="fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-40 lg:hidden"
+    ></div>
+  }
+
+  <aside
+    [class]="menuMobileOuvert() ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+    class="fixed lg:sticky top-0 left-0 h-screen w-64 lg:w-68 bg-white border-r border-slate-200/90 flex flex-col justify-between p-6 z-50 transition-transform duration-300 shadow-xl lg:shadow-none shrink-0"
+  >
+    <!-- Zone supérieure : Logo & Navigation -->
+    <div class="space-y-8">
+      
+      <!-- Logo AYYOU officiel avec flamme rouge et typographie -->
+      <div class="flex items-center justify-between">
+        <a routerLink="/administration/tableau-de-bord" class="flex items-center gap-2.5 cursor-pointer">
+          <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="h-9 w-auto object-contain" />
+        </a>
+
+        <!-- Bouton fermer sur mobile -->
+        <button
+          type="button"
+          (click)="fermerMenuMobile()"
+          class="lg:hidden w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Liens de navigation principale -->
+      <nav class="space-y-1.5 select-none">
+        @for (item of listeMenuPrincipal; track item.code) {
+          <a
+            [routerLink]="item.chemin"
+            (click)="fermerMenuMobile()"
+            [class]="estLienActif(item.chemin)
+              ? 'bg-[#E51824] text-white font-bold shadow-md shadow-red-500/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-semibold'"
+            class="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm transition-all cursor-pointer group"
+          >
+            <i
+              [class]="item.icone + ' text-base w-5 text-center transition-transform group-hover:scale-105 ' + (estLienActif(item.chemin) ? 'text-white' : 'text-slate-500 group-hover:text-slate-800')"
+            ></i>
+            <span>{{ item.libelle }}</span>
+          </a>
+        }
+      </nav>
+
+    </div>
+
+    <!-- Zone inférieure : Paramètres & Profil Administrateur -->
+    <div class="space-y-4 pt-6 border-t border-slate-100">
+      
+      <!-- Lien Paramètres -->
+      <a
+        [routerLink]="lienParametres.chemin"
+        (click)="fermerMenuMobile()"
+        [class]="estLienActif(lienParametres.chemin)
+          ? 'bg-[#E51824] text-white font-bold shadow-md shadow-red-500/25'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-semibold'"
+        class="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm transition-all cursor-pointer group"
+      >
+        <i
+          [class]="lienParametres.icone + ' text-base w-5 text-center ' + (estLienActif(lienParametres.chemin) ? 'text-white' : 'text-slate-500')"
+        ></i>
+        <span>{{ lienParametres.libelle }}</span>
+      </a>
+
+      <!-- Carte du Super Administrateur (Conforme à l'image : Admin AYYOU / admin@ayyou.com) -->
+      <div class="flex items-center justify-between p-2 rounded-2xl bg-slate-50/80 border border-slate-100 hover:bg-slate-100/80 transition-colors">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-200 border border-slate-200 shrink-0">
+            <img
+              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150"
+              alt="Admin AYYOU"
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div class="min-w-0 text-left">
+            <div class="text-xs font-black text-slate-900 truncate">
+              Admin AYYOU
+            </div>
+            <div class="text-[10px] font-medium text-slate-400 truncate">
+              admin@ayyou.com
+            </div>
+          </div>
+        </div>
+
+        <!-- Déconnexion rapide -->
+        <button
+          type="button"
+          (click)="seDeconnecter()"
+          class="w-8 h-8 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          title="Se déconnecter de l'administration"
+        >
+          <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+        </button>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CONTENU PRINCIPAL + EN-TÊTE SUPÉRIEUR (RECHERCHE + NOTIFICATIONS)       -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex flex-col min-w-0 min-h-screen">
+
+    <!-- En-tête supérieur avec Barre de Recherche, Notifications & Messages -->
+    <header class="h-20 px-6 lg:px-10 bg-white/80 backdrop-blur-md border-b border-slate-200/70 sticky top-0 z-30 flex items-center justify-between gap-4">
+      
+      <!-- Bouton burger mobile + Barre de recherche -->
+      <div class="flex items-center gap-3 flex-1 max-w-xl">
+        <button
+          type="button"
+          (click)="basculerMenuMobile()"
+          class="lg:hidden w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-100"
+          aria-label="Ouvrir le menu"
+        >
+          <i class="fa-solid fa-bars text-sm"></i>
+        </button>
+
+        <!-- Champ de recherche conforme à la maquette -->
+        <div class="relative w-full">
+          <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-4 top-1/2 -translate-y-1/2"></i>
+          <input
+            type="text"
+            [ngModel]="texteRechercheGlobale()"
+            (ngModelChange)="texteRechercheGlobale.set($event)"
+            placeholder="Rechercher une commande, un restaurant..."
+            class="w-full py-2.5 pl-10 pr-4 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-100 transition-all"
+          />
+        </div>
+      </div>
+
+      <!-- Actions à droite : Cloche avec badge rouge + Boîte e-mail -->
+      <div class="flex items-center gap-3 shrink-0">
+        <!-- Bouton Notifications (Cloche avec point rouge) -->
+        <button
+          type="button"
+          routerLink="/administration/validations"
+          class="w-10 h-10 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center relative shadow-2xs transition-colors cursor-pointer"
+          title="Notifications de validations"
+        >
+          <i class="fa-regular fa-bell text-sm"></i>
+          <!-- Point rouge de notification active -->
+          <span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#E51824] ring-2 ring-white"></span>
+        </button>
+
+        <!-- Bouton Messages (Enveloppe) -->
+        <button
+          type="button"
+          class="w-10 h-10 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+          title="Messages système"
+        >
+          <i class="fa-regular fa-envelope text-sm"></i>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- Zone principale contenant les écrans de l'administration -->
+    <main class="flex-1 p-6 lg:p-10">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+
+</div>

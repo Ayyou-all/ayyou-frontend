@@ -68,6 +68,22 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
             <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
           </a>
 
+          <a
+            routerLink="/administration"
+            class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-slate-100"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <div>
+                <span class="block text-slate-900">Espace Superadmin</span>
+                <span class="block text-xs font-normal text-slate-400">Tableau de bord & validations de partenaires</span>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
+          </a>
+
           <!-- Déconnexion -> Retour au Mode Visiteur -->
           <button
             type="button"

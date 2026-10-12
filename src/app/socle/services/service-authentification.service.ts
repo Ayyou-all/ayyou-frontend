@@ -101,12 +101,12 @@ export class ServiceAuthentification {
     },
     ADMINISTRATEUR: {
       identifiant: 'util-admin-01',
-      prenom: 'Aissatou',
-      nom: 'Gueye',
-      courriel: 'direction@ayyou.sn',
+      prenom: 'Admin',
+      nom: 'AYYOU',
+      courriel: 'admin@ayyou.com',
       telephone: '+221 77 567 89 01',
       role: 'ADMINISTRATEUR',
-      adressePhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150',
+      adressePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
       estActif: true,
       dateCreation: '2025-12-01'
     }

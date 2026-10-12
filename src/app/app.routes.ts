@@ -74,6 +74,84 @@ export const routes: Routes = [
     title: 'Mes Gains — AYYOU'
   },
   {
+    path: 'administration',
+    loadComponent: () =>
+      import(
+        './partages/mises-en-page/mise-en-page-administration/mise-en-page-administration.component'
+      ).then((m) => m.MiseEnPageAdministrationComponent),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'tableau-de-bord'
+      },
+      {
+        path: 'tableau-de-bord',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/tableau-de-bord/tableau-de-bord.component'
+          ).then((m) => m.TableauDeBordComponent),
+        title: 'Tableau de bord — Superadmin AYYOU'
+      },
+      {
+        path: 'validations',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/validations/validations.component'
+          ).then((m) => m.ValidationsComponent),
+        title: 'Validations en attente — Superadmin AYYOU'
+      },
+      {
+        path: 'utilisateurs',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
+          ).then((m) => m.UtilisateursAdministrationComponent),
+        title: 'Utilisateurs — Superadmin AYYOU'
+      },
+      {
+        path: 'commandes',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
+          ).then((m) => m.CommandesAdministrationComponent),
+        title: 'Commandes — Superadmin AYYOU'
+      },
+      {
+        path: 'restaurants',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
+          ).then((m) => m.RestaurantsAdministrationComponent),
+        title: 'Restaurants — Superadmin AYYOU'
+      },
+      {
+        path: 'livreurs',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
+          ).then((m) => m.LivreursAdministrationComponent),
+        title: 'Livreurs — Superadmin AYYOU'
+      },
+      {
+        path: 'statistiques',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
+          ).then((m) => m.StatistiquesAdministrationComponent),
+        title: 'Statistiques — Superadmin AYYOU'
+      },
+      {
+        path: 'parametres',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/autres-sections/autres-sections-administration.component'
+          ).then((m) => m.ParametresAdministrationComponent),
+        title: 'Paramètres — Superadmin AYYOU'
+      }
+    ]
+  },
+  {
     path: '',
     loadComponent: () =>
       import(
