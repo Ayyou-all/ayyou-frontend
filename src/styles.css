@@ -1,3 +1,48 @@
-/* You can add global styles to this file, and also import other style files */
-
+/* Styles globaux pour la plateforme AYYOU */
 @import 'tailwindcss';
+
+:root {
+  --police-titres: 'Outfit', sans-serif;
+  --police-corps: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+  font-family: var(--police-corps);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--police-titres);
+}
+
+/* Barre de défilement moderne */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+
+/* Animation douce */
+@keyframes apparitionDouce {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animation-apparition {
+  animation: apparitionDouce 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

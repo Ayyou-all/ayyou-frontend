@@ -1,0 +1,191 @@
+<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- EN-TÊTE : BOUTON RETOUR + TITRE "Mes paniers" + BADGE ROUGE (3)           -->
+    <!-- Conforme à l'Image 2                                                      -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center gap-4">
+      <button
+        type="button"
+        (click)="retourner()"
+        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        aria-label="Retour"
+      >
+        <i class="fa-solid fa-chevron-left text-sm font-bold"></i>
+      </button>
+
+      <div class="flex items-center gap-2.5">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+          Mes paniers
+        </h1>
+        @if (servicePanier.nombrePaniersActifs() > 0) {
+          <span class="w-6 h-6 rounded-full bg-[#E51824] text-white text-xs font-black flex items-center justify-center shadow-xs">
+            {{ servicePanier.nombrePaniersActifs() }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- FILTRES HORIZONTAUX (PILULES) : Tous | Chez Fatou | Le Grill | etc.       -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <!-- Pilule Tous -->
+      <button
+        type="button"
+        (click)="filtreRestaurant.set('TOUS')"
+        [class]="filtreRestaurant() === 'TOUS'
+          ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20'
+          : 'bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50'"
+        class="px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold transition-all shrink-0 cursor-pointer"
+      >
+        Tous
+      </button>
+
+      <!-- Pilules par Restaurant -->
+      @for (panier of servicePanier.listePaniersRestaurants(); track panier.identifiantRestaurant) {
+        <button
+          type="button"
+          (click)="filtreRestaurant.set(panier.identifiantRestaurant)"
+          [class]="filtreRestaurant() === panier.identifiantRestaurant
+            ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20'
+            : 'bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50'"
+          class="px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold transition-all shrink-0 cursor-pointer"
+        >
+          {{ panier.nomRestaurant }}
+        </button>
+      }
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- ÉTAT PANIER VIDE                                                          -->
+    <!-- ========================================================================= -->
+    @if (paniersAffiches().length === 0) {
+      <div class="py-16 text-center space-y-4 bg-white rounded-3xl p-8 border border-slate-100 shadow-xs">
+        <div class="w-16 h-16 rounded-full bg-rose-50 text-[#E51824] flex items-center justify-center mx-auto text-2xl">
+          <i class="fa-solid fa-cart-shopping"></i>
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-900 font-['Outfit']">
+          Aucun panier pour l'instant
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
+          Vos paniers auprès de vos restaurants préférés s'afficheront ici.
+        </p>
+        <a
+          routerLink="/catalogue"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-md shadow-red-500/20 transition-all cursor-pointer"
+        >
+          <span>Découvrir les restaurants</span>
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </a>
+      </div>
+    }
+
+    <!-- ========================================================================= -->
+    <!-- LISTE DES PANIERS PAR RESTAURANT (GRILLE RESPONSIVE 1 COL MOBILE / 2 DESK)-->
+    <!-- Conforme au design de la carte Chez Fatou / Chez Aissatou                 -->
+    <!-- ========================================================================= -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+      @for (panier of paniersAffiches(); track panier.identifiantRestaurant) {
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between space-y-5">
+          
+          <!-- Ligne Haute : Logo + Nom resto + Délais + Bouton 'Vider' -->
+          <div class="flex items-start justify-between gap-3">
+            <div
+              (click)="allerVersProfilRestaurant(panier.identifiantRestaurant)"
+              class="flex items-center gap-3.5 cursor-pointer group/resto hover:opacity-95 transition-opacity"
+              title="Voir le profil du restaurant {{ panier.nomRestaurant }}"
+            >
+              <!-- Avatar restaurant rond (marron foncé doré Chez Fatou) -->
+              <div class="w-12 h-12 rounded-full overflow-hidden bg-[#2d1810] border border-amber-900/20 shrink-0 flex items-center justify-center shadow-xs group-hover/resto:scale-105 transition-transform">
+                @if (panier.adresseLogoRestaurant) {
+                  <img
+                    [src]="panier.adresseLogoRestaurant"
+                    [alt]="panier.nomRestaurant"
+                    class="w-full h-full object-cover"
+                  />
+                } @else {
+                  <span class="text-amber-300 font-serif font-black text-xs">
+                    {{ panier.nomRestaurant.substring(0, 2) }}
+                  </span>
+                }
+              </div>
+
+              <!-- Nom restaurant & durée -->
+              <div>
+                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 group-hover/resto:text-[#E51824] transition-colors tracking-tight font-['Outfit'] flex items-center gap-1.5">
+                  <span>{{ panier.nomRestaurant }}</span>
+                  <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 group-hover/resto:text-[#E51824] transition-colors"></i>
+                </h3>
+                <p class="text-xs text-slate-500 font-medium">
+                  {{ totalArticlesPanier(panier) }} articles • {{ panier.delaiLivraison }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Bouton Vider en rouge -->
+            <button
+              type="button"
+              (click)="servicePanier.viderPanierRestaurant(panier.identifiantRestaurant)"
+              class="text-xs font-bold text-[#E51824] hover:underline transition-colors cursor-pointer pt-1"
+            >
+              Vider
+            </button>
+          </div>
+
+          <!-- Ligne Médiane : Miniatures des plats commandés + badge '+1' -->
+          <div class="flex items-center gap-3 py-1">
+            @for (ligne of panier.lignes.slice(0, 2); track ligne.plat.identifiant) {
+              <div
+                (click)="ouvrirDetailPlat(ligne.plat)"
+                class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-2xs shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                title="Voir les détails de {{ ligne.plat.nom }}"
+              >
+                <img
+                  [src]="ligne.plat.adresseImage"
+                  [alt]="ligne.plat.nom"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+            }
+
+            <!-- Badge numérique '+1' si plus de 2 types d'articles ou articles multiples -->
+            @if (nombreArticlesSupplementaires(panier) > 0) {
+              <div
+                (click)="ouvrirDetailPanier(panier.identifiantRestaurant)"
+                class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#f8f9fa] border border-slate-200/60 text-slate-500 font-extrabold text-sm flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-100 transition-colors"
+                title="Voir tous les articles de {{ panier.nomRestaurant }}"
+              >
+                +{{ nombreArticlesSupplementaires(panier) }}
+              </div>
+            }
+          </div>
+
+          <!-- Trait fin de séparation -->
+          <div class="border-t border-slate-100/90 pt-4 flex items-center justify-between gap-4">
+            <!-- Sous-total -->
+            <div>
+              <span class="block text-[11px] font-medium text-slate-400">Sous-total</span>
+              <span class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+                {{ panier.sousTotalFcfa | number }} FCFA
+              </span>
+            </div>
+
+            <!-- Bouton 'Commander →' -->
+            <button
+              type="button"
+              (click)="ouvrirDetailPanier(panier.identifiantRestaurant)"
+              class="py-2.5 px-5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-red-500/20 transition-all cursor-pointer"
+            >
+              <span>Commander</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,104 @@
+<div
+  class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 animation-apparition select-none"
+  (click)="fermer.emit()"
+>
+
+  <!-- Boîte principale (Bottom-sheet mobile / Modale centrée bureau) -->
+  <div
+    class="w-full max-w-sm sm:max-w-md bg-white rounded-t-[36px] sm:rounded-[36px] p-6 sm:p-8 flex flex-col items-center text-center space-y-6 shadow-2xl relative animation-glissement-haut"
+    (click)="$event.stopPropagation()"
+  >
+
+    <!-- Bouton Fermer 'X' en haut à droite (conforme à l'Image 2) -->
+    <button
+      type="button"
+      (click)="fermer.emit()"
+      class="absolute top-5 right-5 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-all active:scale-90 cursor-pointer"
+      aria-label="Fermer"
+    >
+      <i class="fa-solid fa-xmark text-sm font-bold"></i>
+    </button>
+
+    <!-- ========================================================================= -->
+    <!-- ILLUSTRATION CENTRALE : ROND ROUGE CHECK + AURÉOLES ET ICÔNES FESTIVES   -->
+    <!-- Conforme au design de l'Image 2                                           -->
+    <!-- ========================================================================= -->
+    <div class="relative w-48 h-48 flex items-center justify-center my-2">
+      
+      <!-- Auréole externe dégradée rose pâle -->
+      <div class="absolute inset-0 rounded-full bg-rose-50/70 border border-rose-100/40 animate-pulse"></div>
+
+      <!-- Auréole intermédiaire -->
+      <div class="absolute inset-4 rounded-full bg-rose-100/60 shadow-inner"></div>
+
+      <!-- Grand cercle rouge vif central avec check blanc -->
+      <div class="relative z-10 w-28 h-28 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-xl shadow-red-500/30">
+        <i class="fa-solid fa-check text-4xl stroke-[3px]"></i>
+      </div>
+
+      <!-- Icône 1 : Point d'interrogation dans cercle jaune (haut gauche) -->
+      <div class="absolute top-4 left-6 w-6 h-6 rounded-full bg-amber-50 text-amber-500 text-xs font-bold flex items-center justify-center shadow-xs">
+        <i class="fa-solid fa-question text-[10px]"></i>
+      </div>
+
+      <!-- Icône 2 : Couverts rouges dans badge blanc (haut droite) -->
+      <div class="absolute top-2 right-4 w-9 h-9 rounded-2xl bg-white border border-slate-100 text-[#E51824] flex items-center justify-center shadow-md">
+        <i class="fa-solid fa-utensils text-xs"></i>
+      </div>
+
+      <!-- Icône 3 : Cœur vert dans badge blanc (bas gauche) -->
+      <div class="absolute bottom-6 left-2 w-8 h-8 rounded-xl bg-white border border-slate-100 text-emerald-500 flex items-center justify-center shadow-md">
+        <i class="fa-solid fa-heart text-xs"></i>
+      </div>
+
+      <!-- Icône 4 : Étoile dorée (bas droite) -->
+      <div class="absolute bottom-8 right-6 text-amber-400 text-base drop-shadow-xs">
+        <i class="fa-solid fa-star"></i>
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TITRE ET TEXTE DE VALIDATION                                              -->
+    <!-- ========================================================================= -->
+    <div class="space-y-2.5 px-2">
+      <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-['Outfit']">
+        Commande livrée !
+      </h2>
+      <p class="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">
+        Votre repas est arrivé. Bon appétit ! N'oubliez pas de noter votre expérience.
+      </p>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BOUTONS D'ACTION (CONFORME À L'IMAGE 2)                                   -->
+    <!-- ========================================================================= -->
+    <div class="w-full space-y-3 pt-2">
+      
+      <!-- Bouton rouge 'Commander à nouveau' -->
+      <button
+        type="button"
+        (click)="commanderANouveau()"
+        class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-red-500/25 transition-all cursor-pointer"
+      >
+        <i class="fa-solid fa-rotate-right text-sm"></i>
+        <span>Commander à nouveau</span>
+      </button>
+
+      <!-- Bouton blanc 'Consulter le reçu' -->
+      <button
+        type="button"
+        (click)="consulterRecu()"
+        class="w-full py-4 px-6 rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-800 font-extrabold text-sm sm:text-base border border-slate-200/90 shadow-2xs transition-all cursor-pointer"
+      >
+        <span>Consulter le reçu</span>
+      </button>
+
+    </div>
+
+    <!-- Poignée inférieure sur mobile -->
+    <div class="w-16 h-1 bg-slate-200 rounded-full mx-auto sm:hidden pt-0.5"></div>
+
+  </div>
+
+</div>

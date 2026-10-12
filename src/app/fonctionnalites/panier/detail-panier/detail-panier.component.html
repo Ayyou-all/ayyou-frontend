@@ -1,0 +1,422 @@
+<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6">
+
+    <!-- ========================================================================= -->
+    <!-- EN-TÊTE : BOUTON RETOUR + NOM RESTAURANT + VIDER                          -->
+    <!-- Conforme à l'Image 3                                                      -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center justify-between pb-5 sm:pb-6">
+      <button
+        type="button"
+        (click)="retourner()"
+        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        aria-label="Retour aux paniers"
+      >
+        <i class="fa-solid fa-chevron-left text-sm font-bold"></i>
+      </button>
+
+      <button
+        type="button"
+        (click)="allerVersProfilRestaurant()"
+        class="flex items-center gap-2 text-xl sm:text-2xl font-extrabold text-slate-900 hover:text-[#E51824] transition-colors tracking-tight font-['Outfit'] cursor-pointer group"
+        title="Voir le profil du restaurant {{ panier().nomRestaurant }}"
+      >
+        <span>{{ panier().nomRestaurant }}</span>
+        <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:text-[#E51824] group-hover:translate-x-0.5 transition-all"></i>
+      </button>
+
+      <button
+        type="button"
+        (click)="viderPanier()"
+        class="text-xs sm:text-sm font-bold text-[#E51824] hover:underline transition-colors cursor-pointer"
+      >
+        Vider
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- GRILLE RESPONSIVE : 1 COLONNE (MOBILE) / 2 COLONNES ERGONOMIQUES (DESKTOP)-->
+    <!-- ========================================================================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+
+      <!-- ======================================================================= -->
+      <!-- COLONNE GAUCHE (MOBILE: FLUX NORMAL | DESKTOP: 7 COLONNES)              -->
+      <!-- ======================================================================= -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- CARTE ADRESSE DE LIVRAISON -->
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
+          
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3.5">
+              <!-- Pin rouge dans badge beige/rosé -->
+              <div class="w-10 h-10 rounded-2xl bg-rose-50 text-[#E51824] flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-location-dot text-sm"></i>
+              </div>
+
+              <!-- Libellé et adresse -->
+              <div>
+                <span class="block text-[11px] font-medium text-slate-400">
+                  Adresse de livraison
+                </span>
+                <span class="text-sm font-extrabold text-slate-900">
+                  {{ panier().adresseLivraison }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Bouton 'MODIFIER' en rouge -->
+            <button
+              type="button"
+              (click)="ouvrirModifierAdresse()"
+              class="text-xs font-black text-[#E51824] tracking-wider uppercase hover:underline transition-colors cursor-pointer"
+            >
+              MODIFIER
+            </button>
+          </div>
+
+          <!-- Bandeau bleu ciel : Arrivée estimée dans 25-35 min -->
+          <div class="rounded-2xl bg-[#f0f7ff] text-[#2563eb] px-4 py-2.5 flex items-center gap-2.5 text-xs font-bold">
+            <i class="fa-regular fa-clock text-sm"></i>
+            <span>Arrivée estimée dans {{ panier().delaiLivraison }}</span>
+          </div>
+
+        </div>
+
+        <!-- SECTION ARTICLES -->
+        <div class="space-y-4">
+          <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+            Articles ({{ panier().lignes.length }})
+          </h2>
+
+          <!-- Liste des cartes d'articles -->
+          <div class="space-y-3.5">
+            @for (ligne of panier().lignes; track ligne.plat.identifiant) {
+              <div class="bg-white rounded-[24px] sm:rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
+                
+                <!-- Image du plat (cliquable) -->
+                <div
+                  (click)="serviceCatalogue.ouvrirDetailPlat(ligne.plat)"
+                  class="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-2xs shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                  title="Voir les détails de l'article"
+                >
+                  <img
+                    [src]="ligne.plat.adresseImage"
+                    [alt]="ligne.plat.nom"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+
+                <!-- Informations produit (cliquables) -->
+                <div
+                  (click)="serviceCatalogue.ouvrirDetailPlat(ligne.plat)"
+                  class="flex-1 min-w-0 pr-2 cursor-pointer group"
+                  title="Voir les détails de l'article"
+                >
+                  <h3 class="text-sm font-extrabold text-slate-900 group-hover:text-[#E51824] transition-colors truncate">
+                    {{ ligne.plat.nom }}
+                  </h3>
+                  <p class="text-xs text-slate-400 truncate mt-0.5">
+                    {{ ligne.plat.description }}
+                  </p>
+                  <div class="text-sm font-black text-[#E51824] mt-2 font-['Outfit']">
+                    {{ ligne.plat.prixFcfa | number }} FCFA
+                  </div>
+                </div>
+
+                <!-- Corbeille et Stepper -->
+                <div class="flex flex-col items-end justify-between self-stretch py-0.5">
+                  <!-- Bouton supprimer (icône poubelle grise) -->
+                  <button
+                    type="button"
+                    (click)="supprimerArticle(ligne.plat.identifiant)"
+                    class="text-slate-300 hover:text-red-600 transition-colors cursor-pointer text-sm p-1"
+                    title="Supprimer cet article"
+                  >
+                    <i class="fa-regular fa-trash-can"></i>
+                  </button>
+
+                  <!-- Stepper de quantité (- 1 +) -->
+                  <div class="flex items-center gap-2 bg-[#f8f9fa] border border-slate-200/60 rounded-xl px-2 py-1">
+                    <button
+                      type="button"
+                      (click)="diminuerQuantite(ligne.plat.identifiant)"
+                      class="text-slate-400 hover:text-slate-800 active:scale-90 text-xs font-bold px-1 transition-transform cursor-pointer"
+                    >
+                      <i class="fa-solid fa-minus text-[10px]"></i>
+                    </button>
+                    
+                    <span class="w-4 text-center font-extrabold text-xs text-slate-900">
+                      {{ ligne.quantite }}
+                    </span>
+
+                    <button
+                      type="button"
+                      (click)="augmenterQuantite(ligne.plat.identifiant)"
+                      class="text-[#E51824] hover:text-red-700 active:scale-90 text-xs font-bold px-1 transition-transform cursor-pointer"
+                    >
+                      <i class="fa-solid fa-plus text-[10px]"></i>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            }
+          </div>
+
+          <!-- Bouton lien '+ Ajouter d'autres plats' -->
+          <button
+            type="button"
+            (click)="ajouterAutresPlats()"
+            class="text-sm font-extrabold text-[#E51824] hover:underline flex items-center gap-1.5 pt-1 cursor-pointer transition-colors"
+          >
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>Ajouter d'autres plats</span>
+          </button>
+        </div>
+
+        <!-- SECTION NOTE AU RESTAURANT -->
+        <div class="space-y-2 pt-2">
+          <label for="champ-note-restaurant" class="block text-sm font-extrabold text-slate-900">
+            Note au restaurant
+          </label>
+          <div class="rounded-2xl bg-[#f8f9fa] border border-slate-200/50 p-3.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-red-100 transition-all">
+            <textarea
+              id="champ-note-restaurant"
+              rows="3"
+              [ngModel]="noteAuRestaurant()"
+              (ngModelChange)="noteAuRestaurant.set($event)"
+              placeholder="Ex: Pas de piment, livraison à l'accueil..."
+              class="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none"
+            ></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ======================================================================= -->
+      <!-- COLONNE DROITE (DESKTOP: 5 COLONNES STICKY | MOBILE: SUITE DU FLUX)     -->
+      <!-- ======================================================================= -->
+      <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+
+        <!-- CARTE RÉCAPITULATIF FINANCIER -->
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3.5 text-xs sm:text-sm">
+          <div class="flex items-center justify-between text-slate-500 font-medium">
+            <span>Sous-total</span>
+            <span class="font-extrabold text-slate-900 font-['Outfit']">
+              {{ panier().sousTotalFcfa | number }} FCFA
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between text-slate-500 font-medium">
+            <span>Frais de livraison</span>
+            <span class="font-extrabold text-slate-900 font-['Outfit']">
+              {{ panier().fraisLivraisonFcfa | number }} FCFA
+            </span>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3 flex items-center justify-between text-base font-extrabold text-slate-900">
+            <span>Total</span>
+            <span class="font-black text-slate-900 font-['Outfit'] text-lg">
+              {{ panier().totalFcfa | number }} FCFA
+            </span>
+          </div>
+        </div>
+
+        <!-- SECTION MÉTHODE DE PAIEMENT -->
+        <div class="space-y-3">
+          <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            Méthode de paiement
+          </h3>
+
+          <div class="space-y-2.5">
+            
+            <!-- OPTION 1 : WAVE -->
+            <div
+              (click)="choisirMethodePaiement('WAVE')"
+              [class]="panier().methodePaiement === 'WAVE'
+                ? 'border-2 border-[#E51824] bg-white shadow-xs'
+                : 'border border-slate-200/90 bg-white hover:border-slate-300'"
+              class="rounded-2xl p-3.5 flex items-center justify-between transition-all cursor-pointer select-none"
+            >
+              <div class="flex items-center gap-3">
+                <!-- Logo Wave cyan avec pingouin stylisé -->
+                <div class="w-11 h-11 rounded-xl bg-[#00d2ff] flex items-center justify-center overflow-hidden shadow-2xs shrink-0">
+                  <div class="relative w-8 h-8 flex items-center justify-center">
+                    <!-- Silhouette Pingouin Wave vectorielle -->
+                    <div class="w-5 h-6 bg-slate-900 rounded-full flex flex-col items-center justify-center relative">
+                      <div class="w-3.5 h-3.5 bg-white rounded-full mt-1.5 flex items-center justify-center">
+                        <div class="w-1.5 h-1 bg-amber-400 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 class="text-sm font-extrabold text-slate-900">Wave</h4>
+                  <p class="text-[11px] text-slate-400 font-medium">Paiement instantané mobile</p>
+                </div>
+              </div>
+
+              <!-- Bouton Radio Wave -->
+              <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+                [class]="panier().methodePaiement === 'WAVE' ? 'border-[#E51824]' : 'border-slate-300'">
+                @if (panier().methodePaiement === 'WAVE') {
+                  <div class="w-2.5 h-2.5 rounded-full bg-[#E51824]"></div>
+                }
+              </div>
+            </div>
+
+            <!-- OPTION 2 : ORANGE MONEY -->
+            <div
+              (click)="choisirMethodePaiement('ORANGE_MONEY')"
+              [class]="panier().methodePaiement === 'ORANGE_MONEY'
+                ? 'border-2 border-[#E51824] bg-white shadow-xs'
+                : 'border border-slate-200/90 bg-white hover:border-slate-300'"
+              class="rounded-2xl p-3.5 flex items-center justify-between transition-all cursor-pointer select-none"
+            >
+              <div class="flex items-center gap-3">
+                <!-- Logo Orange Money noir avec flèches orange/noires -->
+                <div class="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center overflow-hidden shadow-2xs shrink-0">
+                  <div class="flex items-center gap-0.5 text-xs font-black">
+                    <span class="text-white"><i class="fa-solid fa-arrow-trend-up"></i></span>
+                    <span class="text-orange-500 font-black text-sm">OM</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 class="text-sm font-extrabold text-slate-900">Orange Money</h4>
+                  <p class="text-[11px] text-slate-400 font-medium">Paiement sécurisé par code secret</p>
+                </div>
+              </div>
+
+              <!-- Bouton Radio Orange Money -->
+              <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+                [class]="panier().methodePaiement === 'ORANGE_MONEY' ? 'border-[#E51824]' : 'border-slate-300'">
+                @if (panier().methodePaiement === 'ORANGE_MONEY') {
+                  <div class="w-2.5 h-2.5 rounded-full bg-[#E51824]"></div>
+                }
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- BOUTON ROUGE D'ACTION PRINCIPALE : Payer ... FCFA → -->
+        <button
+          type="button"
+          (click)="effectuerPaiement()"
+          [disabled]="panier().lignes.length === 0"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-base flex items-center justify-center gap-2 shadow-xl shadow-red-500/25 transition-all disabled:opacity-50 cursor-pointer"
+        >
+          <span>Payer {{ panier().totalFcfa | number }} FCFA</span>
+          <i class="fa-solid fa-arrow-right text-sm"></i>
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL : MODIFIER L'ADRESSE DE LIVRAISON                                   -->
+<!-- ========================================================================= -->
+@if (modalModifierAdresse()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animation-apparition"
+    (click)="modalModifierAdresse.set(false)"
+  >
+    <div
+      class="w-full max-w-md bg-white rounded-3xl p-6 space-y-5 shadow-2xl animation-glissement-haut"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-extrabold text-slate-900 font-['Outfit']">
+          Modifier l'adresse de livraison
+        </h3>
+        <button
+          type="button"
+          (click)="modalModifierAdresse.set(false)"
+          class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <label for="champ-adresse" class="text-xs font-bold text-slate-600">
+          Nouvelle adresse (quartier, rue, repère)
+        </label>
+        <input
+          id="champ-adresse"
+          type="text"
+          [ngModel]="adresseSaisie()"
+          (ngModelChange)="adresseSaisie.set($event)"
+          placeholder="Ex: Plateau, Avenue Hassan II"
+          class="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white transition-all"
+        />
+      </div>
+
+      <button
+        type="button"
+        (click)="sauvegarderAdresse()"
+        class="w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-md shadow-red-500/20 transition-all cursor-pointer"
+      >
+        Valider cette adresse
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- MODAL : COMMANDE VALIDÉE AVEC SUCCÈS                                      -->
+<!-- ========================================================================= -->
+@if (commandeReussie()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animation-apparition"
+  >
+    <div
+      class="w-full max-w-md bg-white rounded-[32px] p-7 text-center space-y-5 shadow-2xl animation-glissement-haut"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-3xl mx-auto border-4 border-emerald-100 shadow-md">
+        <i class="fa-solid fa-check"></i>
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 class="text-2xl font-black text-slate-900 font-['Outfit']">
+          Commande confirmée !
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-500 max-w-xs mx-auto">
+          Votre commande auprès de <span class="font-bold text-slate-800">{{ panier().nomRestaurant }}</span> est en cours de préparation en cuisine.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 rounded-2xl p-4 text-xs space-y-1.5 border border-slate-100">
+        <div class="flex justify-between text-slate-500">
+          <span>Numéro de commande</span>
+          <span class="font-bold text-slate-900">{{ numeroCommandeSimulee() }}</span>
+        </div>
+        <div class="flex justify-between text-slate-500">
+          <span>Paiement</span>
+          <span class="font-bold text-[#E51824]">{{ panier().methodePaiement }}</span>
+        </div>
+        <div class="flex justify-between text-slate-500">
+          <span>Livraison estimée</span>
+          <span class="font-bold text-emerald-600">{{ panier().delaiLivraison }}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="allerVersCommandes()"
+        class="w-full py-4 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-xl shadow-red-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+      >
+        <span>Suivre ma commande</span>
+        <i class="fa-solid fa-arrow-right text-xs"></i>
+      </button>
+    </div>
+  </div>
+}

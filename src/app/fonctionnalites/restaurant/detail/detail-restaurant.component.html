@@ -1,0 +1,223 @@
+<div class="relative w-full pb-24">
+
+  <!-- Notification d'ajout au panier -->
+  @if (notificationPanier()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2 animation-apparition">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span>{{ notificationPanier() }}</span>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE AVEC IMAGE DU RESTAURANT (CONFORME À LA MAQUETTE 3)            -->
+  <!-- ========================================================================= -->
+  <div class="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden bg-slate-900">
+    <img
+      [src]="restaurant().adresseCouverture"
+      [alt]="restaurant().nom"
+      class="w-full h-full object-cover select-none brightness-95"
+    />
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none"></div>
+
+    <!-- Bouton Retour à gauche -->
+    <div class="absolute top-4 left-4 z-20">
+      <button
+        type="button"
+        (click)="retourner()"
+        class="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-slate-800 hover:bg-white flex items-center justify-center shadow-lg transition-transform active:scale-90 cursor-pointer"
+        aria-label="Retour"
+      >
+        <i class="fa-solid fa-arrow-left text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Bouton Partager à droite -->
+    <div class="absolute top-4 right-4 z-20">
+      <button
+        type="button"
+        (click)="partager()"
+        class="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-slate-800 hover:bg-white flex items-center justify-center shadow-lg transition-transform active:scale-90 cursor-pointer"
+        aria-label="Partager"
+      >
+        <i class="fa-solid fa-share-nodes text-sm"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Conteneur principal centré -->
+  <div class="w-full max-w-3xl mx-auto px-4 sm:px-6 relative z-30">
+    
+    <!-- ========================================================================= -->
+    <!-- 2. CARTE FLOTTANTE DU RESTAURANT (CONFORME À LA MAQUETTE 3)              -->
+    <!-- ========================================================================= -->
+    <div class="-mt-14 sm:-mt-16 bg-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-100 space-y-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+          {{ restaurant().nom }}
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+          {{ restaurant().specialite }}
+        </p>
+      </div>
+
+      <!-- Métriques : Ferme à 23h30 / Ouvert | Lieux : Keur Massar -->
+      <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+        <!-- Colonne 1 : Horaires & Statut -->
+        <div class="space-y-0.5">
+          <div class="text-xs text-slate-400 font-medium">
+            Ferme a {{ restaurant().heureFermeture }}
+          </div>
+          <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+            <i class="fa-regular fa-clock text-red-600 text-sm"></i>
+            <span>{{ restaurant().estOuvert ? 'Ouvert' : 'Fermé' }}</span>
+          </div>
+        </div>
+
+        <!-- Colonne 2 : Lieux -->
+        <div class="space-y-0.5 border-l border-slate-100 pl-4">
+          <div class="text-xs text-slate-400 font-medium">
+            Lieux
+          </div>
+          <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+            <i class="fa-solid fa-flag text-red-600 text-xs"></i>
+            <span class="truncate">{{ restaurant().quartierVille }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. ONGLETS DE CONTENU : MENU & VIDEOS (CONFORME À LA MAQUETTE 3)          -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center gap-8 border-b border-slate-200 mt-8 mb-6 select-none">
+      <button
+        type="button"
+        (click)="ongletActif.set('MENU')"
+        [class]="ongletActif() === 'MENU'
+          ? 'text-[#E51824] font-extrabold border-b-2 border-[#E51824]'
+          : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
+        class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
+      >
+        Menu
+      </button>
+
+      <button
+        type="button"
+        (click)="ongletActif.set('VIDEOS')"
+        [class]="ongletActif() === 'VIDEOS'
+          ? 'text-[#E51824] font-extrabold border-b-2 border-[#E51824]'
+          : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
+        class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
+      >
+        Videos
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 4. LISTE DES PLATS DU MENU (CONFORME À LA MAQUETTE 3)                     -->
+    <!-- ========================================================================= -->
+    @if (ongletActif() === 'MENU') {
+      <div class="space-y-4">
+        @for (plat of listePlats(); track plat.identifiant) {
+          <div
+            (click)="serviceCatalogue.ouvrirDetailPlat(plat)"
+            class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-2xs hover:shadow-md transition-all flex items-center justify-between gap-4 cursor-pointer group"
+          >
+            
+            <!-- Informations du plat à gauche -->
+            <div class="flex-1 space-y-2 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 group-hover:text-[#E51824] transition-colors leading-snug">
+                  {{ plat.nom }}
+                </h3>
+
+                <!-- Badge indisponible si applicable (ex: Mafe au Bœuf) -->
+                @if (plat.statut === 'INDISPONIBLE') {
+                  <span class="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                    INDISPONIBLE
+                  </span>
+                }
+              </div>
+
+              <p class="text-xs sm:text-sm text-slate-500 leading-relaxed line-clamp-2">
+                {{ plat.description }}
+              </p>
+
+              <!-- Prix et bouton '+' -->
+              <div class="flex items-center gap-4 pt-1">
+                <span
+                  [class]="plat.statut === 'INDISPONIBLE' ? 'text-slate-400' : 'text-slate-900'"
+                  class="text-base sm:text-lg font-extrabold font-['Outfit']"
+                >
+                  {{ plat.prixFcfa | number }} FCFA
+                </span>
+
+                <!-- Bouton '+' rouge (ou grisé si indisponible) -->
+                <button
+                  type="button"
+                  (click)="$event.stopPropagation(); ajouterAuPanier(plat)"
+                  [disabled]="plat.statut === 'INDISPONIBLE'"
+                  [class]="plat.statut === 'INDISPONIBLE'
+                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                    : 'bg-[#E51824] hover:bg-red-700 active:scale-90 text-white shadow-sm shadow-red-500/20 cursor-pointer'"
+                  class="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                  [title]="plat.statut === 'INDISPONIBLE' ? 'Plat indisponible' : 'Ajouter au panier'"
+                >
+                  <i class="fa-solid fa-plus text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Image carrée du plat à droite -->
+            <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-100 shrink-0 shadow-2xs group-hover:scale-105 transition-transform duration-300">
+              <img
+                [src]="plat.adresseImage"
+                [alt]="plat.nom"
+                class="w-full h-full object-cover select-none"
+              />
+            </div>
+
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Onglet Vidéos (extraits gourmands du restaurant) -->
+      <div class="py-12 text-center space-y-3">
+        <div class="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto text-2xl">
+          <i class="fa-solid fa-clapperboard"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">Vidéos et coulisses</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto">
+          Découvrez la préparation des recettes traditionnelles en vidéo par les chefs de {{ restaurant().nom }}.
+        </p>
+      </div>
+    }
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 5. BOUTON FLOTTANT STICKY 'VOIR LE PANIER' (CONFORME À LA MAQUETTE 3)     -->
+  <!-- ========================================================================= -->
+  @if (servicePanier.nombreTotalArticles() > 0) {
+    <div class="fixed bottom-20 md:bottom-8 left-4 right-4 max-w-xl mx-auto z-40 animation-glissement-haut">
+      <a
+        routerLink="/panier"
+        class="w-full py-4 px-5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white flex items-center justify-between shadow-2xl shadow-red-600/30 transition-all cursor-pointer group"
+      >
+        <!-- Badge compteur à gauche (ex: 3) -->
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-md bg-white/20 text-white font-extrabold text-xs flex items-center justify-center">
+            {{ servicePanier.nombreTotalArticles() }}
+          </div>
+          <span class="font-extrabold text-sm sm:text-base">Voir le panier</span>
+        </div>
+
+        <!-- Montant total à droite (ex: 7 500 FCFA) -->
+        <div class="font-extrabold text-sm sm:text-base">
+          {{ servicePanier.totalFcfa() | number }} FCFA
+        </div>
+      </a>
+    </div>
+  }
+
+</div>

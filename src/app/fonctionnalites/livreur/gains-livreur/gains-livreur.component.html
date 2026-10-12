@@ -1,0 +1,231 @@
+<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between select-none font-['Plus_Jakarta_Sans',sans-serif]">
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE MES GAINS (CONFORME À L'IMAGE 2)                              -->
+  <!-- ========================================================================= -->
+  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40 shadow-2xs">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 leading-tight font-['Outfit']">
+        Mes Gains
+      </h1>
+
+      <!-- Bouton calendrier rond -->
+      <button
+        type="button"
+        class="w-11 h-11 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-100"
+        aria-label="Sélectionner la période"
+      >
+        <i class="fa-regular fa-calendar text-base"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CONTENU PRINCIPAL                                                      -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- CARTE ROUGE VIF : CETTE SEMAINE 85 000 FCFA (CONFORME À L'IMAGE 2) -->
+    <div class="w-full bg-[#E51824] rounded-[32px] p-6 text-white shadow-xl shadow-red-500/20 space-y-5 relative overflow-hidden">
+      
+      <!-- Ligne supérieure : CETTE SEMAINE + Badge d'évolution -->
+      <div class="space-y-2">
+        <span class="block text-xs font-black text-white/80 tracking-wider uppercase">
+          CETTE SEMAINE
+        </span>
+
+        <div class="flex items-baseline gap-2">
+          <span class="text-4xl sm:text-5xl font-black tracking-tight font-['Outfit']">
+            {{ serviceLivreur.gainsSemaine().montantTotalFcfa | number }}
+          </span>
+          <span class="text-xl sm:text-2xl font-extrabold text-white/90">
+            FCFA
+          </span>
+        </div>
+
+        <!-- Badge semi-transparent blanc/rouge +12% vs semaine dernière -->
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-extrabold backdrop-blur-xs">
+          <span>+{{ serviceLivreur.gainsSemaine().pourcentageEvolution }}% vs semaine dernière</span>
+        </div>
+      </div>
+
+      <!-- Ligne de séparation blanche semi-transparente -->
+      <div class="border-t border-white/20"></div>
+
+      <!-- Métriques inférieures : LIVRAISONS & HEURES EN LIGNE -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="block text-[10px] font-black text-white/80 uppercase tracking-wider">
+            LIVRAISONS
+          </span>
+          <span class="text-2xl sm:text-3xl font-black font-['Outfit']">
+            {{ serviceLivreur.gainsSemaine().livraisonsSemaine }}
+          </span>
+        </div>
+
+        <div>
+          <span class="block text-[10px] font-black text-white/80 uppercase tracking-wider">
+            HEURES EN LIGNE
+          </span>
+          <span class="text-2xl sm:text-3xl font-black font-['Outfit']">
+            {{ serviceLivreur.gainsSemaine().heuresEnLigne }}
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CARTE : ACTIVITÉ HEBDOMADAIRE (GRAPHIQUE EN BÂTONNETS LUN - DIM) -->
+    <div class="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm space-y-5">
+      
+      <!-- Titre du graphique -->
+      <div class="flex items-center justify-between">
+        <h2 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+          Activité hebdomadaire
+        </h2>
+        <span class="text-xs font-black text-slate-400 tracking-wider uppercase">
+          LUN – DIM
+        </span>
+      </div>
+
+      <!-- Graphique en barres verticales rouges -->
+      <div class="relative pt-4 pb-2">
+        <!-- Lignes de repères Y horizontales (0k, 5k, 10k, 15k) -->
+        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-300 font-bold pr-2 pb-6">
+          <div class="border-b border-dashed border-slate-100 flex items-center justify-between pb-1">
+            <span>15kk</span>
+          </div>
+          <div class="border-b border-dashed border-slate-100 flex items-center justify-between pb-1">
+            <span>10kk</span>
+          </div>
+          <div class="border-b border-dashed border-slate-100 flex items-center justify-between pb-1">
+            <span>5kk</span>
+          </div>
+          <div class="flex items-center justify-between pb-1">
+            <span>0k</span>
+          </div>
+        </div>
+
+        <!-- 7 Bâtonnets rouges -->
+        <div class="grid grid-cols-7 gap-2 sm:gap-3 h-48 items-end relative z-10 px-4 sm:px-6">
+          @for (barre of serviceLivreur.activiteHebdomadaire(); track barre.jour) {
+            <div class="flex flex-col items-center gap-2 group h-full justify-end">
+              <!-- Barre rouge -->
+              <div class="w-full max-w-[28px] rounded-t-lg bg-[#E51824] transition-all duration-500 group-hover:bg-red-700 relative flex items-center justify-center"
+                   [style.height.%]="barre.hauteurPourcentage">
+                <!-- Tooltip au survol -->
+                <div class="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-20">
+                  {{ barre.montantFcfa | number }}
+                </div>
+              </div>
+              <!-- Libellé du jour -->
+              <span class="text-[11px] font-bold text-slate-400">
+                {{ barre.jour }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECTION : DÉTAILS QUOTIDIENS -->
+    <div class="space-y-3.5">
+      
+      <div class="flex items-center justify-between px-1">
+        <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+          Détails quotidiens
+        </h3>
+        <button
+          type="button"
+          class="text-xs font-black text-[#E51824] hover:text-red-700 tracking-wider uppercase cursor-pointer"
+        >
+          VOIR TOUT
+        </button>
+      </div>
+
+      <!-- Liste des cartes par jour -->
+      <div class="space-y-2.5">
+        @for (item of serviceLivreur.detailsQuotidiens(); track item.titreDate) {
+          <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center justify-between gap-3 hover:border-slate-200 transition-all cursor-pointer group">
+            
+            <!-- Icône & date & nombre de livraisons -->
+            <div class="flex items-center gap-3.5 min-w-0 flex-1">
+              <div
+                [class]="item.couleurFond"
+                class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-base"
+              >
+                <i [class]="item.icone"></i>
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <h4 class="text-sm sm:text-base font-extrabold text-slate-900 truncate font-['Outfit']">
+                  {{ item.titreDate }}
+                </h4>
+                <p class="text-xs text-slate-400 font-medium">
+                  {{ item.nombreLivraisons }} livraisons
+                </p>
+              </div>
+            </div>
+
+            <!-- Montant & chevron -->
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right">
+                <span class="text-sm sm:text-base font-black text-slate-900 font-['Outfit']">
+                  {{ item.montantFcfa | number }}
+                </span>
+                <span class="text-[10px] font-extrabold text-slate-400 ml-0.5">FCFA</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-300 group-hover:text-slate-500 transition-colors"></i>
+            </div>
+
+          </div>
+        }
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BARRE DE NAVIGATION INFÉRIEURE (ACCUEIL, GAINS ACTIF, PROFIL)          -->
+  <!-- Conforme au bas de l'Image 2                                              -->
+  <!-- ========================================================================= -->
+  <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+    <!-- Onglet 1 : Accueil -->
+    <a
+      routerLink="/livreur"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors group"
+    >
+      <i class="fa-solid fa-house text-xl"></i>
+      <span class="text-[11px] font-bold mt-1">
+        Accueil
+      </span>
+    </a>
+
+    <!-- Onglet 2 : Gains (Actif en rouge avec fond pilule doux conforme à l'Image 2) -->
+    <a
+      routerLink="/livreur/gains"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer group"
+    >
+      <div class="px-4 py-1 rounded-full bg-red-50 text-[#E51824] flex items-center justify-center">
+        <i class="fa-solid fa-wallet text-lg"></i>
+      </div>
+      <span class="text-[11px] font-black text-[#E51824] mt-0.5">
+        Gains
+      </span>
+    </a>
+
+    <!-- Onglet 3 : Profil -->
+    <a
+      routerLink="/profil"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
+    >
+      <i class="fa-solid fa-user text-xl"></i>
+      <span class="text-[11px] font-bold mt-1">
+        Profil
+      </span>
+    </a>
+  </nav>
+
+</div>

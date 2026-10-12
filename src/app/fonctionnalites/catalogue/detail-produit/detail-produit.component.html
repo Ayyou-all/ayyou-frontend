@@ -1,0 +1,117 @@
+<div
+  class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 animation-apparition select-none"
+  (click)="fermer.emit()"
+>
+
+  <!-- Conteneur principal (Bottom-sheet sur mobile, Modal centrée sur bureau) -->
+  <div
+    class="w-full max-w-md bg-white rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh] animation-glissement-haut"
+    (click)="$event.stopPropagation()"
+  >
+
+    <!-- Poignée de glissement sur mobile -->
+    <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-3 mb-1 sm:hidden"></div>
+
+    <div class="overflow-y-auto px-5 pt-2 pb-6 space-y-5">
+      
+      <!-- Image du plat avec bouton de fermeture 'X' en haut à droite -->
+      <div class="relative w-full h-56 sm:h-64 rounded-3xl overflow-hidden shadow-sm bg-slate-100">
+        <img
+          [src]="plat.adresseImage"
+          [alt]="plat.nom"
+          class="w-full h-full object-cover select-none"
+        />
+
+        <!-- Bouton Fermer 'X' -->
+        <button
+          type="button"
+          (click)="fermer.emit()"
+          class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 flex items-center justify-center shadow-md transition-all active:scale-90 cursor-pointer"
+          aria-label="Fermer"
+        >
+          <i class="fa-solid fa-xmark text-sm font-bold"></i>
+        </button>
+      </div>
+
+      <!-- Titre et description du plat -->
+      <div class="space-y-2">
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+          {{ plat.nom }}
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+          {{ plat.description }}
+        </p>
+      </div>
+
+      <!-- Ligne de sélection de la quantité -->
+      <div class="flex items-center justify-between py-3 border-y border-slate-100">
+        <span class="text-sm font-extrabold text-slate-900">Quantité</span>
+
+        <div class="flex items-center gap-2">
+          <!-- Bouton Moins '-' -->
+          <button
+            type="button"
+            (click)="diminuerQuantite()"
+            [disabled]="quantite() <= 1"
+            class="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 active:scale-95 border border-slate-200 text-slate-700 font-extrabold flex items-center justify-center transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <i class="fa-solid fa-minus text-xs"></i>
+          </button>
+
+          <!-- Valeur numérique -->
+          <span class="w-8 text-center text-base font-extrabold text-slate-900">
+            {{ quantite() }}
+          </span>
+
+          <!-- Bouton Plus '+' -->
+          <button
+            type="button"
+            (click)="augmenterQuantite()"
+            class="w-9 h-9 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 border border-rose-200 text-[#E51824] font-extrabold flex items-center justify-center transition-all cursor-pointer"
+          >
+            <i class="fa-solid fa-plus text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Instructions spéciales -->
+      <div class="space-y-2">
+        <label for="champ-instructions" class="block text-sm font-extrabold text-slate-900">
+          Instructions spéciales
+        </label>
+        <div class="rounded-2xl bg-[#f4f5f7] p-3.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-red-100 transition-all">
+          <textarea
+            id="champ-instructions"
+            rows="3"
+            [ngModel]="instructionsSpeciales()"
+            (ngModelChange)="instructionsSpeciales.set($event)"
+            placeholder="Ex: Pas trop pimenté, sans oignons..."
+            class="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Bouton rouge 'Ajouter au panier | 3 500 FCFA' -->
+      <div class="pt-2 space-y-2">
+        <button
+          type="button"
+          (click)="ajouterAuPanier()"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base flex items-center justify-between shadow-xl shadow-red-500/25 transition-all cursor-pointer"
+        >
+          <span>Ajouter au panier</span>
+          <div class="flex items-center gap-3">
+            <span class="w-[1px] h-4 bg-white/30 inline-block"></span>
+            <span class="font-black tracking-wide">{{ prixTotalCalculer() | number }} FCFA</span>
+          </div>
+        </button>
+
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center pt-1">
+          Glisser vers le bas pour fermer
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

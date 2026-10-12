@@ -1,0 +1,212 @@
+<div class="min-h-screen w-full bg-[#fafbfc] text-slate-800 flex flex-col justify-between select-none font-['Plus_Jakarta_Sans',sans-serif] relative">
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE CONFIRMER LA LIVRAISON (CONFORME À L'IMAGE 3)                  -->
+  <!-- ========================================================================= -->
+  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40 shadow-2xs">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      
+      <!-- Bouton Retour rond -->
+      <button
+        type="button"
+        (click)="retourner()"
+        class="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+        aria-label="Retour"
+      >
+        <i class="fa-solid fa-chevron-left text-sm"></i>
+      </button>
+
+      <!-- Titre centré -->
+      <h1 class="text-base sm:text-lg font-black text-slate-900 leading-tight font-['Outfit']">
+        Confirmer la livraison
+      </h1>
+
+      <!-- Espace symétrique -->
+      <div class="w-11 h-11"></div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CONTENU PRINCIPAL                                                      -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 w-full max-w-md mx-auto px-4 sm:px-6 py-5 flex flex-col justify-between space-y-5">
+
+    <!-- CARTE RÉCAPITULATIF COMMANDE (IMAGE 3) -->
+    <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs flex items-center justify-between gap-3">
+      
+      <!-- Miniature repas + Nom client + Articles -->
+      <div class="flex items-center gap-3.5 min-w-0 flex-1">
+        <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
+          <img
+            src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200"
+            alt="Commande"
+            class="w-full h-full object-cover"
+          />
+        </div>
+        
+        <div class="min-w-0 flex-1">
+          <span class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+            COMMANDE #{{ serviceLivreur.courseEnCours()?.identifiantCommande || '8294' }}
+          </span>
+          <h3 class="text-sm sm:text-base font-black text-slate-900 truncate font-['Outfit']">
+            Client: {{ serviceLivreur.courseEnCours()?.clientNom || 'Moussa Diop' }}
+          </h3>
+          <p class="text-xs text-slate-400 truncate font-medium">
+            1x Burger Gourmet, 1x Soda
+          </p>
+        </div>
+      </div>
+
+      <!-- Badge vert validé rond -->
+      <div class="w-9 h-9 rounded-full bg-[#e8faf0] text-[#16a34a] flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-check text-sm font-black"></i>
+      </div>
+
+    </div>
+
+    <!-- SECTION CODE DE SÉCURITÉ : ICÔNE BOUCLIER + INSTRUCTION -->
+    <div class="flex flex-col items-center text-center space-y-3 pt-1">
+      
+      <!-- Bouclier rouge dans cercle pastel -->
+      <div class="w-16 h-16 rounded-full bg-[#fee2e2]/70 flex items-center justify-center shadow-xs">
+        <i class="fa-solid fa-shield text-2xl text-[#E51824]"></i>
+      </div>
+
+      <!-- Titres et consignes -->
+      <div class="space-y-1.5 max-w-xs">
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit'] tracking-tight">
+          Code de sécurité
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+          Demandez le code de confirmation à <strong class="text-slate-800 font-extrabold">4 chiffres</strong> au client pour valider la remise.
+        </p>
+      </div>
+
+      <!-- 4 CASES DU CODE À CHIFFRES (CONFORME À L'IMAGE 3) -->
+      <div class="flex items-center justify-center gap-3 pt-2">
+        @for (val of casesCode(); track $index; let idx = $index) {
+          <div
+            [class]="val
+              ? 'border-2 border-[#E51824] bg-white text-slate-900 shadow-xs'
+              : 'border border-slate-200 bg-white text-slate-300'"
+            class="w-14 h-16 sm:w-16 sm:h-18 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl font-black font-['Outfit'] transition-all"
+          >
+            @if (val) {
+              <span>{{ val }}</span>
+            } @else {
+              <span class="text-lg leading-none text-slate-300">•</span>
+            }
+          </div>
+        }
+      </div>
+
+      @if (messageErreur()) {
+        <p class="text-xs text-[#E51824] font-bold animate-shake pt-1">
+          {{ messageErreur() }}
+        </p>
+      }
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- CLAVIER NUMÉRIQUE EN DIRECT (CONFORME À L'IMAGE 3)                        -->
+    <!-- ========================================================================= -->
+    <div class="w-full max-w-xs mx-auto space-y-2.5 pt-2">
+      @for (ligne of touchesClavier; track $index) {
+        <div class="grid grid-cols-3 gap-3">
+          @for (touche of ligne; track touche) {
+            @if (touche === '') {
+              <div></div>
+            } @else if (touche === 'EFFACER') {
+              <button
+                type="button"
+                (click)="appuyerTouche('EFFACER')"
+                class="h-13 sm:h-14 rounded-2xl bg-white hover:bg-slate-100 active:scale-95 text-slate-500 font-bold shadow-xs border border-slate-100 flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Effacer"
+              >
+                <i class="fa-solid fa-delete-left text-base"></i>
+              </button>
+            } @else {
+              <button
+                type="button"
+                (click)="appuyerTouche(touche)"
+                class="h-13 sm:h-14 rounded-2xl bg-white hover:bg-slate-50 active:scale-95 text-slate-900 text-xl font-black font-['Outfit'] shadow-xs border border-slate-100 flex items-center justify-center transition-all cursor-pointer"
+              >
+                {{ touche }}
+              </button>
+            }
+          }
+        </div>
+      }
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BOUTON INFÉRIEUR : CONFIRMER LA LIVRAISON (IMAGE 3)                     -->
+  <!-- ========================================================================= -->
+  <div class="w-full bg-white border-t border-slate-100 p-4 sm:p-5 sticky bottom-0 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+    <div class="max-w-md mx-auto space-y-3">
+      
+      <!-- Gros bouton rouge de validation -->
+      <button
+        type="button"
+        (click)="confirmerLivraison()"
+        [class]="codeSaisi().length === 4
+          ? 'bg-[#E51824] hover:bg-red-700 shadow-xl shadow-red-500/25'
+          : 'bg-[#E51824] hover:bg-red-700 shadow-md'"
+        class="w-full py-4 px-6 rounded-2xl active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+      >
+        <span>Confirmer la livraison</span>
+        <i class="fa-solid fa-circle-check text-base"></i>
+      </button>
+
+      <!-- Lien d'aide en cas de problème avec le code -->
+      <div class="text-center">
+        <button
+          type="button"
+          (click)="codeSaisi.set('8245')"
+          class="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+        >
+          Problème avec le code ?
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODALE DE FÉLICITATIONS (SUCCÈS DE LIVRAISON)                             -->
+  <!-- ========================================================================= -->
+  @if (livraisonReussie()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animation-apparition">
+      <div class="w-full max-w-sm bg-white rounded-[36px] p-6 text-center space-y-4 shadow-2xl animation-glissement-haut">
+        
+        <div class="w-20 h-20 rounded-full bg-[#e8faf0] text-[#16a34a] flex items-center justify-center mx-auto shadow-inner">
+          <i class="fa-solid fa-check text-3xl font-black"></i>
+        </div>
+
+        <div class="space-y-1">
+          <h3 class="text-2xl font-black text-slate-900 font-['Outfit']">
+            Livraison Confirmée !
+          </h3>
+          <p class="text-sm text-slate-500 font-medium">
+            La commande a été remise avec succès au client.
+          </p>
+        </div>
+
+        <div class="bg-red-50 rounded-2xl p-3 border border-red-100 flex items-center justify-center gap-2 text-[#E51824] font-black text-base font-['Outfit']">
+          <i class="fa-solid fa-coins"></i>
+          <span>+{{ serviceLivreur.courseEnCours()?.gainFcfa || 1500 | number }} FCFA crédités</span>
+        </div>
+
+        <p class="text-xs text-slate-400">
+          Redirection vers votre accueil...
+        </p>
+
+      </div>
+    </div>
+  }
+
+</div>

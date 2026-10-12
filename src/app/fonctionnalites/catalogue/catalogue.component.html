@@ -1,0 +1,222 @@
+<div class="w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 space-y-6">
+
+  <!-- ========================================================================= -->
+  <!-- 1. BARRE DE RECHERCHE AVEC MICROPHONE (CONFORME À LA MAQUETTE 2)          -->
+  <!-- ========================================================================= -->
+  <div class="relative w-full">
+    <div class="flex items-center rounded-2xl bg-slate-100/90 border border-slate-200/70 px-4 py-3.5 focus-within:bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all shadow-2xs">
+      <i class="fa-solid fa-magnifying-glass text-slate-400 mr-3 text-base"></i>
+      <input
+        type="text"
+        [ngModel]="texteRecherche()"
+        (ngModelChange)="texteRecherche.set($event)"
+        placeholder="Plat, restaurant, burger, artisan..."
+        class="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
+      />
+      <button
+        type="button"
+        class="text-slate-500 hover:text-slate-800 transition-colors ml-2 p-1"
+        title="Recherche vocale"
+      >
+        <i class="fa-solid fa-microphone text-base"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. SECTION : EXPLORER LES CATÉGORIES (CONFORME À LA MAQUETTE 2)           -->
+  <!-- ========================================================================= -->
+  <section class="space-y-3.5">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+        Explorer les catégories
+      </h2>
+      <button
+        type="button"
+        (click)="categorieSelectionnee.set(null)"
+        class="text-xs sm:text-sm font-bold text-[#E51824] hover:underline flex items-center gap-1 cursor-pointer"
+      >
+        <span>Tout voir</span>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+    </div>
+
+    <!-- Défilement horizontal des catégories avec icônes rouges sur fond rose pâle -->
+    <div class="flex items-center gap-3.5 overflow-x-auto pb-2 scrollbar-none select-none">
+      @for (cat of serviceCatalogue.categories(); track cat.identifiant) {
+        <button
+          type="button"
+          (click)="filtrerParCategorie(cat.nom)"
+          class="flex flex-col items-center gap-2 shrink-0 cursor-pointer group"
+        >
+          <!-- Boîte icône carrée aux coins arrondis -->
+          <div
+            [class]="categorieSelectionnee() === cat.nom
+              ? 'bg-[#E51824] text-white ring-2 ring-[#E51824] ring-offset-2 scale-105'
+              : 'bg-[#FFF1F2] text-[#E51824] hover:bg-rose-100 group-hover:scale-105'"
+            class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all shadow-2xs"
+          >
+            <i [class]="cat.icone + ' text-2xl sm:text-3xl'"></i>
+          </div>
+
+          <!-- Libellé de la catégorie -->
+          <span
+            [class]="categorieSelectionnee() === cat.nom ? 'text-[#E51824] font-extrabold' : 'text-slate-700 font-bold'"
+            class="text-xs sm:text-sm"
+          >
+            {{ cat.nom }}
+          </span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. LISTE DES RESTAURANTS (CONFORME AUX CARTES DE LA MAQUETTE 2)           -->
+  <!-- ========================================================================= -->
+  <section class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h3 class="text-base sm:text-lg font-bold text-slate-800 font-['Outfit']">
+        Restaurants disponibles
+      </h3>
+      <span class="text-xs text-slate-400 font-semibold">
+        {{ listeRestaurantsFiltree().length }} trouvé(s)
+      </span>
+    </div>
+
+    <!-- Grille responsive : 1 colonne mobile, 2 à 3 colonnes desktop -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      @for (resto of listeRestaurantsFiltree(); track resto.identifiant) {
+        <div
+          (click)="ouvrirRestaurant(resto.identifiant)"
+          class="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group flex flex-col justify-between"
+          title="Voir le profil du restaurant {{ resto.nom }}"
+        >
+          <!-- Image du restaurant en haut -->
+          <div class="relative w-full h-52 sm:h-56 overflow-hidden bg-slate-100">
+            <img
+              [src]="resto.adresseCouverture"
+              [alt]="resto.nom"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            
+            <!-- Badge statut 'Ouvert / Fermé' en haut à gauche -->
+            <div class="absolute top-3.5 left-3.5">
+              <span
+                [class]="resto.estOuvert ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-white'"
+                class="px-2.5 py-1 rounded-full text-[11px] font-extrabold tracking-wide uppercase shadow-md backdrop-blur-xs"
+              >
+                {{ resto.estOuvert ? 'Ouvert' : 'Fermé' }}
+              </span>
+            </div>
+
+            <!-- Badge favori flottant en haut à droite -->
+            <button
+              type="button"
+              (click)="$event.stopPropagation()"
+              class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-slate-600 hover:text-red-600 hover:bg-white flex items-center justify-center shadow-md transition-colors cursor-pointer"
+            >
+              <i class="fa-regular fa-heart text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Informations en bas : Nom, Quartier, Action 'Voir le profil' -->
+          <div class="p-4 sm:p-5 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="text-lg font-extrabold text-slate-900 group-hover:text-[#E51824] transition-colors truncate">
+                {{ resto.nom }}
+              </h4>
+            </div>
+
+            <p class="text-xs text-slate-400 line-clamp-1">
+              {{ resto.specialite }}
+            </p>
+
+            <div class="flex items-center justify-between pt-1 border-t border-slate-100/80 text-xs">
+              <div class="flex items-center text-slate-500 font-medium truncate pr-2">
+                <i class="fa-solid fa-location-dot text-[#E51824] mr-1.5 text-xs"></i>
+                <span class="truncate">{{ resto.quartierVille }}</span>
+              </div>
+              <span class="text-[#E51824] font-extrabold group-hover:translate-x-1 transition-transform flex items-center gap-1 shrink-0">
+                <span>Voir profil</span>
+                <i class="fa-solid fa-chevron-right text-[10px]"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full py-16 text-center space-y-3">
+          <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-2xl">
+            <i class="fa-solid fa-utensils"></i>
+          </div>
+          <div class="text-base font-bold text-slate-800">Aucun restaurant trouvé</div>
+          <div class="text-xs text-slate-500">Essayez une autre recherche ou réinitialisez les filtres.</div>
+          <button
+            type="button"
+            (click)="texteRecherche.set(''); categorieSelectionnee.set(null)"
+            class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-black transition-colors cursor-pointer"
+          >
+            Réinitialiser les filtres
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 4. SECTION : PLATS POPULAIRES (CLIQUER POUR VOIR LE DÉTAIL PRODUIT)       -->
+  <!-- ========================================================================= -->
+  <section class="space-y-4 pt-4 border-t border-slate-100">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+          Plats recommandés à la carte
+        </h3>
+        <p class="text-xs text-slate-400">Cliquez sur un plat pour voir ses détails et le commander</p>
+      </div>
+    </div>
+
+    <!-- Grille de plats cliquables -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (plat of platsPopulaires(); track plat.identifiant) {
+        <div
+          (click)="ouvrirDetailPlat(plat)"
+          class="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-2xs hover:shadow-md transition-all flex items-center gap-3.5 cursor-pointer group"
+          title="Voir la fiche détaillée de {{ plat.nom }}"
+        >
+          <!-- Image du plat -->
+          <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 group-hover:scale-105 transition-transform">
+            <img
+              [src]="plat.adresseImage"
+              [alt]="plat.nom"
+              class="w-full h-full object-cover"
+            />
+          </div>
+
+          <!-- Détails du plat -->
+          <div class="flex-1 min-w-0">
+            <span class="block text-[10px] font-bold text-[#E51824] uppercase tracking-wider truncate">
+              {{ plat.nomRestaurant }}
+            </span>
+            <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-[#E51824] transition-colors truncate">
+              {{ plat.nom }}
+            </h4>
+            <div class="text-xs sm:text-sm font-black text-slate-900 mt-1 font-['Outfit']">
+              {{ plat.prixFcfa | number }} FCFA
+            </div>
+          </div>
+
+          <!-- Bouton oeil / voir détails -->
+          <button
+            type="button"
+            class="w-8 h-8 rounded-full bg-slate-50 text-slate-600 group-hover:bg-[#E51824] group-hover:text-white transition-colors flex items-center justify-center shrink-0"
+            title="Détails du plat"
+          >
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+
+</div>

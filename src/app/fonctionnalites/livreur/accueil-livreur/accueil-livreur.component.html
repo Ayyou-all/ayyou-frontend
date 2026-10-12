@@ -1,0 +1,237 @@
+<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between select-none font-['Plus_Jakarta_Sans',sans-serif]">
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE DU LIVREUR : AVATAR + BONJOUR + TOGGLE DISPONIBLE               -->
+  <!-- Conforme au haut de l'Image 1                                             -->
+  <!-- ========================================================================= -->
+  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40 shadow-2xs">
+    <div class="max-w-2xl mx-auto flex items-center justify-between">
+      
+      <!-- Profil livreur à gauche -->
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full overflow-hidden bg-slate-900 border-2 border-slate-100 shadow-xs shrink-0">
+          <img
+            [src]="serviceLivreur.profilLivreur().adressePhoto"
+            alt="Moussa Diop"
+            class="w-full h-full object-cover"
+          />
+        </div>
+        <div>
+          <span class="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+            BONJOUR,
+          </span>
+          <h1 class="text-base sm:text-lg font-black text-slate-900 leading-tight font-['Outfit']">
+            {{ serviceLivreur.profilLivreur().nomComplet }}
+          </h1>
+        </div>
+      </div>
+
+      <!-- Toggle de disponibilité (DISPONIBLE ON/OFF) -->
+      <button
+        type="button"
+        (click)="serviceLivreur.basculerDisponibilite()"
+        [class]="serviceLivreur.profilLivreur().estDisponible
+          ? 'bg-[#e8faf0] border-[#bbf7d0]'
+          : 'bg-slate-100 border-slate-200'"
+        class="flex items-center gap-2.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer shadow-2xs"
+      >
+        <span
+          [class]="serviceLivreur.profilLivreur().estDisponible ? 'text-[#16a34a]' : 'text-slate-500'"
+          class="text-xs font-black tracking-wider uppercase"
+        >
+          {{ serviceLivreur.profilLivreur().estDisponible ? 'DISPONIBLE' : 'HORS LIGNE' }}
+        </span>
+
+        <!-- Switch iOS vert -->
+        <div
+          [class]="serviceLivreur.profilLivreur().estDisponible ? 'bg-[#22c55e]' : 'bg-slate-300'"
+          class="w-10 h-6 rounded-full p-0.5 transition-colors relative flex items-center"
+        >
+          <div
+            [class]="serviceLivreur.profilLivreur().estDisponible ? 'translate-x-4' : 'translate-x-0'"
+            class="w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200"
+          ></div>
+        </div>
+      </button>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CONTENU PRINCIPAL                                                      -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-8 flex flex-col justify-center">
+
+    <!-- CARTE : GAINS DU JOUR (CONFORME À L'IMAGE 1) -->
+    <a routerLink="/livreur/gains" class="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm flex items-center justify-between gap-4 hover:border-red-200 transition-colors cursor-pointer group">
+      
+      <!-- Gauche : GAINS DU JOUR + 12 500 FCFA -->
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-black text-slate-400 uppercase tracking-wider">
+            GAINS DU JOUR
+          </span>
+          <span class="px-2 py-0.5 rounded-full bg-rose-50 text-[#E51824] text-[10px] font-extrabold">
+            Aujourd'hui
+          </span>
+        </div>
+
+        <div class="flex items-baseline gap-2">
+          <span class="text-3xl sm:text-4xl font-black text-slate-900 font-['Outfit'] tracking-tight">
+            {{ serviceLivreur.profilLivreur().gainsDuJourFcfa | number }}
+          </span>
+          <span class="text-sm font-extrabold text-slate-400">
+            FCFA
+          </span>
+        </div>
+      </div>
+
+      <!-- Droite : Icône moto rouge + 8 Livraisons -->
+      <div class="flex flex-col items-center justify-center text-center pl-4 border-l border-slate-100">
+        <div class="flex items-center gap-1.5 text-[#E51824]">
+          <i class="fa-solid fa-motorcycle text-lg"></i>
+          <span class="text-2xl font-black font-['Outfit']">
+            {{ serviceLivreur.profilLivreur().nombreLivraisonsJour }}
+          </span>
+        </div>
+        <span class="text-xs text-slate-400 font-medium">
+          Livraisons
+        </span>
+      </div>
+
+    </a>
+
+    <!-- ========================================================================= -->
+    <!-- ILLUSTRATION CENTRALE : LIVREUR SCOOTER DANS LE CERCLE SAUMON             -->
+    <!-- Conforme à l'illustration de l'Image 1                                    -->
+    <!-- ========================================================================= -->
+    <div class="flex flex-col items-center text-center space-y-6 my-auto py-4">
+      
+      <!-- Grand disque saumon / pêche avec l'illustration -->
+      <div class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full border-12 border-[#fed7aa]/60 bg-[#fff7ed] flex items-center justify-center shadow-inner">
+        
+        <!-- Illustration SVG soignée du livreur en scooter orange -->
+        <svg class="w-44 h-44 sm:w-48 sm:h-48 drop-shadow-md" viewBox="0 0 200 200" fill="none">
+          <!-- Ombre sous le scooter -->
+          <ellipse cx="100" cy="165" rx="55" ry="8" fill="#cbd5e1" opacity="0.6"/>
+
+          <!-- Roues scooter noires avec jantes -->
+          <circle cx="65" cy="150" r="16" fill="#334155"/>
+          <circle cx="65" cy="150" r="8" fill="#e2e8f0"/>
+          <circle cx="138" cy="150" r="16" fill="#334155"/>
+          <circle cx="138" cy="150" r="8" fill="#e2e8f0"/>
+
+          <!-- Corps du scooter orange AYYOU -->
+          <path d="M65,150 L85,145 L100,125 L125,125 L138,150 Z" fill="#f97316"/>
+          <path d="M85,145 L95,115 L115,115 L120,135 Z" fill="#ea580c"/>
+          <rect x="75" y="110" width="30" height="8" rx="4" fill="#1e293b"/> <!-- Selle -->
+
+          <!-- Guidon et rétroviseur -->
+          <path d="M72,110 L70,85 L60,82" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="68" cy="78" r="4" fill="#94a3b8"/> <!-- Rétro -->
+          <path d="M70,85 L85,90" stroke="#f97316" stroke-width="8" stroke-linecap="round"/> <!-- Tablier avant -->
+          <circle cx="63" cy="88" r="4" fill="#fbbf24"/> <!-- Phare -->
+
+          <!-- Caisson de livraison jaune/orange à l'arrière -->
+          <rect x="120" y="95" width="28" height="28" rx="4" fill="#f59e0b"/>
+          <rect x="122" y="97" width="24" height="24" rx="2" fill="#fbbf24"/>
+          <path d="M128,109 L140,109" stroke="#b45309" stroke-width="2"/>
+
+          <!-- Conducteur : Corps et veste orange -->
+          <path d="M90,110 L94,80 L110,80 L112,110 Z" fill="#ea580c"/>
+          <path d="M102,80 L102,110" stroke="#ffffff" stroke-width="2"/> <!-- Fermeture éclair -->
+
+          <!-- Bras et mains sur le guidon -->
+          <path d="M96,85 L80,90 L70,86" stroke="#ea580c" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="68" cy="86" r="3" fill="#fdba74"/> <!-- Main -->
+
+          <!-- Tête, visage et casque jaune -->
+          <circle cx="102" cy="65" r="10" fill="#fed7aa"/> <!-- Tête -->
+          <path d="M95,68 Q102,74 108,68" stroke="#0f172a" stroke-width="1.5" fill="none"/> <!-- Sourire -->
+          <circle cx="99" cy="63" r="1.5" fill="#0f172a"/> <!-- Œil -->
+          <!-- Casque de moto jaune vif -->
+          <path d="M91,62 Q102,48 113,62 Q115,50 102,50 Q89,50 91,62 Z" fill="#f59e0b"/>
+          <rect x="90" y="58" width="24" height="6" rx="3" fill="#fbbf24"/>
+        </svg>
+
+      </div>
+
+      <!-- Textes d'état en attente -->
+      <div class="space-y-2 max-w-sm px-4">
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-['Outfit']">
+          En attente de commandes...
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+          Restez à proximité des zones commerciales pour augmenter vos chances.
+        </p>
+      </div>
+
+      <!-- Bouton de simulation pour tester la réception d'une commande (Image 2) -->
+      <div class="pt-2">
+        <button
+          type="button"
+          (click)="simulerNouvelleCommande()"
+          class="px-5 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+        >
+          <i class="fa-solid fa-bell animate-bounce"></i>
+          <span>Simuler une nouvelle livraison</span>
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BARRE DE NAVIGATION INFÉRIEURE DU LIVREUR (ACCUEIL, GAINS, PROFIL)      -->
+  <!-- Conforme au bas de l'Image 1                                              -->
+  <!-- ========================================================================= -->
+  <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+    <!-- Onglet 1 : Accueil (Actif rouge) -->
+    <a
+      routerLink="/livreur"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer group"
+    >
+      <i class="fa-solid fa-house text-xl text-[#E51824]"></i>
+      <span class="text-[11px] font-black text-[#E51824] mt-1">
+        Accueil
+      </span>
+    </a>
+
+    <!-- Onglet 2 : Gains -->
+    <a
+      routerLink="/livreur/gains"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
+    >
+      <i class="fa-solid fa-wallet text-xl"></i>
+      <span class="text-[11px] font-bold mt-1">
+        Gains
+      </span>
+    </a>
+
+    <!-- Onglet 3 : Profil -->
+    <a
+      routerLink="/profil"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
+    >
+      <i class="fa-solid fa-user text-xl"></i>
+      <span class="text-[11px] font-bold mt-1">
+        Profil
+      </span>
+    </a>
+  </nav>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALE PROPOSITION DE LIVRAISON (IMAGE 2)                                 -->
+<!-- S'affiche dès qu'une course est proposée                                 -->
+<!-- ========================================================================= -->
+@if (serviceLivreur.propositionActive()) {
+  <app-proposition-livraison
+    [proposition]="serviceLivreur.propositionActive()!"
+    [secondesRestantes]="serviceLivreur.secondesRestantes()"
+    (accepter)="accepterLivraison()"
+    (refuser)="refuserLivraison()"
+  ></app-proposition-livraison>
+}

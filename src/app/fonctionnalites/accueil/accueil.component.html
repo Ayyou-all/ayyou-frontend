@@ -1,0 +1,230 @@
+<div
+  (wheel)="gererMolette($event)"
+  (touchstart)="gererDebutToucher($event)"
+  (touchend)="gererFinToucher($event)"
+  class="relative w-full h-[calc(100vh-68px)] max-h-[100dvh] flex items-center justify-center overflow-hidden bg-slate-950 select-none"
+>
+
+  <!-- Notification flottante d'ajout au panier -->
+  @if (notificationAjoutPanier()) {
+    <div class="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white text-xs sm:text-sm font-bold shadow-2xl border border-slate-700/60 flex items-center gap-2 animation-apparition">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span>{{ notificationAjoutPanier() }}</span>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- LECTEUR VIDÉO IMMERSIF STYLE TIKTOK (CENTRÉ SUR DESKTOP ET MOBILE)         -->
+  <!-- ========================================================================= -->
+  <div class="relative w-full h-full md:max-h-[calc(100vh-84px)] md:aspect-[9/16] md:max-w-[410px] md:rounded-[32px] overflow-hidden shadow-2xl bg-black md:border-2 md:border-slate-800 flex items-center justify-center">
+
+    <!-- Vidéo en arrière-plan avec boucle automatique -->
+    @if (publicationCourante().adresseVideo) {
+      <video
+        #elementVideo
+        [src]="publicationCourante().adresseVideo"
+        [poster]="publicationCourante().adresseMedia"
+        autoplay
+        loop
+        [muted]="estEnSourdine()"
+        playsinline
+        (click)="basculerLecture()"
+        class="absolute inset-0 w-full h-full object-cover cursor-pointer"
+      ></video>
+    } @else {
+      <!-- Image de repli de haute qualité si la vidéo n'est pas spécifiée -->
+      <img
+        [src]="publicationCourante().adresseMedia"
+        [alt]="publicationCourante().plat.nom"
+        (click)="basculerLecture()"
+        class="absolute inset-0 w-full h-full object-cover cursor-pointer"
+      />
+    }
+
+    <!-- Superposition de dégradé sombre (discret pour maximiser la visibilité de la vidéo) -->
+    <div class="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/85 pointer-events-none"></div>
+
+    <!-- Indicateur de pause si la vidéo est arrêtée -->
+    @if (!estEnLecture()) {
+      <div
+        (click)="basculerLecture()"
+        class="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-[2px] cursor-pointer animation-apparition"
+      >
+        <div class="w-16 h-16 rounded-full bg-black/60 border border-white/20 text-white flex items-center justify-center text-2xl shadow-xl">
+          <i class="fa-solid fa-play ml-1"></i>
+        </div>
+      </div>
+    }
+
+    <!-- En-tête supérieur : Contrôle du son à gauche, Recherche à droite -->
+    <div class="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
+      <!-- Bouton Son (Muet / Actif) -->
+      <button
+        type="button"
+        (click)="basculerSon()"
+        class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-white hover:bg-black/60 flex items-center justify-center text-xs shadow-md transition-all cursor-pointer"
+        [title]="estEnSourdine() ? 'Activer le son' : 'Couper le son'"
+      >
+        <i [class]="estEnSourdine() ? 'fa-solid fa-volume-xmark text-slate-300' : 'fa-solid fa-volume-high text-white'"></i>
+      </button>
+
+      <!-- Bouton Recherche (Glassmorphism de la maquette) -->
+      <a
+        routerLink="/catalogue"
+        class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/60 flex items-center justify-center shadow-lg transition-all cursor-pointer"
+        aria-label="Rechercher"
+      >
+        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+      </a>
+    </div>
+
+    <!-- Actions latérales à droite (Profil restaurant, J'aime, Partager) -->
+    <div class="absolute right-3.5 bottom-24 sm:bottom-28 z-30 flex flex-col items-center gap-5">
+      
+      <!-- Avatar du restaurant + bouton '+' d'abonnement -->
+      <div class="relative cursor-pointer group" (click)="voirRestaurant(publicationCourante().identifiantRestaurant)">
+        <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-xl bg-white">
+          <img [src]="publicationCourante().adresseLogoRestaurant" alt="Restaurant" class="w-full h-full object-cover" />
+        </div>
+        <button
+          type="button"
+          (click)="basculerAbonnement(); $event.stopPropagation()"
+          [class]="publicationCourante().estAbonne ? 'bg-emerald-600' : 'bg-[#E51824]'"
+          class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4.5 h-4.5 rounded-full text-white flex items-center justify-center text-[9px] shadow-md border-2 border-white transition-colors cursor-pointer"
+          [title]="publicationCourante().estAbonne ? 'Abonné' : 'Suivre'"
+        >
+          <i [class]="publicationCourante().estAbonne ? 'fa-solid fa-check' : 'fa-solid fa-plus'"></i>
+        </button>
+      </div>
+
+      <!-- Bouton J'aime avec compteur -->
+      <button
+        type="button"
+        (click)="basculerJaime()"
+        class="flex flex-col items-center gap-1 text-white hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+      >
+        <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg">
+          <i
+            [class]="publicationCourante().estAime ? 'fa-solid fa-heart text-red-500 scale-110' : 'fa-solid fa-heart text-white'"
+            class="text-lg drop-shadow transition-all"
+          ></i>
+        </div>
+        <span class="text-[11px] font-bold drop-shadow-md">{{ publicationCourante().nombreJeaime }}</span>
+      </button>
+
+      <!-- Bouton Partager -->
+      <button
+        type="button"
+        (click)="partagerPlat()"
+        class="flex flex-col items-center gap-1 text-white hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+      >
+        <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-share text-base drop-shadow"></i>
+        </div>
+        <span class="text-[11px] font-bold drop-shadow-md">Partager</span>
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BAS DU LECTEUR : INFORMATIONS COMPACTES DU PLAT (ESPACE VIDÉO MAXIMISÉ)    -->
+    <!-- ========================================================================= -->
+    <div class="absolute left-4 right-18 bottom-5 z-30 space-y-1.5 text-left pointer-events-auto">
+      
+      <!-- Handle du restaurant cliquable -->
+      <div>
+        <button
+          type="button"
+          (click)="voirRestaurant(publicationCourante().identifiantRestaurant)"
+          class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-white hover:underline drop-shadow-md cursor-pointer"
+        >
+          <span>{{ publicationCourante().nomUtilisateurRestaurant }}</span>
+        </button>
+      </div>
+
+      <!-- Nom du plat (cliquable pour ouvrir la fiche détaillée Image 1) -->
+      <button
+        type="button"
+        (click)="ouvrirDetailPlat(publicationCourante().plat)"
+        class="text-left text-sm sm:text-base font-bold text-white leading-tight font-['Outfit'] drop-shadow-md line-clamp-1 hover:text-red-300 transition-colors cursor-pointer"
+      >
+        {{ publicationCourante().plat.nom }}
+      </button>
+
+      <!-- Prix en FCFA (Rouge vif caractéristique de la maquette) -->
+      <div
+        (click)="ouvrirDetailPlat(publicationCourante().plat)"
+        class="text-base sm:text-lg font-black text-[#E51824] tracking-tight drop-shadow-md cursor-pointer hover:scale-105 transition-transform inline-block"
+      >
+        {{ publicationCourante().plat.prixFcfa | number }} FCFA
+      </div>
+
+      <!-- Description courte / Accroche -->
+      <p class="text-[11px] sm:text-xs text-neutral-200 leading-tight drop-shadow line-clamp-1 max-w-xs">
+        {{ publicationCourante().descriptionAccroche }}
+      </p>
+
+      <!-- Bouton Commander rouge compact -->
+      <div class="pt-1.5">
+        <button
+          type="button"
+          (click)="commanderPlatActuel(publicationCourante().plat)"
+          class="w-full py-2.5 sm:py-3 px-5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/40 transition-all cursor-pointer"
+        >
+          <span>Commander</span>
+          <i class="fa-solid fa-cart-shopping text-xs"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Indicateur d'étape du fil (barre verticale fine de progression) -->
+    <div class="absolute right-1 top-1/3 bottom-1/3 w-1 rounded-full bg-white/20 flex flex-col justify-between overflow-hidden">
+      <div
+        class="w-full bg-[#E51824] transition-all duration-300 rounded-full"
+        [style.height]="((indexPublicationActuelle() + 1) / totalPublications() * 100) + '%'"
+      ></div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- COMMANDES DE DÉFILEMENT LATÉRALES SUR BUREAU (SWIPE VERTICAL ASSISTÉ)     -->
+  <!-- ========================================================================= -->
+  <div class="hidden md:flex flex-col gap-3 absolute right-8 lg:right-16 top-1/2 -translate-y-1/2 z-40">
+    <!-- Vidéo précédente (haut) -->
+    <button
+      type="button"
+      (click)="publicationPrecedente()"
+      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl cursor-pointer group"
+      title="Vidéo précédente (Swipe vers le bas ou Flèche Haut)"
+    >
+      <i class="fa-solid fa-arrow-up text-sm group-hover:-translate-y-0.5 transition-transform"></i>
+    </button>
+
+    <!-- Vidéo suivante (bas) -->
+    <button
+      type="button"
+      (click)="publicationSuivante()"
+      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl cursor-pointer group"
+      title="Vidéo suivante (Swipe vers le haut ou Flèche Bas / Molette)"
+    >
+      <i class="fa-solid fa-arrow-down text-sm group-hover:translate-y-0.5 transition-transform"></i>
+    </button>
+  </div>
+
+  <!-- Aide discrète sur Desktop en bas à gauche -->
+  <div class="hidden lg:flex items-center gap-2 absolute left-8 bottom-6 z-40 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400">
+    <i class="fa-solid fa-computer-mouse text-slate-300"></i>
+    <span>Scrollez la molette ou utilisez ↑ ↓ pour swiper de vidéo en vidéo</span>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL DÉTAIL PRODUIT (CONFORME À L'IMAGE 1)                               -->
+  <!-- ========================================================================= -->
+  @if (platEnConsultation()) {
+    <app-detail-produit
+      [plat]="platEnConsultation()!"
+      (fermer)="platEnConsultation.set(null)"
+    ></app-detail-produit>
+  }
+
+</div>

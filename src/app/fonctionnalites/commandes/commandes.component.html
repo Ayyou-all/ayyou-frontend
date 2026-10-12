@@ -1,0 +1,236 @@
+<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- 1. EN-TÊTE : TITRE 'Mes Commandes' + BOUTON FILTRES (SLIDERS)              -->
+    <!-- Conforme à l'Image 3                                                      -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+        Mes Commandes
+      </h1>
+
+      <button
+        type="button"
+        class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        title="Filtrer mes commandes"
+      >
+        <i class="fa-solid fa-sliders text-sm"></i>
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. ONGLETS : En cours (actif avec trait rouge) | Historique               -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center gap-6 border-b border-slate-200 select-none">
+      <button
+        type="button"
+        (click)="ongletActif.set('EN_COURS')"
+        [class]="ongletActif() === 'EN_COURS'
+          ? 'text-[#E51824] font-black border-b-2 border-[#E51824]'
+          : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
+        class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
+      >
+        En cours
+      </button>
+
+      <button
+        type="button"
+        (click)="ongletActif.set('HISTORIQUE')"
+        [class]="ongletActif() === 'HISTORIQUE'
+          ? 'text-[#E51824] font-black border-b-2 border-[#E51824]'
+          : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
+        class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
+      >
+        Historique
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. CONTENU : ONGLET 'EN COURS' (COMMANDES ACTIVES + RÉCENTS)              -->
+    <!-- ========================================================================= -->
+    @if (ongletActif() === 'EN_COURS') {
+      <div class="space-y-6">
+
+        <!-- A. SECTION DES COMMANDES EN COURS -->
+        <div class="space-y-4">
+          @for (cmd of serviceCommandes.commandesEnCours(); track cmd.identifiant) {
+            <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between gap-3.5 sm:gap-4">
+              
+              <!-- Image carrée du plat -->
+              <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-2xs shrink-0">
+                <img
+                  [src]="cmd.adresseImageRestaurant"
+                  [alt]="cmd.nomRestaurant"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+
+              <!-- Bloc central : Nom resto + date/heure + prix -->
+              <div class="flex-1 min-w-0 pr-1 space-y-1">
+                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 truncate font-['Outfit']">
+                  {{ cmd.nomRestaurant }}
+                </h3>
+
+                <p class="text-xs text-slate-400 font-medium">
+                  {{ cmd.dateHeureTexte }}
+                </p>
+
+                <!-- Prix en rouge gras -->
+                <div class="text-sm sm:text-base font-black text-[#E51824] font-['Outfit'] pt-0.5">
+                  {{ cmd.montantTotalFcfa | number }} FCFA
+                </div>
+              </div>
+
+              <!-- Bloc droit : Badge statut + Action (Suivre ou temps) -->
+              <div class="flex flex-col items-end justify-between self-stretch shrink-0 py-0.5">
+                <!-- Badge Statut -->
+                @if (cmd.statut === 'EN_LIVRAISON') {
+                  <span class="px-3 py-1 rounded-full bg-[#edf2fe] text-[#3b82f6] text-[10px] sm:text-xs font-black tracking-wider uppercase">
+                    EN LIVRAISON
+                  </span>
+                } @else if (cmd.statut === 'PREPARATION') {
+                  <span class="px-3 py-1 rounded-full bg-[#fef3eb] text-[#ea580c] text-[10px] sm:text-xs font-black tracking-wider uppercase">
+                    PRÉPARATION
+                  </span>
+                }
+
+                <!-- Bouton 'Suivre' pour la commande en livraison -->
+                @if (cmd.statut === 'EN_LIVRAISON') {
+                  <button
+                    type="button"
+                    (click)="suivreCommande(cmd.identifiant)"
+                    class="py-1.5 px-4 rounded-xl bg-[#f8f9fa] hover:bg-slate-100 active:scale-95 text-slate-700 font-extrabold text-xs border border-slate-200/80 transition-all cursor-pointer shadow-2xs"
+                  >
+                    Suivre
+                  </button>
+                } @else if (cmd.delaiOuRemarque) {
+                  <!-- Temps estimé (ex: 15-20 min) -->
+                  <div class="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
+                    <i class="fa-regular fa-clock text-xs"></i>
+                    <span>{{ cmd.delaiOuRemarque }}</span>
+                  </div>
+                }
+              </div>
+
+            </div>
+          }
+        </div>
+
+        <!-- B. SECTION 'RÉCENTS' CONFORME À L'IMAGE 3 -->
+        <div class="space-y-4 pt-2">
+          <h2 class="text-xs font-black text-slate-400 tracking-wider uppercase">
+            RÉCENTS
+          </h2>
+
+          <div class="space-y-4">
+            @for (cmd of commandesRecentes(); track cmd.identifiant) {
+              <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between gap-3.5 sm:gap-4">
+                
+                <!-- Image du plat -->
+                <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-2xs shrink-0">
+                  <img
+                    [src]="cmd.adresseImageRestaurant"
+                    [alt]="cmd.nomRestaurant"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+
+                <!-- Informations produit / restaurant -->
+                <div class="flex-1 min-w-0 pr-1 space-y-1">
+                  <h3 class="text-base sm:text-lg font-extrabold text-slate-900 truncate font-['Outfit']">
+                    {{ cmd.nomRestaurant }}
+                  </h3>
+
+                  <p class="text-xs text-slate-400 font-medium">
+                    {{ cmd.dateHeureTexte }}
+                  </p>
+
+                  <!-- Prix -->
+                  <div
+                    [class]="cmd.statut === 'REFUSE' ? 'text-slate-400' : 'text-[#E51824]'"
+                    class="text-sm sm:text-base font-black font-['Outfit'] pt-0.5"
+                  >
+                    {{ cmd.montantTotalFcfa | number }} FCFA
+                  </div>
+                </div>
+
+                <!-- Statut + Bouton Ré-commander ou Remarque -->
+                <div class="flex flex-col items-end justify-between self-stretch shrink-0 py-0.5">
+                  <!-- Badges de statut fidèles à l'Image 3 -->
+                  @if (cmd.statut === 'LIVRE') {
+                    <span class="px-3 py-1 rounded-full bg-[#e8faf0] text-[#16a34a] text-[10px] sm:text-xs font-black tracking-wider uppercase">
+                      LIVRÉ
+                    </span>
+                  } @else if (cmd.statut === 'REFUSE') {
+                    <span class="px-3 py-1 rounded-full bg-[#fdf2f2] text-[#ef4444] text-[10px] sm:text-xs font-black tracking-wider uppercase">
+                      REFUSÉ
+                    </span>
+                  } @else if (cmd.statut === 'PRET') {
+                    <span class="px-3 py-1 rounded-full bg-[#f5f3ff] text-[#7c3aed] text-[10px] sm:text-xs font-black tracking-wider uppercase">
+                      PRÊT
+                    </span>
+                  }
+
+                  <!-- Action ou Remarque -->
+                  @if (cmd.statut === 'LIVRE') {
+                    <!-- Bouton rouge 'Ré-commander' -->
+                    <button
+                      type="button"
+                      (click)="recommander(cmd)"
+                      class="py-1.5 px-3.5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-red-500/20 transition-all cursor-pointer"
+                    >
+                      Ré-commander
+                    </button>
+                  } @else if (cmd.statut === 'REFUSE') {
+                    <!-- Mention rouge 'Rupture de stock' -->
+                    <span class="text-xs font-bold text-red-400">
+                      {{ cmd.delaiOuRemarque || 'Rupture de stock' }}
+                    </span>
+                  } @else if (cmd.statut === 'PRET') {
+                    <!-- Mention violette '📍 Attente livreur' -->
+                    <span class="text-xs font-extrabold text-purple-600 flex items-center gap-1">
+                      <i class="fa-solid fa-location-dot text-[11px]"></i>
+                      <span>{{ cmd.delaiOuRemarque || 'Attente livreur' }}</span>
+                    </span>
+                  }
+                </div>
+
+              </div>
+            }
+          </div>
+        </div>
+
+      </div>
+    } @else {
+      <!-- ===================================================================== -->
+      <!-- CONTENU : ONGLET 'HISTORIQUE'                                         -->
+      <!-- ===================================================================== -->
+      <div class="space-y-4">
+        @for (cmd of serviceCommandes.commandesHistorique(); track cmd.identifiant) {
+          <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
+                <img [src]="cmd.adresseImageRestaurant" [alt]="cmd.nomRestaurant" class="w-full h-full object-cover" />
+              </div>
+              <div class="min-w-0">
+                <h3 class="text-base font-extrabold text-slate-900 truncate font-['Outfit']">{{ cmd.nomRestaurant }}</h3>
+                <p class="text-xs text-slate-400 font-medium">{{ cmd.dateHeureTexte }}</p>
+                <div class="text-sm font-black text-[#E51824] mt-1 font-['Outfit']">{{ cmd.montantTotalFcfa | number }} FCFA</div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              (click)="recommander(cmd)"
+              class="py-2 px-4 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-red-500/20 transition-all cursor-pointer shrink-0"
+            >
+              Commander
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

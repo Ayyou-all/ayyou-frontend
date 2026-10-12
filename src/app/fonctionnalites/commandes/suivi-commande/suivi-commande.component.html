@@ -1,0 +1,383 @@
+<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6">
+
+    <!-- ========================================================================= -->
+    <!-- 1. EN-TÊTE : RETOUR + TITRE 'Suivi de commande' + BOUTON SUPPORT           -->
+    <!-- Conforme à l'Image 1                                                      -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center justify-between pb-5 sm:pb-6">
+      <!-- Bouton retour circulaire -->
+      <button
+        type="button"
+        (click)="retourner()"
+        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        aria-label="Retour aux commandes"
+      >
+        <i class="fa-solid fa-chevron-left text-sm font-bold"></i>
+      </button>
+
+      <!-- Titre de la page -->
+      <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+        Suivi de commande
+      </h1>
+
+      <!-- Bouton support audio / service client -->
+      <button
+        type="button"
+        class="w-10 h-10 rounded-full bg-rose-50/80 hover:bg-rose-100 text-[#E51824] flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        title="Contacter le support AYYOU"
+      >
+        <i class="fa-solid fa-headset text-sm"></i>
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MISE EN PAGE RESPONSIVE : 1 COLONNE MOBILE / 2 COLONNES DESKTOP           -->
+    <!-- ========================================================================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+
+      <!-- ======================================================================= -->
+      <!-- COLONNE PRINCIPALE / GAUCHE : STATUT STEPPER + CARTE GPS DAKAR          -->
+      <!-- ======================================================================= -->
+      <div class="lg:col-span-7 space-y-5">
+
+        <!-- CARTE DE STATUT : STEPPER 4 ÉTAPES + HEURE ESTIMÉE + PASTILLE VERTE -->
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-xs space-y-6 text-center">
+          
+          <!-- Stepper horizontal à 4 étapes reliées par une ligne rouge -->
+          <div class="relative flex items-center justify-between px-3 sm:px-6 select-none">
+            <!-- Ligne de connexion rouge d'arrière-plan -->
+            <div class="absolute left-8 right-8 top-4.5 h-0.5 bg-slate-100 -translate-y-1/2">
+              <div class="h-full bg-[#E51824] transition-all duration-500" style="width: 75%;"></div>
+            </div>
+
+            <!-- Étape 1 : Acceptée (rouge avec check blanc) -->
+            <div class="relative z-10 flex flex-col items-center gap-1.5">
+              <div class="w-9 h-9 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-md shadow-red-500/20">
+                <i class="fa-solid fa-check text-xs font-bold"></i>
+              </div>
+              <span class="text-[11px] font-extrabold text-[#E51824]">Acceptée</span>
+            </div>
+
+            <!-- Étape 2 : Préparation (rouge avec couverts blancs) -->
+            <div class="relative z-10 flex flex-col items-center gap-1.5">
+              <div class="w-9 h-9 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-md shadow-red-500/20">
+                <i class="fa-solid fa-utensils text-xs"></i>
+              </div>
+              <span class="text-[11px] font-extrabold text-[#E51824]">Préparation</span>
+            </div>
+
+            <!-- Étape 3 : En route (rouge avec moto blanche, actif avec halo) -->
+            <div class="relative z-10 flex flex-col items-center gap-1.5">
+              <div class="w-9 h-9 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-lg shadow-red-500/40 ring-4 ring-rose-100 animate-pulse">
+                <i class="fa-solid fa-motorcycle text-xs"></i>
+              </div>
+              <span class="text-[11px] font-extrabold text-[#E51824]">En route</span>
+            </div>
+
+            <!-- Étape 4 : Livrée (gris clair avec maison blanche) -->
+            <div class="relative z-10 flex flex-col items-center gap-1.5">
+              <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                <i class="fa-solid fa-house text-xs"></i>
+              </div>
+              <span class="text-[11px] font-semibold text-slate-400">Livrée</span>
+            </div>
+          </div>
+
+          <!-- Heure d'arrivée estimée -->
+          <div class="space-y-1">
+            <div class="text-xs sm:text-sm font-medium text-slate-400">
+              Arrivée estimée à
+            </div>
+            <div class="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight font-['Outfit']">
+              {{ commande().heureArriveeEstimee }}
+            </div>
+          </div>
+
+          <!-- Pastille verte : LE LIVREUR EST PROCHE -->
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#e8faf0] text-[#16a34a] text-xs font-black tracking-wider uppercase shadow-2xs">
+            <span class="w-2 h-2 rounded-full bg-[#16a34a] animate-ping"></span>
+            <span>{{ commande().messageProximite || 'LE LIVREUR EST PROCHE' }}</span>
+          </div>
+
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- CARTE GPS DE DAKAR : VUE STYLISÉE DES RUES + PIN DESTINATION + MOUSSA  -->
+        <!-- Conforme à l'illustration de la maquette 1                            -->
+        <!-- ===================================================================== -->
+        <div class="relative w-full h-72 sm:h-80 md:h-96 rounded-[32px] overflow-hidden bg-[#d6e5df] border border-slate-200/80 shadow-md select-none group">
+          
+          <!-- Fond vectoriel stylisé représentant la voirie de Dakar (Cap-vert / Almadies / Plateau) -->
+          <svg class="absolute inset-0 w-full h-full object-cover" viewBox="0 0 400 300" preserveAspectRatio="none">
+            <!-- Zones bâties et blocs urbains (teintes pastel vert d'eau et sable) -->
+            <path d="M0,0 L400,0 L400,300 L0,300 Z" fill="#cfe1da"/>
+            <path d="M20,10 L160,20 L140,110 L10,80 Z" fill="#b9d6cb"/>
+            <path d="M180,30 L380,10 L390,130 L220,100 Z" fill="#b9d6cb"/>
+            <path d="M240,120 L390,150 L380,280 L230,260 Z" fill="#c4ddd4"/>
+            <path d="M30,130 L190,120 L160,260 L20,240 Z" fill="#dfd6c6"/>
+            
+            <!-- Tracé des rues et avenues blanches/crème -->
+            <path d="M-10,95 Q180,115 410,130" stroke="#ffffff" stroke-width="26" fill="none" stroke-linecap="round"/>
+            <path d="M170,-10 Q190,140 180,310" stroke="#ffffff" stroke-width="24" fill="none" stroke-linecap="round"/>
+            <path d="M30,0 L180,130" stroke="#ffffff" stroke-width="16" fill="none"/>
+            <path d="M220,120 L390,290" stroke="#ffffff" stroke-width="18" fill="none"/>
+            <path d="M0,220 L400,240" stroke="#ffffff" stroke-width="22" fill="none"/>
+
+            <!-- Ligne de trajectoire GPS en pointillés jaunes dorés -->
+            <path
+              d="M170,220 Q210,180 235,145 Q245,120 240,95"
+              stroke="#f59e0b"
+              stroke-width="3"
+              stroke-dasharray="6,6"
+              fill="none"
+              stroke-linecap="round"
+            />
+
+            <!-- Points d'étape GPS bleus sur la route -->
+            <circle cx="230" cy="140" r="4.5" fill="#0284c7" />
+            <circle cx="240" cy="120" r="4.5" fill="#0284c7" />
+          </svg>
+
+          <!-- 1. Marqueur de destination (Pin sombre avec cercle blanc) -->
+          <div class="absolute top-[26%] right-[36%] z-20 flex flex-col items-center">
+            <div class="w-10 h-10 rounded-full bg-[#1e293b] text-white flex items-center justify-center shadow-xl border-2 border-white">
+              <div class="w-3.5 h-3.5 rounded-full bg-white"></div>
+            </div>
+            <!-- Ombre au sol -->
+            <div class="w-5 h-1.5 rounded-full bg-black/25 blur-2xs mt-1"></div>
+          </div>
+
+          <!-- 2. Marqueur du livreur : Badge rouge 'Moussa' avec moto (conforme maquette 1) -->
+          <div
+            class="absolute bottom-[28%] left-[26%] z-30 flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#E51824] text-white font-extrabold text-xs shadow-2xl border-2 border-white transition-transform duration-500 hover:scale-105 select-none"
+          >
+            <div class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+              <i class="fa-solid fa-motorcycle text-white text-[11px]"></i>
+            </div>
+            <span class="tracking-wide">Moussa</span>
+          </div>
+
+          <!-- Ombre du scooter au sol -->
+          <div class="absolute bottom-[26%] left-[32%] z-10 w-8 h-2.5 rounded-full bg-black/30 blur-2xs"></div>
+
+          <!-- Bouton interactif pour simuler l'arrivée de la livraison -->
+          <div class="absolute bottom-3.5 right-3.5 z-30">
+            <button
+              type="button"
+              (click)="confirmerLivraison()"
+              class="px-4 py-2 rounded-2xl bg-white/95 hover:bg-white text-slate-800 text-xs font-black shadow-lg backdrop-blur-md flex items-center gap-2 border border-slate-200 transition-transform active:scale-95 cursor-pointer"
+              title="Tester la livraison de la commande"
+            >
+              <i class="fa-solid fa-circle-check text-emerald-500"></i>
+              <span>Simuler arrivée du livreur</span>
+            </button>
+          </div>
+
+          <!-- Badge d'indication en haut à gauche -->
+          <div class="absolute top-3.5 left-3.5 z-20 px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-[11px] font-bold text-slate-700 shadow-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-location-crosshairs text-red-600 text-xs"></i>
+            <span>Dakar • Plateau</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ======================================================================= -->
+      <!-- COLONNE DROITE : CODE LIVRAISON + LIVREUR + DÉTAILS COMMANDE           -->
+      <!-- ======================================================================= -->
+      <div class="lg:col-span-5 space-y-5">
+
+        <!-- CARTE CODE DE LIVRAISON (CONFORME À L'IMAGE 1) -->
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-3">
+          
+          <!-- Intitulé à gauche -->
+          <div class="space-y-0.5">
+            <h3 class="text-xs font-black text-[#E51824] tracking-wider uppercase font-['Outfit']">
+              CODE DE LIVRAISON
+            </h3>
+            <p class="text-[11px] text-slate-400 font-medium">
+              À donner au livreur à son arrivée
+            </p>
+          </div>
+
+          <!-- 4 Cases numériques avec bordure rouge (4 8 2 5) -->
+          <div class="flex items-center gap-2 shrink-0">
+            @for (chiffre of commande().codeLivraison; track $index) {
+              <div class="w-10 h-12 rounded-2xl bg-white border-2 border-[#E51824] text-[#E51824] font-black text-xl flex items-center justify-center font-['Outfit'] shadow-2xs">
+                {{ chiffre }}
+              </div>
+            }
+          </div>
+
+        </div>
+
+        <!-- CARTE DU LIVREUR : MOUSSA DIOP + TMAX + BOUTON D'APPEL -->
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-4">
+          
+          <div class="flex items-center gap-3.5 min-w-0">
+            <!-- Photo du livreur Moussa Diop -->
+            <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-900 border border-slate-100 shadow-xs shrink-0">
+              <img
+                [src]="commande().livreur?.adressePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'"
+                alt="Livreur Moussa Diop"
+                class="w-full h-full object-cover"
+              />
+            </div>
+
+            <!-- Nom et Véhicule -->
+            <div class="min-w-0">
+              <h4 class="text-base font-extrabold text-slate-900 truncate font-['Outfit']">
+                {{ commande().livreur?.nom || 'Moussa Diop' }}
+              </h4>
+              <p class="text-xs text-slate-400 font-medium">
+                {{ commande().livreur?.vehicule || 'Yamaha TMAX' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Gros bouton d'appel rond rouge vif (conforme maquette 1) -->
+          <button
+            type="button"
+            (click)="appelerLivreur()"
+            class="w-12 h-12 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-red-500/25 transition-all cursor-pointer shrink-0"
+            aria-label="Appeler Moussa"
+            title="Appeler le livreur"
+          >
+            <i class="fa-solid fa-phone text-base"></i>
+          </button>
+
+        </div>
+
+        <!-- CARTE ACCORDÉON : DÉTAILS DE LA COMMANDE (CONFORME À L'IMAGE 1) -->
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
+          
+          <!-- En-tête de l'accordéon -->
+          <div
+            (click)="basculerDetails()"
+            class="flex items-center justify-between cursor-pointer select-none group"
+          >
+            <div class="flex items-center gap-3">
+              <!-- Icône reçu dans un badge gris doux -->
+              <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 text-slate-500 flex items-center justify-center">
+                <i class="fa-solid fa-receipt text-sm"></i>
+              </div>
+
+              <div>
+                <h4 class="text-sm font-extrabold text-slate-900 font-['Outfit'] group-hover:text-[#E51824] transition-colors">
+                  Détails de la commande
+                </h4>
+                <p class="text-[11px] text-slate-400 font-medium">
+                  ID: #{{ commande().identifiant }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Flèche repliable -->
+            <i
+              [class]="detailsOuverts() ? 'rotate-180' : 'rotate-0'"
+              class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"
+            ></i>
+          </div>
+
+          <!-- Corps de l'accordéon (articles commandés) -->
+          @if (detailsOuverts()) {
+            <div class="space-y-3 pt-2 border-t border-slate-100/90 text-xs sm:text-sm">
+              
+              @for (art of commande().articles; track art.nomPlat) {
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <!-- Badge multiplicateur rosé (1x, 2x) -->
+                    <span class="w-6 h-6 rounded-md bg-rose-50 border border-rose-100 text-[#E51824] font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                      {{ art.quantite }}x
+                    </span>
+                    <span class="font-bold text-slate-700 truncate">
+                      {{ art.nomPlat }}
+                    </span>
+                  </div>
+
+                  <span class="font-extrabold text-slate-900 shrink-0 font-['Outfit']">
+                    {{ art.prixTotalFcfa | number }} FCFA
+                  </span>
+                </div>
+              }
+
+              <!-- Ligne de total en rouge (conforme à l'Image 1) -->
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-base font-extrabold">
+                <span class="text-slate-900">Total</span>
+                <span class="text-[#E51824] font-black font-['Outfit'] text-lg">
+                  {{ commande().montantTotalFcfa | number }} FCFA
+                </span>
+              </div>
+
+            </div>
+          }
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALE 1 : APPEL DU LIVREUR (SIMULATION NUMÉRO SÉNÉGALAIS)                -->
+<!-- ========================================================================= -->
+@if (modalAppelLivreur()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animation-apparition"
+    (click)="fermerAppel()"
+  >
+    <div
+      class="w-full max-w-sm bg-white rounded-3xl p-6 text-center space-y-4 shadow-2xl animation-glissement-haut"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="w-16 h-16 rounded-full bg-rose-50 text-[#E51824] flex items-center justify-center text-2xl mx-auto">
+        <i class="fa-solid fa-phone"></i>
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="text-lg font-black text-slate-900 font-['Outfit']">
+          Appeler Moussa Diop
+        </h3>
+        <p class="text-xs text-slate-500">
+          Votre livreur est en route sur son scooter Yamaha TMAX.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 rounded-2xl p-3.5 text-base font-extrabold text-slate-800 tracking-wider">
+        {{ commande().livreur?.numeroTelephone || '+221 77 821 44 90' }}
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button
+          type="button"
+          (click)="fermerAppel()"
+          class="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+        >
+          Annuler
+        </button>
+        <a
+          [href]="'tel:' + (commande().livreur?.numeroTelephone || '+221778214490')"
+          class="flex-1 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <i class="fa-solid fa-phone text-xs"></i>
+          <span>Appeler</span>
+        </a>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ========================================================================= -->
+<!-- MODALE 2 : COMMANDE LIVRÉE ! (CONFORME À L'IMAGE 2)                       -->
+<!-- ========================================================================= -->
+@if (serviceCommandes.livraisonValidee()) {
+  <app-validation-livraison
+    [commande]="commande()"
+    (fermer)="serviceCommandes.fermerValidationLivraison()"
+  ></app-validation-livraison>
+}

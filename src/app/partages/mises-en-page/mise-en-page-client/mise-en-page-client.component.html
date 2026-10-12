@@ -1,0 +1,137 @@
+<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] flex flex-col justify-between">
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE BUREAU (ÉCRANS >= 768px)                                       -->
+  <!-- ========================================================================= -->
+  <header class="hidden md:flex items-center justify-between px-8 lg:px-14 py-4 bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 shadow-2xs">
+    
+    <!-- Logo & Localisation -->
+    <div class="flex items-center gap-6">
+      <a routerLink="/accueil" class="flex items-center gap-2 group cursor-pointer">
+        <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="h-9 w-auto object-contain transition-transform group-hover:scale-105" />
+      </a>
+
+      <!-- Badge de localisation -->
+      <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+        <i class="fa-solid fa-location-dot text-red-600 text-xs"></i>
+        <span>Dakar, Sénégal</span>
+        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+      </div>
+    </div>
+
+    <!-- Liens de navigation centraux -->
+    <nav class="flex items-center gap-2">
+      @for (onglet of listeOnglets.slice(0, 3); track onglet.code) {
+        <a
+          [routerLink]="onglet.chemin"
+          [class]="estOngletActif(onglet.chemin)
+            ? 'bg-red-50 text-red-600 font-bold border-red-200'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-transparent'"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all border font-medium cursor-pointer"
+        >
+          <i [class]="onglet.icone + ' text-sm'"></i>
+          <span>{{ onglet.libelle }}</span>
+        </a>
+      }
+    </nav>
+
+    <!-- Actions droites : Recherche, Panier & Profil -->
+    <div class="flex items-center gap-3.5">
+      <!-- Raccourci vers catalogue / recherche -->
+      <a
+        routerLink="/catalogue"
+        class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+        title="Rechercher des plats ou restaurants"
+      >
+        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+      </a>
+
+      <!-- Bouton Panier avec Badge & Montant -->
+      <a
+        routerLink="/panier"
+        class="relative flex items-center gap-2.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-500/20 transition-all cursor-pointer"
+      >
+        <i class="fa-solid fa-cart-shopping text-sm"></i>
+        <span>{{ servicePanier.totalFcfa() | number }} FCFA</span>
+        @if (servicePanier.nombreTotalArticles() > 0) {
+          <span class="w-5 h-5 rounded-full bg-white text-red-600 text-xs font-extrabold flex items-center justify-center shadow-xs">
+            {{ servicePanier.nombreTotalArticles() }}
+          </span>
+        }
+      </a>
+
+      <!-- Profil Utilisateur -->
+      <a
+        routerLink="/profil"
+        class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+      >
+        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+          @if (serviceAuthentification.utilisateurConnecte()?.adressePhoto) {
+            <img [src]="serviceAuthentification.utilisateurConnecte()?.adressePhoto" alt="Avatar" class="w-full h-full object-cover" />
+          } @else {
+            <i class="fa-solid fa-user text-xs text-slate-400"></i>
+          }
+        </div>
+        <div class="text-left leading-tight hidden lg:block">
+          <div class="text-xs font-bold text-slate-900 truncate max-w-[100px]">
+            {{ serviceAuthentification.utilisateurConnecte()?.prenom || 'Fatou' }}
+          </div>
+          <div class="text-[10px] text-slate-400">Client</div>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CONTENU PRINCIPAL (ROUTER-OUTLET)                                      -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 w-full" [class.pb-20]="!estOngletActif('/accueil')" [class.md:pb-6]="!estOngletActif('/accueil')">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BARRE DE NAVIGATION INFÉRIEURE MOBILE (ÉCRANS < 768px)                -->
+  <!-- Conforme au design des maquettes (Accueil, Catalogue, Commandes, Panier, Profil) -->
+  <!-- ========================================================================= -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-3 py-2 flex items-center justify-around">
+    @for (onglet of listeOnglets; track onglet.code) {
+      <a
+        [routerLink]="onglet.chemin"
+        class="flex flex-col items-center justify-center py-1 px-2 relative transition-all group cursor-pointer"
+      >
+        <!-- Icône avec indicateur actif -->
+        <div class="relative flex items-center justify-center">
+          <i
+            [class]="onglet.icone + ' text-lg transition-transform duration-200 ' + (estOngletActif(onglet.chemin) ? 'text-[#E51824] scale-110' : 'text-slate-400 group-hover:text-slate-600')"
+          ></i>
+
+          <!-- Badge numérique pour le Panier (ex: 2 articles) -->
+          @if (onglet.aBadge && servicePanier.nombreTotalArticles() > 0) {
+            <span class="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#E51824] text-white text-[10px] font-extrabold flex items-center justify-center shadow-xs">
+              {{ servicePanier.nombreTotalArticles() }}
+            </span>
+          }
+        </div>
+
+        <!-- Libellé -->
+        <span
+          [class]="estOngletActif(onglet.chemin) ? 'text-[#E51824] font-extrabold' : 'text-slate-400 font-medium'"
+          class="text-[10px] tracking-tight mt-1 transition-colors"
+        >
+          {{ onglet.libelle }}
+        </span>
+      </a>
+    }
+  </nav>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL / FICHE DÉTAIL PRODUIT GLOBALE (CONFORME À L'IMAGE 1)               -->
+  <!-- ========================================================================= -->
+  @if (serviceCatalogue.platSelectionnePourDetail()) {
+    <app-detail-produit
+      [plat]="serviceCatalogue.platSelectionnePourDetail()!"
+      (fermer)="serviceCatalogue.fermerDetailPlat()"
+    ></app-detail-produit>
+  }
+
+</div>
