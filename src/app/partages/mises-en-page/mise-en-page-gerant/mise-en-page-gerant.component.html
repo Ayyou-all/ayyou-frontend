@@ -1,0 +1,201 @@
+<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] flex flex-col lg:flex-row">
+
+  <!-- Notification Toast globale pour le gérant -->
+  @if (notificationSucces()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span>{{ notificationSucces() }}</span>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- 1. BARRE LATÉRALE BUREAU & TIROIR MOBILE (CONFORME AUX IMAGES DU GÉRANT)   -->
+  <!-- ========================================================================= -->
+
+  <!-- Arrière-plan sombre sur mobile -->
+  @if (menuMobileOuvert()) {
+    <div
+      (click)="fermerMenuMobile()"
+      class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden"
+    ></div>
+  }
+
+  <aside
+    [class]="menuMobileOuvert() ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+    class="fixed lg:sticky top-0 left-0 h-screen w-64 lg:w-68 bg-white border-r border-slate-200/90 flex flex-col justify-between p-6 z-50 transition-transform duration-300 shadow-xl lg:shadow-none shrink-0"
+  >
+    <!-- Haut : Logo Teranga Eats & Liens -->
+    <div class="space-y-8">
+      
+      <!-- Logo Teranga Eats officiel -->
+      <div class="flex items-center justify-between">
+        <a routerLink="/gerant/commandes" class="flex items-center gap-3 cursor-pointer select-none">
+          <div class="w-10 h-10 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-[#E51824] shadow-2xs">
+            <i class="fa-solid fa-utensils text-base"></i>
+          </div>
+          <span class="text-xl font-black text-[#E51824] font-['Outfit'] tracking-tight">
+            Teranga Eats
+          </span>
+        </a>
+
+        <!-- Bouton fermer sur mobile -->
+        <button
+          type="button"
+          (click)="fermerMenuMobile()"
+          class="lg:hidden w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Liens de navigation principale du gérant -->
+      <nav class="space-y-2 select-none">
+        @for (item of listeMenu; track item.code) {
+          <a
+            [routerLink]="item.chemin"
+            (click)="fermerMenuMobile()"
+            [class]="estLienActif(item.chemin)
+              ? 'bg-[#E51824] text-white font-extrabold shadow-md shadow-red-500/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-bold'"
+            class="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm transition-all cursor-pointer group"
+          >
+            <i
+              [class]="item.icone + ' text-base w-5 text-center transition-transform group-hover:scale-110 ' + (estLienActif(item.chemin) ? 'text-white' : 'text-slate-400 group-hover:text-slate-800')"
+            ></i>
+            <span>{{ item.libelle }}</span>
+          </a>
+        }
+      </nav>
+
+    </div>
+
+    <!-- Bas : Carte du Profil Gérant (Amath Diop) -->
+    <div class="pt-6 border-t border-slate-100">
+      <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/80 border border-slate-100 select-none">
+        <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-200 border border-slate-200 shrink-0">
+          <img
+            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
+            alt="Amath Diop"
+            class="w-full h-full object-cover"
+          />
+        </div>
+        <div class="min-w-0">
+          <div class="text-xs font-black text-slate-900 leading-snug truncate">
+            Gérant
+          </div>
+          <div class="text-[11px] font-semibold text-slate-400 truncate">
+            Amath Diop
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CONTENU PRINCIPAL + EN-TÊTE SUPÉRIEUR RESTAURANT                       -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex flex-col min-w-0 min-h-screen">
+
+    <!-- En-tête supérieur : Statut Ouvert/Fermé, Flamme commandes, Cloche & Son -->
+    <header class="h-20 px-4 sm:px-6 lg:px-10 bg-white/90 backdrop-blur-md border-b border-slate-200/70 sticky top-0 z-30 flex items-center justify-between gap-4">
+      
+      <!-- Gauche : Burger mobile + Nom Restaurant & Switch Ouvert/Fermé -->
+      <div class="flex items-center gap-3 sm:gap-6 min-w-0">
+        <!-- Bouton burger mobile -->
+        <button
+          type="button"
+          (click)="basculerMenuMobile()"
+          class="lg:hidden w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-100"
+          aria-label="Ouvrir le menu"
+        >
+          <i class="fa-solid fa-bars text-sm"></i>
+        </button>
+
+        <!-- Titre de l'établissement -->
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit'] truncate">
+          Le Teranga
+        </h2>
+
+        <!-- Séparateur vertical -->
+        <div class="hidden sm:block h-6 w-px bg-slate-200"></div>
+
+        <!-- Switch OUVERT / FERMÉ conforme à la maquette -->
+        <div class="flex items-center gap-2 select-none">
+          <span
+            [class]="estOuvert() ? 'text-emerald-600 font-black' : 'text-slate-400 font-bold'"
+            class="text-xs uppercase tracking-wider"
+          >
+            {{ estOuvert() ? 'OUVERT' : 'FERMÉ' }}
+          </span>
+
+          <button
+            type="button"
+            (click)="basculerStatutRestaurant()"
+            [class]="estOuvert() ? 'bg-emerald-500' : 'bg-slate-300'"
+            class="w-12 h-6 rounded-full transition-colors relative cursor-pointer p-0.5 shrink-0 shadow-2xs"
+            title="Changer le statut d'ouverture"
+          >
+            <div
+              [class]="estOuvert() ? 'translate-x-6' : 'translate-x-0'"
+              class="w-5 h-5 rounded-full bg-white shadow-sm transition-transform"
+            ></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Droite : Badge '🔥 12 commandes aujourd'hui' + Cloche + Sonnette -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        
+        <!-- Badge rouge/orange avec flamme -->
+        <div class="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-red-50 text-[#E51824] border border-red-100 text-xs font-black shadow-2xs select-none">
+          <i class="fa-solid fa-fire text-sm text-[#E51824]"></i>
+          <span>{{ totalCommandesJour() }} commandes aujourd'hui</span>
+        </div>
+
+        <!-- Bouton Notifications (Cloche avec point rouge) -->
+        <button
+          type="button"
+          class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 flex items-center justify-center relative shadow-2xs transition-colors cursor-pointer"
+          title="Notifications"
+        >
+          <i class="fa-regular fa-bell text-sm"></i>
+          <span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#E51824] ring-2 ring-white"></span>
+        </button>
+
+        <!-- Bouton Sonnette d'alerte (Haut-parleur) -->
+        <button
+          type="button"
+          (click)="basculerSon()"
+          [class]="sonActive() ? 'bg-slate-50 text-slate-700' : 'bg-red-50 text-[#E51824]'"
+          class="w-10 h-10 rounded-2xl border border-slate-200 hover:bg-slate-100 flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+          [title]="sonActive() ? 'Couper le son des alertes' : 'Activer le son des alertes'"
+        >
+          <i [class]="sonActive() ? 'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm'"></i>
+        </button>
+
+      </div>
+
+    </header>
+
+    <!-- Zone principale contenant les écrans de Teranga Eats -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <router-outlet></router-outlet>
+    </main>
+
+    <!-- Barre de navigation mobile inférieure (pour un accès rapide du gérant sur smartphone) -->
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 flex items-center justify-around px-2 shadow-lg select-none">
+      @for (item of listeMenu; track item.code) {
+        <a
+          [routerLink]="item.chemin"
+          [class]="estLienActif(item.chemin) ? 'text-[#E51824]' : 'text-slate-400 hover:text-slate-700'"
+          class="flex flex-col items-center justify-center gap-1 py-1 px-3 text-[11px] font-bold transition-colors cursor-pointer"
+        >
+          <i [class]="item.icone + ' text-lg'"></i>
+          <span class="text-[10px]">{{ item.libelle }}</span>
+        </a>
+      }
+    </nav>
+
+  </div>
+
+</div>

@@ -157,6 +157,52 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'gerant',
+    loadComponent: () =>
+      import(
+        './partages/mises-en-page/mise-en-page-gerant/mise-en-page-gerant.component'
+      ).then((m) => m.MiseEnPageGerantComponent),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'commandes'
+      },
+      {
+        path: 'commandes',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-commandes/gerant-commandes.component'
+          ).then((m) => m.GerantCommandesComponent),
+        title: 'Gestion des Commandes — Teranga Eats'
+      },
+      {
+        path: 'menu',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-menu/gerant-menu.component'
+          ).then((m) => m.GerantMenuComponent),
+        title: 'Gestion du Menu — Teranga Eats'
+      },
+      {
+        path: 'historique',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-historique/gerant-historique.component'
+          ).then((m) => m.GerantHistoriqueComponent),
+        title: 'Historique des Commandes — Teranga Eats'
+      },
+      {
+        path: 'analytiques',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-analytiques/gerant-analytiques.component'
+          ).then((m) => m.GerantAnalytiquesComponent),
+        title: 'Performances & Analytiques — Teranga Eats'
+      }
+    ]
+  },
+  {
     path: '',
     loadComponent: () =>
       import(
