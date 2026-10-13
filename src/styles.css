@@ -1,5 +1,18 @@
 /* Styles globaux pour la plateforme AYYOU */
 @import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+/* Réinitialisation propre des marqueurs Leaflet HTML */
+.leaflet-div-icon,
+.marqueur-leaflet-sans-style {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Mode sombre élégant pour les tuiles OpenStreetMap sans clé API */
+.tuile-carte-sombre {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) !important;
+}
 
 :root {
   --police-titres: 'Outfit', sans-serif;
@@ -46,3 +59,15 @@ h1, h2, h3, h4, h5, h6 {
 .animation-apparition {
   animation: apparitionDouce 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes sonnetteWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20%, 60% { transform: rotate(-14deg); }
+  40%, 80% { transform: rotate(14deg); }
+}
+
+.animate-wiggle {
+  animation: sonnetteWiggle 1.4s ease-in-out infinite;
+  transform-origin: top center;
+}
+

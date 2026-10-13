@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MethodePaiement, PanierRestaurant } from '../../../socle/modeles/panier.modele';
+import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
+import { ServiceOrchestrateurCommandesService } from '../../../socle/services/service-orchestrateur-commandes.service';
 import { ServicePanierService } from '../../../socle/services/service-panier.service';
 
 @Component({
@@ -17,6 +19,8 @@ export class DetailPanierComponent {
   readonly routeur = inject(Router);
   readonly servicePanier = inject(ServicePanierService);
   readonly serviceCatalogue = inject(ServiceCatalogueService);
+  readonly serviceAuthentification = inject(ServiceAuthentification);
+  readonly serviceOrchestrateur = inject(ServiceOrchestrateurCommandesService);
 
   // Modal de modification de l'adresse de livraison
   readonly modalModifierAdresse = signal<boolean>(false);
@@ -25,6 +29,18 @@ export class DetailPanierComponent {
   // Modal de confirmation de commande réussie
   readonly commandeReussie = signal<boolean>(false);
   readonly numeroCommandeSimulee = signal<string>('AYY-8429');
+  readonly commandeCreeeId = signal<string | null>(null);
+
+  // Détection des articles en rupture de stock
+  readonly aDesArticlesIndisponibles = computed(() => {
+    return this.panier().lignes.some((ligne) => ligne.plat.statut === 'INDISPONIBLE');
+  });
+
+  @HostListener('document:keydown.escape')
+  surEchap(): void {
+    this.modalModifierAdresse.set(false);
+    this.commandeReussie.set(false);
+  }
 
   // Identifiant du restaurant sélectionné dans l'URL
   readonly identifiantRestaurant = computed(() => {
@@ -126,13 +142,38 @@ export class DetailPanierComponent {
 
   /**
    * Effectue le paiement de la commande.
+   * En mode visiteur, exige la connexion.
    */
   effectuerPaiement(): void {
+    if (!this.serviceAuthentification.estAuthentifie()) {
+      this.serviceAuthentification.exigerAuthentification(
+        'COMMANDE',
+        () => this.effectuerPaiement(),
+        {
+          titre: 'Payer votre commande',
+          description:
+            'Connectez-vous pour finaliser votre commande, enregistrer votre adresse de livraison et suivre votre livreur.'
+        }
+      );
+      return;
+    }
+
+    // Empêcher le paiement si des articles sont en rupture de stock
+    if (this.aDesArticlesIndisponibles()) {
+      return;
+    }
+
     // Enregistrement de la note éventuelle
     this.servicePanier.definirNoteRestaurant(this.identifiantRestaurant(), this.noteAuRestaurant());
 
-    // Simulation de création de commande
-    this.numeroCommandeSimulee.set('AYY-' + Math.floor(1000 + Math.random() * 9000));
+    // Création orchestrée de la commande réelle (propage vers le restaurant et le coursier)
+    const commandeCreee = this.serviceOrchestrateur.creerCommandeDepuisPanier(
+      this.panier(),
+      this.noteAuRestaurant()
+    );
+
+    this.commandeCreeeId.set(commandeCreee.identifiant);
+    this.numeroCommandeSimulee.set(commandeCreee.identifiant);
     this.commandeReussie.set(true);
   }
 
@@ -140,9 +181,9 @@ export class DetailPanierComponent {
    * Finalise la commande et redirige vers le suivi de commande GPS en direct.
    */
   allerVersCommandes(): void {
-    this.servicePanier.viderPanierRestaurant(this.identifiantRestaurant());
+    const idCommande = this.commandeCreeeId() || 'ORD-99238';
     this.commandeReussie.set(false);
-    this.routeur.navigate(['/commandes/suivi', 'ORD-99238']);
+    this.routeur.navigate(['/commandes/suivi', idCommande]);
   }
 
   /**

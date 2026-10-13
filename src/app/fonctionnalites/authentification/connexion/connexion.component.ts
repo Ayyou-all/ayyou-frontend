@@ -73,10 +73,7 @@ export class ConnexionComponent {
   private redirigerSelonRole(role: RoleUtilisateur): void {
     switch (role) {
       case 'RESTAURANT':
-        this.routeur.navigate(['/restaurant']);
-        break;
-      case 'VENDEUR':
-        this.routeur.navigate(['/vendeur']);
+        this.routeur.navigate(['/gerant']);
         break;
       case 'LIVREUR':
         this.routeur.navigate(['/livreur']);

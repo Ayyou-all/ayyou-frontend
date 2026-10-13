@@ -1,0 +1,459 @@
+<div class="space-y-6 max-w-7xl mx-auto">
+
+  <!-- Notification Toast -->
+  @if (notificationSucces()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span>{{ notificationSucces() }}</span>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE : TITRE, SOUS-TITRE & ACTIONS SUPÉRIEURES (IMAGE 1)              -->
+  <!-- ========================================================================= -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
+        Gestion des Utilisateurs
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">
+        Visualisez et gérez l'ensemble des acteurs de la plateforme
+      </p>
+    </div>
+
+    <!-- Actions à droite : Cloche de notification & Bouton 'Exporter CSV' -->
+    <div class="flex items-center gap-3 shrink-0">
+      <button
+        type="button"
+        class="w-10 h-10 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+        title="Notifications"
+      >
+        <i class="fa-regular fa-bell text-sm"></i>
+      </button>
+
+      <button
+        type="button"
+        (click)="exporterCsv()"
+        class="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer flex items-center gap-2"
+      >
+        <i class="fa-solid fa-arrow-up-from-bracket text-xs"></i>
+        <span>Exporter CSV</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. BARRE D'ONGLETS & RECHERCHE (CONFORME À L'IMAGE 1)                       -->
+  <!-- ========================================================================= -->
+  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
+    
+    <!-- Onglets de rôles : Clients, Restaurants, Livreurs -->
+    <div class="flex items-center gap-2 p-1 rounded-2xl bg-slate-50 border border-slate-100 shrink-0">
+      <button
+        type="button"
+        (click)="changerOnglet('CLIENTS')"
+        [class]="ongletActif() === 'CLIENTS'
+          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          : 'text-slate-500 hover:text-slate-800 font-bold'"
+        class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
+      >
+        Clients
+      </button>
+
+      <button
+        type="button"
+        (click)="changerOnglet('RESTAURANTS')"
+        [class]="ongletActif() === 'RESTAURANTS'
+          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          : 'text-slate-500 hover:text-slate-800 font-bold'"
+        class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
+      >
+        Restaurants
+      </button>
+
+      <button
+        type="button"
+        (click)="changerOnglet('LIVREURS')"
+        [class]="ongletActif() === 'LIVREURS'
+          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          : 'text-slate-500 hover:text-slate-800 font-bold'"
+        class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
+      >
+        Livreurs
+      </button>
+    </div>
+
+    <!-- Champ de recherche par nom ou email -->
+    <div class="relative flex-1 max-w-md">
+      <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-4 top-1/2 -translate-y-1/2"></i>
+      <input
+        type="text"
+        [ngModel]="rechercheTexte()"
+        (ngModelChange)="rechercheTexte.set($event); pageActuelle.set(1)"
+        placeholder="Rechercher par nom ou email..."
+        class="w-full py-2.5 pl-10 pr-4 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-100 transition-all"
+      />
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. TABLEAU DES UTILISATEURS (CONFORME À L'IMAGE 1)                         -->
+  <!-- ========================================================================= -->
+  <div class="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+            <th class="py-3.5 px-6 font-bold">UTILISATEUR</th>
+            <th class="py-3.5 px-6 font-bold">EMAIL</th>
+            <th class="py-3.5 px-6 font-bold">RÔLE</th>
+            <th class="py-3.5 px-6 font-bold">INSCRIPTION</th>
+            <th class="py-3.5 px-6 font-bold">STATUT</th>
+            <th class="py-3.5 px-6 font-bold text-right">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-sm">
+          @for (utilisateur of utilisateursAffiches(); track utilisateur.identifiant) {
+            <tr class="hover:bg-slate-50/70 transition-colors">
+              
+              <!-- 1. UTILISATEUR (Avatar + Nom en gras + Sous-titre type) -->
+              <td class="py-4 px-6">
+                <div class="flex items-center gap-3.5">
+                  @if (utilisateur.photoUrl) {
+                    <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                      <img [src]="utilisateur.photoUrl" [alt]="utilisateur.nom" class="w-full h-full object-cover" />
+                    </div>
+                  } @else {
+                    <div
+                      [class]="utilisateur.fondIconeLogo || 'bg-amber-100 text-amber-700'"
+                      class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                    >
+                      <i [class]="utilisateur.iconeLogo || 'fa-solid fa-store'"></i>
+                    </div>
+                  }
+
+                  <div class="min-w-0">
+                    <div class="font-black text-slate-900 leading-snug truncate">
+                      {{ utilisateur.nom }}
+                    </div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      {{ utilisateur.badgeType }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- 2. EMAIL -->
+              <td class="py-4 px-6 text-xs text-slate-600 font-medium">
+                {{ utilisateur.email }}
+              </td>
+
+              <!-- 3. RÔLE (Icône colorée + Libellé) -->
+              <td class="py-4 px-6">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <i [class]="utilisateur.iconeRole + ' ' + utilisateur.couleurIconeRole + ' text-xs'"></i>
+                  <span>{{ utilisateur.role }}</span>
+                </div>
+              </td>
+
+              <!-- 4. INSCRIPTION -->
+              <td class="py-4 px-6 text-xs font-semibold text-slate-600">
+                {{ utilisateur.dateInscription }}
+              </td>
+
+              <!-- 5. STATUT (Pill badge : ● ACTIF, ● BANNI, ● INACTIF) -->
+              <td class="py-4 px-6">
+                @if (utilisateur.statut === 'ACTIF') {
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span>ACTIF</span>
+                  </span>
+                } @else if (utilisateur.statut === 'BANNI') {
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200/60">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                    <span>BANNI</span>
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                    <span>INACTIF</span>
+                  </span>
+                }
+              </td>
+
+              <!-- 6. ACTIONS (Crayon + Cloche ou Avion rouge selon statut) -->
+              <td class="py-4 px-6 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <!-- Bouton Édition -->
+                  <button
+                    type="button"
+                    (click)="editerUtilisateur(utilisateur)"
+                    class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-900 flex items-center justify-center text-xs transition-colors cursor-pointer"
+                    title="Modifier l'utilisateur"
+                  >
+                    <i class="fa-regular fa-pen-to-square"></i>
+                  </button>
+
+                  <!-- Bouton Action contextuelle (Avion si banni, Cloche sinon) -->
+                  @if (utilisateur.statut === 'BANNI') {
+                    <button
+                      type="button"
+                      (click)="ouvrirAlerteUtilisateur(utilisateur)"
+                      class="w-8 h-8 rounded-xl bg-[#E51824] hover:bg-red-700 text-white flex items-center justify-center text-xs shadow-xs transition-colors cursor-pointer"
+                      title="Envoyer un message au client banni"
+                    >
+                      <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      (click)="ouvrirAlerteUtilisateur(utilisateur)"
+                      class="w-8 h-8 rounded-xl border border-red-100 bg-red-50/60 hover:bg-red-100 text-red-500 flex items-center justify-center text-xs transition-colors cursor-pointer"
+                      title="Signaler ou avertir"
+                    >
+                      <i class="fa-solid fa-bell text-[11px]"></i>
+                    </button>
+                  }
+                </div>
+              </td>
+
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="py-12 text-center text-slate-400">
+                <i class="fa-solid fa-users text-3xl mb-2 block text-slate-300"></i>
+                <div class="text-sm font-bold text-slate-700">Aucun utilisateur trouvé</div>
+                <div class="text-xs text-slate-400 mt-1">Ajustez vos filtres ou termes de recherche.</div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 4. PAGINATION (IMAGE 1 : AFFICHAGE DE 1 À 4 SUR 1 240 UTILISATEURS)       -->
+    <!-- ========================================================================= -->
+    <div class="px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
+      
+      <!-- Texte récapitulatif -->
+      <div class="text-xs font-semibold text-slate-500">
+        Affichage de <span class="font-bold text-slate-900">1</span> à
+        <span class="font-bold text-slate-900">{{ utilisateursAffiches().length }}</span> sur
+        <span class="font-bold text-slate-900">1 240</span> utilisateurs
+      </div>
+
+      <!-- Contrôles de pagination : <  1  2  3  ... 42  > -->
+      <div class="flex items-center gap-1.5">
+        
+        <!-- Précédent < -->
+        <button
+          type="button"
+          (click)="changerPage(pageActuelle() - 1)"
+          [disabled]="pageActuelle() === 1"
+          class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 flex items-center justify-center text-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label="Précédent"
+        >
+          <i class="fa-solid fa-chevron-left text-[10px]"></i>
+        </button>
+
+        <!-- Page 1 (Active) -->
+        <button
+          type="button"
+          (click)="changerPage(1)"
+          [class]="pageActuelle() === 1
+            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
+          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
+        >
+          1
+        </button>
+
+        <!-- Page 2 -->
+        <button
+          type="button"
+          (click)="changerPage(2)"
+          [class]="pageActuelle() === 2
+            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
+          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
+        >
+          2
+        </button>
+
+        <!-- Page 3 -->
+        <button
+          type="button"
+          (click)="changerPage(3)"
+          [class]="pageActuelle() === 3
+            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
+          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
+        >
+          3
+        </button>
+
+        <!-- Points de suspension ... -->
+        <span class="px-1 text-slate-400 font-bold text-xs select-none">...</span>
+
+        <!-- Dernière page 42 -->
+        <button
+          type="button"
+          (click)="changerPage(42)"
+          class="w-8 h-8 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors cursor-pointer"
+        >
+          42
+        </button>
+
+        <!-- Suivant > -->
+        <button
+          type="button"
+          (click)="changerPage(pageActuelle() + 1)"
+          class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 flex items-center justify-center text-xs transition-colors cursor-pointer"
+          aria-label="Suivant"
+        >
+          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 5. MODALE D'ÉDITION D'UN UTILISATEUR                                      -->
+  <!-- ========================================================================= -->
+  @if (modaleEditionOuverte() && utilisateurEnEdition()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animation-apparition"
+      (click)="fermerModaleEdition()"
+    >
+      <div
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative"
+        (click)="$event.stopPropagation()"
+      >
+        <button
+          type="button"
+          (click)="fermerModaleEdition()"
+          class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+
+        <h3 class="text-xl font-black text-slate-900 font-['Outfit']">
+          Modifier l'utilisateur
+        </h3>
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nom complet</label>
+            <input
+              type="text"
+              [(ngModel)]="utilisateurEnEdition()!.nom"
+              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
+            />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Adresse E-mail</label>
+            <input
+              type="email"
+              [(ngModel)]="utilisateurEnEdition()!.email"
+              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
+            />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Statut du compte</label>
+            <select
+              [(ngModel)]="utilisateurEnEdition()!.statut"
+              class="w-full p-3 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 focus:outline-none focus:border-red-500"
+            >
+              <option value="ACTIF">ACTIF</option>
+              <option value="INACTIF">INACTIF</option>
+              <option value="BANNI">BANNI</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            (click)="fermerModaleEdition()"
+            class="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            (click)="sauvegarderUtilisateur()"
+            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- 6. MODALE D'ALERTE / MESSAGE                                             -->
+  <!-- ========================================================================= -->
+  @if (modaleAlerteOuverte() && utilisateurEnAlerte()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animation-apparition"
+      (click)="fermerModaleAlerte()"
+    >
+      <div
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative"
+        (click)="$event.stopPropagation()"
+      >
+        <button
+          type="button"
+          (click)="fermerModaleAlerte()"
+          class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+
+        <h3 class="text-xl font-black text-slate-900 font-['Outfit'] flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+          <span>Avertissement à {{ utilisateurEnAlerte()!.nom }}</span>
+        </h3>
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Message officiel de la modération</label>
+            <textarea
+              rows="4"
+              [ngModel]="messageAlerte()"
+              (ngModelChange)="messageAlerte.set($event)"
+              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500 text-slate-800"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            (click)="fermerModaleAlerte()"
+            class="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs"
+          >
+            Fermer
+          </button>
+          <button
+            type="button"
+            (click)="envoyerAlerte()"
+            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center gap-2"
+          >
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span>Envoyer la notification</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

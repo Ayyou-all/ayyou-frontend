@@ -1,0 +1,380 @@
+<div class="space-y-6 max-w-7xl mx-auto">
+
+  <!-- Notification Toast -->
+  @if (notificationSucces()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span>{{ notificationSucces() }}</span>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE : TITRE, SOUS-TITRE & BOUTON D'ENREGISTREMENT (IMAGE 3)         -->
+  <!-- ========================================================================= -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
+        Paramètres
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">
+        Configurez les options globales de la plateforme et gérez la sécurité.
+      </p>
+    </div>
+
+    <!-- Bouton noir : Enregistrer les modifications -->
+    <button
+      type="button"
+      (click)="enregistrerModifications()"
+      class="px-6 py-2.5 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs sm:text-sm font-black shadow-md transition-all cursor-pointer shrink-0 active:scale-95"
+    >
+      Enregistrer les modifications
+    </button>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. ONGLETS DE PARAMÉTRAGE (CONFORME À L'IMAGE 3)                           -->
+  <!-- ========================================================================= -->
+  <div class="flex items-center gap-6 sm:gap-8 border-b border-slate-200 select-none text-xs sm:text-sm font-bold">
+    <button
+      type="button"
+      (click)="ongletActif.set('GENERAL')"
+      [class]="ongletActif() === 'GENERAL'
+        ? 'text-[#E51824] border-b-2 border-[#E51824] pb-3'
+        : 'text-slate-500 hover:text-slate-800 pb-3 border-b-2 border-transparent'"
+      class="transition-colors cursor-pointer"
+    >
+      Général
+    </button>
+
+    <button
+      type="button"
+      (click)="ongletActif.set('SECURITE')"
+      [class]="ongletActif() === 'SECURITE'
+        ? 'text-[#E51824] border-b-2 border-[#E51824] pb-3'
+        : 'text-slate-500 hover:text-slate-800 pb-3 border-b-2 border-transparent'"
+      class="transition-colors cursor-pointer"
+    >
+      Sécurité
+    </button>
+
+    <button
+      type="button"
+      (click)="ongletActif.set('NOTIFICATIONS')"
+      [class]="ongletActif() === 'NOTIFICATIONS'
+        ? 'text-[#E51824] border-b-2 border-[#E51824] pb-3'
+        : 'text-slate-500 hover:text-slate-800 pb-3 border-b-2 border-transparent'"
+      class="transition-colors cursor-pointer"
+    >
+      Notifications
+    </button>
+
+    <button
+      type="button"
+      (click)="ongletActif.set('PAIEMENTS')"
+      [class]="ongletActif() === 'PAIEMENTS'
+        ? 'text-[#E51824] border-b-2 border-[#E51824] pb-3'
+        : 'text-slate-500 hover:text-slate-800 pb-3 border-b-2 border-transparent'"
+      class="transition-colors cursor-pointer"
+    >
+      Paiements
+    </button>
+
+    <button
+      type="button"
+      (click)="ongletActif.set('API')"
+      [class]="ongletActif() === 'API'
+        ? 'text-[#E51824] border-b-2 border-[#E51824] pb-3'
+        : 'text-slate-500 hover:text-slate-800 pb-3 border-b-2 border-transparent'"
+      class="transition-colors cursor-pointer"
+    >
+      API
+    </button>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. CONTENU PRINCIPAL (2 COLONNES CONFORME À L'IMAGE 3)                     -->
+  <!-- ========================================================================= -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- ===================== COLONNE GAUCHE (8/12) ===================== -->
+    <div class="lg:col-span-8 space-y-6">
+      
+      <!-- Carte 1 : Informations de la Plateforme -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-2xs space-y-6">
+        <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+          Informations de la Plateforme
+        </h3>
+
+        <!-- Nom de la plateforme & Email de contact -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nom de la plateforme</label>
+            <input
+              type="text"
+              [(ngModel)]="nomPlateforme"
+              class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Email de contact</label>
+            <input
+              type="email"
+              [(ngModel)]="emailContact"
+              class="w-full py-2.5 px-3.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+            />
+          </div>
+        </div>
+
+        <!-- Logo de la plateforme -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-2">Logo de la plateforme</label>
+          <div class="p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center gap-4">
+            
+            <!-- Vignette du logo AYYOU -->
+            <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 p-2 flex items-center justify-center shrink-0 shadow-2xs">
+              <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="w-full h-auto object-contain" />
+            </div>
+
+            <!-- Boutons d'action logo & consigne -->
+            <div class="space-y-1 text-center sm:text-left">
+              <div class="flex items-center justify-center sm:justify-start gap-2 text-xs">
+                <button
+                  type="button"
+                  (click)="notificationSucces.set('Sélectionnez un nouveau fichier logo...')"
+                  class="text-[#E51824] font-extrabold hover:underline cursor-pointer"
+                >
+                  Changer le logo
+                </button>
+                <span class="text-slate-300">•</span>
+                <button
+                  type="button"
+                  class="text-slate-400 hover:text-slate-700 font-bold cursor-pointer"
+                >
+                  Supprimer
+                </button>
+              </div>
+              <div class="text-[11px] text-slate-400 font-medium">
+                PNG, JPG ou SVG. Max 2MB (Recommandé: 400x400px)
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Devise par défaut & Fuseau horaire -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Devise par défaut</label>
+            <div class="relative">
+              <select
+                [(ngModel)]="deviseParDefaut"
+                class="w-full py-2.5 pl-3.5 pr-8 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-red-500 appearance-none cursor-pointer"
+              >
+                <option value="FCFA (Franc CFA)">FCFA (Franc CFA)</option>
+                <option value="EUR (Euro)">EUR (Euro)</option>
+                <option value="USD (Dollar US)">USD (Dollar US)</option>
+              </select>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Fuseau horaire</label>
+            <div class="relative">
+              <select
+                [(ngModel)]="fuseauHoraire"
+                class="w-full py-2.5 pl-3.5 pr-8 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-red-500 appearance-none cursor-pointer"
+              >
+                <option value="(GMT+00:00) Dakar, Sénégal">(GMT+00:00) Dakar, Sénégal</option>
+                <option value="(GMT+00:00) UTC">(GMT+00:00) UTC</option>
+                <option value="(GMT+01:00) Paris, France">(GMT+01:00) Paris, France</option>
+              </select>
+              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Carte 2 : Mode Maintenance -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shadow-2xs shrink-0">
+            <i class="fa-solid fa-wrench"></i>
+          </div>
+          <div>
+            <div class="text-sm font-black text-slate-900">Mode Maintenance</div>
+            <div class="text-xs text-slate-400 font-medium">
+              Désactive temporairement l'accès client pour des mises à jour.
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle Switch -->
+        <button
+          type="button"
+          (click)="basculerModeMaintenance()"
+          [class]="modeMaintenanceActif() ? 'bg-[#E51824]' : 'bg-slate-200'"
+          class="w-12 h-6 rounded-full transition-colors relative cursor-pointer p-0.5 shrink-0"
+          aria-label="Basculer le mode maintenance"
+        >
+          <div
+            [class]="modeMaintenanceActif() ? 'translate-x-6' : 'translate-x-0'"
+            class="w-5 h-5 rounded-full bg-white shadow-sm transition-transform"
+          ></div>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ===================== COLONNE DROITE (4/12) ===================== -->
+    <div class="lg:col-span-4 space-y-6">
+      
+      <!-- Carte 1 : Aperçu Sécurité (Sombre navy) -->
+      <div class="bg-slate-900 text-white rounded-3xl p-6 space-y-5 shadow-xl border border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-shield-halved text-red-500 text-sm"></i>
+          <h4 class="text-sm font-black text-white font-['Outfit']">
+            Aperçu Sécurité
+          </h4>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <!-- 2FA -->
+          <div class="flex items-start gap-2.5">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-xs mt-0.5"></i>
+            <div>
+              <div class="font-extrabold text-white">2FA Activée</div>
+              <div class="text-[11px] text-slate-400">Dernière vérification hier à 14:30</div>
+            </div>
+          </div>
+
+          <!-- Mot de passe admin -->
+          <div class="flex items-start gap-2.5">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs mt-0.5"></i>
+            <div>
+              <div class="font-extrabold text-white">Mot de passe admin</div>
+              <div class="text-[11px] text-slate-400">Modifié il y a 84 jours (recommandé: 90j)</div>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="ouvrirGestionSecurite()"
+          class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors cursor-pointer text-center"
+        >
+          Gérer la sécurité
+        </button>
+      </div>
+
+      <!-- Carte 2 : Santé du Système -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-5">
+        <h4 class="text-sm font-black text-slate-900 font-['Outfit']">
+          Santé du Système
+        </h4>
+
+        <!-- Jauge Espace Stockage (64% Rouge) -->
+        <div class="space-y-1.5 text-xs">
+          <div class="flex items-center justify-between text-slate-600 font-bold">
+            <span>Espace Stockage</span>
+            <span class="text-slate-900 font-mono">64%</span>
+          </div>
+          <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-[#E51824] w-[64%] rounded-full"></div>
+          </div>
+        </div>
+
+        <!-- Jauge Utilisation API (28% Noir) -->
+        <div class="space-y-1.5 text-xs">
+          <div class="flex items-center justify-between text-slate-600 font-bold">
+            <span>Utilisation API (Quotidien)</span>
+            <span class="text-slate-900 font-mono">28%</span>
+          </div>
+          <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-slate-900 w-[28%] rounded-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lien Retour au Dashboard -->
+      <div class="pt-2">
+        <a
+          routerLink="/administration/tableau-de-bord"
+          class="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
+        >
+          <i class="fa-solid fa-arrow-left text-[11px]"></i>
+          <span>Retour au Dashboard principal</span>
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 4. MODALE DE GESTION DE LA SÉCURITÉ                                       -->
+  <!-- ========================================================================= -->
+  @if (modaleSecuriteOuverte()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animation-apparition"
+      (click)="fermerGestionSecurite()"
+    >
+      <div
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 relative"
+        (click)="$event.stopPropagation()"
+      >
+        <button
+          type="button"
+          (click)="fermerGestionSecurite()"
+          class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+
+        <h3 class="text-xl font-black text-slate-900 font-['Outfit'] flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-red-500 text-base"></i>
+          <span>Sécurité du Compte Superadmin</span>
+        </h3>
+
+        <div class="space-y-4 text-xs">
+          <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div>
+              <div class="font-bold text-slate-800">Authentification à deux facteurs (2FA)</div>
+              <div class="text-[11px] text-slate-500">Sécurisation renforcée via application OTP (Google Authenticator)</div>
+            </div>
+            <input type="checkbox" [checked]="doubleFacteurActif()" class="w-4 h-4 text-red-600 rounded" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nouveau mot de passe administrateur</label>
+            <input
+              type="password"
+              placeholder="••••••••••••"
+              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            (click)="fermerGestionSecurite()"
+            class="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs"
+          >
+            Fermer
+          </button>
+          <button
+            type="button"
+            (click)="sauvegarderSecurite()"
+            class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-xs shadow-md"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>
