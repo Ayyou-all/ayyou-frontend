@@ -1,4 +1,9 @@
 import { Routes } from '@angular/router';
+import {
+  gardeAdministration,
+  gardeGerant,
+  gardeLivreur
+} from './socle/gardes/authentification.guard';
 
 export const routes: Routes = [
   {
@@ -18,7 +23,13 @@ export const routes: Routes = [
     title: 'Inscription — AYYOU'
   },
   {
+    path: 'restaurant',
+    redirectTo: 'gerant',
+    pathMatch: 'prefix'
+  },
+  {
     path: 'livreur',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/accueil-livreur/accueil-livreur.component'
@@ -75,6 +86,7 @@ export const routes: Routes = [
   },
   {
     path: 'administration',
+    canActivate: [gardeAdministration],
     loadComponent: () =>
       import(
         './partages/mises-en-page/mise-en-page-administration/mise-en-page-administration.component'
@@ -158,6 +170,7 @@ export const routes: Routes = [
   },
   {
     path: 'gerant',
+    canActivate: [gardeGerant],
     loadComponent: () =>
       import(
         './partages/mises-en-page/mise-en-page-gerant/mise-en-page-gerant.component'
@@ -201,12 +214,17 @@ export const routes: Routes = [
         title: 'Performances & Analytiques — Teranga Eats'
       },
       {
-        path: 'ayyou-studio',
+        path: 'menu-studio',
         loadComponent: () =>
           import(
             './fonctionnalites/restaurant/gerant-ayyou-studio/gerant-ayyou-studio.component'
           ).then((m) => m.GerantAyyouStudioComponent),
-        title: 'Ayyou Studio — Teranga Eats'
+        title: 'Menu & Studio — Teranga Eats'
+      },
+      {
+        path: 'ayyou-studio',
+        redirectTo: 'menu-studio',
+        pathMatch: 'full'
       }
     ]
   },

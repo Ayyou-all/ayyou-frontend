@@ -1,349 +1,360 @@
-<div class="space-y-6 pb-28">
+<div class="space-y-6 pb-12" (click)="fermerMenuOptions()">
 
   <!-- Toast notification -->
   @if (notificationMessage()) {
     <div
-      class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-gray-700 animate-fade-in"
+      class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl border border-gray-700 animate-fade-in"
     >
       <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
       <span class="text-sm font-medium">{{ notificationMessage() }}</span>
     </div>
   }
 
-  <!-- 1. EN-TÊTE : Le Teranga | Gestion du Menu & Vidéos + Recherche + Ajouter -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
-    <!-- Nom et Titre de la page -->
-    <div class="flex items-center gap-3">
-      <h1 class="text-xl font-black text-gray-900 tracking-tight">Le Teranga</h1>
-      <span class="text-gray-300 font-light text-lg">|</span>
-      <div class="flex items-center gap-2 text-sm font-bold text-gray-600">
-        <i class="fa-solid fa-utensils text-gray-500 text-xs"></i>
-        <span>Gestion du Menu & Vidéos</span>
+  <!-- ========================================================================= -->
+  <!-- VUE 1 : MES VIDÉOS PUBLIÉES (CONFORME À L'IMAGE 2)                        -->
+  <!-- ========================================================================= -->
+  @if (vueActive() === 'MES_VIDEOS') {
+
+    <!-- Barre de titre & Actions (Aperçu Feed Client + Nouvelle vidéo) -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+      <h1 class="text-xl font-black text-gray-900 tracking-tight">
+        Mes Vidéos Publiées
+      </h1>
+
+      <div class="flex items-center gap-3">
+        <!-- Bouton Aperçu Feed Client -->
+        <a
+          routerLink="/accueil"
+          class="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-bold text-xs active:scale-95 transition cursor-pointer"
+        >
+          <span>Aperçu Feed Client</span>
+        </a>
+
+        <!-- Bouton Nouvelle vidéo -->
+        <button
+          type="button"
+          (click)="basculerVue('PUBLICATION')"
+          class="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl bg-white hover:bg-gray-50 border border-gray-300 text-gray-900 font-bold text-xs active:scale-95 transition cursor-pointer"
+        >
+          <i class="fa-solid fa-video text-xs text-gray-700"></i>
+          <span>Nouvelle vidéo</span>
+        </button>
       </div>
     </div>
 
-    <!-- Barre de recherche & Bouton Ajouter un plat / vidéo -->
-    <div class="flex items-center gap-3 w-full md:w-auto">
-      <div class="relative flex-1 md:w-80">
-        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-        <input
-          type="text"
-          [ngModel]="rechercheTexte()"
-          (ngModelChange)="rechercheTexte.set($event)"
-          placeholder="Rechercher un plat, une vidéo..."
-          class="w-full pl-10 pr-4 py-2.5 bg-gray-50 hover:bg-gray-100 focus:bg-white text-sm text-gray-800 rounded-xl border border-transparent focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition"
-        />
-        @if (rechercheTexte()) {
-          <button
-            type="button"
-            (click)="rechercheTexte.set('')"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+    <!-- Grille des 4 vidéos publiées (Format 9:16 vertical) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+      @for (video of listeVideosPubliees(); track video.id) {
+        <div class="bg-white rounded-3xl p-3 sm:p-3.5 border border-gray-100 flex flex-col justify-between group transition">
+          
+          <!-- Lecteur / Miniature 9:16 avec bouton play et informations en surimpression -->
+          <div
+            (click)="regarderVideo(video)"
+            class="relative aspect-[9/16] w-full rounded-2xl overflow-hidden bg-black cursor-pointer"
           >
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        }
-      </div>
+            <img
+              [src]="video.imageAffiche"
+              [alt]="video.titrePlat"
+              class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+            />
+
+            <!-- Bouton central Play pour visionner la vidéo -->
+            <button
+              type="button"
+              (click)="regarderVideo(video); $event.stopPropagation()"
+              title="Regarder la vidéo"
+              class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-black/40 backdrop-blur-xs text-white flex items-center justify-center border border-white/20 transition-transform group-hover:scale-110 active:scale-95 cursor-pointer z-10"
+            >
+              <i class="fa-solid fa-play text-sm pl-0.5"></i>
+            </button>
+
+            <!-- Dégradé & Informations du plat en bas de la vidéo -->
+            <div class="absolute inset-x-0 bottom-0 p-3 pt-10 bg-gradient-to-t from-black/85 via-black/45 to-transparent text-white pointer-events-none">
+              <span class="text-[9px] font-black uppercase tracking-wider text-gray-300 block">
+                PLAT ASSOCIÉ
+              </span>
+              <div class="text-sm font-black line-clamp-1 mt-0.5 text-white">
+                {{ video.titrePlat }}
+              </div>
+              <div class="text-xs font-semibold text-gray-200 mt-0.5 line-clamp-1">
+                {{ video.detailsPlat }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Métriques & Date sous la vidéo -->
+          <div class="pt-3 px-1 space-y-2">
+            <!-- J'aime et Vues -->
+            <div class="flex items-center gap-4 text-xs font-bold">
+              <div class="flex items-center gap-1.5 text-gray-900">
+                <i class="fa-solid fa-heart text-xs text-gray-900"></i>
+                <span>{{ video.nombreJeaime }}</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-gray-500">
+                <i class="fa-regular fa-eye text-xs text-gray-400"></i>
+                <span>{{ video.nombreVues }}</span>
+              </div>
+            </div>
+
+            <!-- Date de publication & Menu des 3 points (⋮) -->
+            <div class="relative flex items-center justify-between pt-1 border-t border-gray-100 text-[11px] text-gray-400 font-medium">
+              <span>{{ video.datePublication }}</span>
+
+              <!-- Bouton 3 points -->
+              <div class="relative">
+                <button
+                  type="button"
+                  title="Options de la vidéo"
+                  (click)="basculerMenuOptions(video.id, $event)"
+                  class="w-7 h-7 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center transition cursor-pointer"
+                >
+                  <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+                </button>
+
+                <!-- Menu déroulant d'options (Regarder / Supprimer) -->
+                @if (menuOptionsOuvertId() === video.id) {
+                  <div
+                    class="absolute right-0 bottom-full mb-1 w-44 bg-white rounded-xl border border-gray-200 py-1.5 z-30 animate-fade-in"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <!-- Regarder -->
+                    <button
+                      type="button"
+                      (click)="regarderVideo(video)"
+                      class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition text-left cursor-pointer"
+                    >
+                      <i class="fa-solid fa-play text-gray-400 text-xs w-4"></i>
+                      <span>Regarder la vidéo</span>
+                    </button>
+
+                    <!-- Supprimer -->
+                    <button
+                      type="button"
+                      (click)="supprimerVideo(video, $event)"
+                      class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-[#E51824] hover:bg-red-50 transition text-left cursor-pointer border-t border-gray-50"
+                    >
+                      <i class="fa-solid fa-trash-can text-[#E51824] text-xs w-4"></i>
+                      <span>Supprimer la vidéo</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+        </div>
+      }
+    </div>
+
+  }
+
+  <!-- ========================================================================= -->
+  <!-- VUE 2 : PUBLICATION VIDÉO (CONFORME À L'IMAGE 3 - SANS CATÉGORIE)          -->
+  <!-- ========================================================================= -->
+  @if (vueActive() === 'PUBLICATION') {
+
+    <!-- Barre de titre & Bouton "Mes vidéos" (Image 3) -->
+    <div class="flex items-center justify-between pt-1">
+      <h1 class="text-xl font-black text-gray-900 tracking-tight">
+        Publication Vidéo
+      </h1>
 
       <button
         type="button"
-        (click)="ouvrirChangementPlat()"
-        class="flex items-center gap-2 px-4 py-2.5 bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-md shadow-red-500/20 transition whitespace-nowrap cursor-pointer"
+        (click)="basculerVue('MES_VIDEOS')"
+        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-xs transition cursor-pointer select-none"
       >
-        <i class="fa-solid fa-plus text-xs"></i>
-        <span>Ajouter un plat / vidéo</span>
+        Mes vidéos
       </button>
     </div>
-  </div>
 
-  <!-- 2. SOUS-TITRE : Plats Principaux & Publication Vidéo (12 plats) -->
-  <div class="flex items-center justify-between pt-1">
-    <div class="flex items-center gap-2.5">
-      <h2 class="text-lg font-black text-gray-900 tracking-tight">
-        Plats Principaux & Publication Vidéo
-      </h2>
-      <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
-        12 plats
-      </span>
-    </div>
-    <button
-      type="button"
-      (click)="afficherNotification('Accès aux 12 vidéos publiées du restaurant Le Teranga')"
-      class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-xs shadow-md shadow-red-500/20 transition cursor-pointer select-none"
-    >
-      Mes vidéos
-    </button>
-  </div>
+    <!-- Grille centrale de publication (Image 3) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
 
-  <!-- 3. GRILLE CENTRALE DE PUBLICATION (CONFORME À LA CAPTURE D'ÉCRAN AYYOU STUDIO) -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-    <!-- COLONNE GAUCHE (5 colonnes) : APERÇU VIDÉO VERTICAL (9:16) -->
-    <div class="lg:col-span-5 space-y-4">
-      <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
-        
-        <!-- En-tête de l'aperçu -->
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-black uppercase tracking-wider text-gray-800">
-            APERÇU VIDÉO VERTICAL (9:16)
-          </span>
-          <span class="text-[11px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
-            PRÊTE À DIFFUSER
-          </span>
-        </div>
-
-        <!-- CADRE VIDÉO VERTICAL (FORMAT REELS / TIKTOK 9:16) -->
-        <div class="relative w-full aspect-[9/16] max-h-[520px] mx-auto rounded-3xl overflow-hidden bg-black shadow-lg border border-gray-100 group">
+      <!-- COLONNE GAUCHE (5 colonnes) : APERÇU VIDÉO VERTICAL (9:16) -->
+      <div class="lg:col-span-5 space-y-4">
+        <div class="bg-white rounded-3xl p-5 border border-gray-100 space-y-4">
           
-          <!-- Lecteur vidéo HTML5 -->
-          <video
-            #videoApercu
-            [src]="urlVideoActive()"
-            [poster]="urlAfficheActive()"
-            playsinline
-            loop
-            muted
-            (click)="basculerLectureVideo()"
-            class="w-full h-full object-cover cursor-pointer"
-          ></video>
-
-          <!-- OVERLAYS SUPÉRIEURS -->
-          <div class="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-10">
-            <!-- Indicateur Enregistrement / Durée -->
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-bold shadow">
-              <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-              <span>
-                {{ estEnEnregistrement() ? '00:' + (tempsEnregistrement() < 10 ? '0' + tempsEnregistrement() : tempsEnregistrement()) : '00:28' }} / 00:30
-              </span>
-            </div>
-
-            <!-- Badge Résolution HD -->
-            <div class="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white/90 text-[11px] font-bold shadow">
-              1080 × 1920 HD
-            </div>
-          </div>
-
-          <!-- BOUTON PLAY/PAUSE AU CENTRE -->
-          <button
-            type="button"
-            (click)="basculerLectureVideo()"
-            class="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/45 hover:bg-black/60 backdrop-blur-sm text-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-xl z-10"
-            [class.opacity-0]="estEnLecture()"
-            [class.group-hover:opacity-100]="estEnLecture()"
-          >
-            @if (estEnLecture()) {
-              <i class="fa-solid fa-pause text-xl"></i>
-            } @else {
-              <i class="fa-solid fa-play text-xl pl-1"></i>
-            }
-          </button>
-
-          <!-- OVERLAY BAS : Nom du plat sur la vidéo -->
-          <div class="absolute bottom-4 left-4 right-4 p-3 rounded-2xl bg-black/50 backdrop-blur-md text-white pointer-events-none">
-            <div class="text-[10px] uppercase font-black tracking-wider text-red-400">Teranga Eats Live</div>
-            <div class="font-extrabold text-sm truncate">{{ platSelectionne().nom }}</div>
-          </div>
-        </div>
-
-        <!-- ACTIONS SOUS LA VIDÉO : Filmer / Importer -->
-        <div class="grid grid-cols-2 gap-3 pt-1">
-          <!-- Bouton Filmer -->
-          <button
-            type="button"
-            (click)="declencherFilmer()"
-            [class]="estEnEnregistrement() ? 'bg-red-700 ring-2 ring-red-400' : 'bg-[#E51824] hover:bg-red-700'"
-            class="flex items-center justify-center gap-2 py-3 px-4 text-white text-xs font-black rounded-2xl shadow-md shadow-red-500/20 active:scale-95 transition cursor-pointer"
-          >
-            <i class="fa-solid fa-video text-sm"></i>
-            <span>{{ estEnEnregistrement() ? 'Arrêter (' + tempsEnregistrement() + 's)' : 'Filmer' }}</span>
-          </button>
-
-          <!-- Bouton Importer -->
-          <button
-            type="button"
-            (click)="declencherImportVideo()"
-            class="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-gray-50 text-gray-800 text-xs font-black rounded-2xl border border-gray-200 shadow-2xs active:scale-95 transition cursor-pointer"
-          >
-            <i class="fa-solid fa-arrow-down-to-bracket text-sm text-gray-500"></i>
-            <span>Importer</span>
-          </button>
-
-          <!-- Input masqué pour importer un fichier vidéo depuis l'ordinateur ou téléphone -->
-          <input
-            #inputFichierVideo
-            type="file"
-            accept="video/*"
-            (change)="surFichierVideoChoisi($event)"
-            class="hidden"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- COLONNE DROITE (7 colonnes) : ASSOCIATION AU MENU & PARAMÈTRES -->
-    <div class="lg:col-span-7 space-y-5">
-
-      <!-- CARTE 1 : PLAT SÉLECTIONNÉ & ASSOCIATION AU MENU -->
-      <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
-        
-        <div class="flex items-center justify-between">
+          <!-- Titre aperçu -->
           <div>
-            <span class="text-[10px] font-black uppercase tracking-wider text-gray-400">PLAT SÉLECTIONNÉ</span>
-            <h3 class="text-base font-black text-gray-900 tracking-tight">
-              Association au menu du restaurant
-            </h3>
-          </div>
-          <button
-            type="button"
-            (click)="ouvrirChangementPlat()"
-            class="text-xs font-black text-[#E51824] hover:underline transition cursor-pointer"
-          >
-            Changer de plat
-          </button>
-        </div>
-
-        <!-- Ligne du plat sélectionné (Thieboudienne Rouge 4 500 FCFA avec switch) -->
-        <div class="bg-gray-50/60 rounded-2xl p-4 border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <!-- Thumbnail & Détails -->
-          <div class="flex items-center gap-3.5">
-            <img
-              [src]="platSelectionne().adresseImage"
-              [alt]="platSelectionne().nom"
-              class="w-16 h-16 rounded-2xl object-cover shadow-inner border border-gray-200 shrink-0"
-            />
-            <div>
-              <div class="text-lg font-black text-gray-900">
-                {{ platSelectionne().prixFcfa | number:'1.0-0' }}
-                <span class="text-xs font-bold text-gray-400">FCFA</span>
-              </div>
-              <div class="text-xs font-bold text-gray-600 line-clamp-1">
-                {{ platSelectionne().nom }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Switch DISPONIBILITÉ (conforme à l'image) -->
-          <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200/60">
-            <div class="bg-white px-3.5 py-1.5 rounded-xl border border-gray-200 flex flex-col items-center gap-0.5">
-              <span class="text-[9px] font-black text-gray-400 uppercase tracking-wider">DISPONIBILITÉ</span>
-              <div class="flex items-center gap-2 text-xs font-bold">
-                <span [class]="!platEstDisponible() ? 'text-red-600 font-extrabold' : 'text-gray-400 font-medium'">
-                  Rupture
-                </span>
-
-                <!-- Switch bouton -->
-                <button
-                  type="button"
-                  (click)="basculerDisponibilitePlat()"
-                  class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                  [class]="platEstDisponible() ? 'bg-emerald-500' : 'bg-gray-300'"
-                >
-                  <span
-                    class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                    [class]="platEstDisponible() ? 'translate-x-5' : 'translate-x-0'"
-                  ></span>
-                </button>
-
-                <span [class]="platEstDisponible() ? 'text-emerald-600 font-extrabold' : 'text-gray-400 font-medium'">
-                  DISPONIBLE
-                </span>
-              </div>
-            </div>
-
-            <!-- Boutons Éditer & Supprimer -->
-            <div class="flex items-center gap-1.5">
-              <button
-                type="button"
-                (click)="ouvrirChangementPlat()"
-                title="Modifier l'association"
-                class="w-9 h-9 rounded-xl bg-white hover:bg-gray-100 text-gray-600 flex items-center justify-center border border-gray-200 transition cursor-pointer"
-              >
-                <i class="fa-solid fa-pen text-xs"></i>
-              </button>
-              <button
-                type="button"
-                (click)="ouvrirChangementPlat()"
-                title="Supprimer l'association"
-                class="w-9 h-9 rounded-xl bg-white hover:bg-red-50 text-gray-400 hover:text-red-600 flex items-center justify-center border border-gray-200 transition cursor-pointer"
-              >
-                <i class="fa-solid fa-trash-can text-xs"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- CARTE 2 : CATÉGORIE DU PLAT & DESCRIPTION DE LA PUBLICATION -->
-      <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6">
-
-        <!-- Catégorie du plat -->
-        <div class="space-y-2.5">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-black text-gray-900 uppercase tracking-wider">
-              CATÉGORIE DU PLAT <span class="text-[#E51824]">*</span>
-            </label>
-            <span class="text-[11px] font-medium text-gray-400">
-              Filtre dans l'application
+            <span class="text-xs font-black uppercase tracking-wider text-gray-800">
+              APERÇU VIDÉO VERTICAL (9:16)
             </span>
           </div>
 
-          <!-- Pilules de catégories -->
-          <div class="flex flex-wrap items-center gap-2.5">
-            <!-- Plats Principaux (Sélectionné) -->
+          <!-- Cadre vidéo 9:16 (Format Reels / TikTok) -->
+          <div class="relative w-full aspect-[9/16] max-h-[500px] mx-auto rounded-3xl overflow-hidden bg-black border border-gray-100 group">
+            
+            <video
+              #videoApercu
+              [src]="urlVideoActive()"
+              [poster]="urlAfficheActive()"
+              playsinline
+              loop
+              muted
+              (click)="basculerLectureVideo()"
+              class="w-full h-full object-cover cursor-pointer"
+            ></video>
+
+            <!-- Overlays supérieurs (Image 3) -->
+            <div class="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-10">
+              <!-- Durée / point rouge -->
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-bold">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                <span>
+                  {{ estEnEnregistrement() ? '00:' + (tempsEnregistrement() < 10 ? '0' + tempsEnregistrement() : tempsEnregistrement()) : '00:28' }} / 00:30
+                </span>
+              </div>
+
+              <!-- Badge 1080 × 1920 HD -->
+              <div class="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white/90 text-[11px] font-bold">
+                1080 × 1920 HD
+              </div>
+            </div>
+
+            <!-- Bouton central Play / Pause -->
             <button
               type="button"
-              (click)="categorieSelectionnee.set('PLATS_PRINCIPAUX')"
-              [class]="categorieSelectionnee() === 'PLATS_PRINCIPAUX'
-                ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'"
-              class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+              (click)="basculerLectureVideo()"
+              class="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/45 hover:bg-black/60 backdrop-blur-sm text-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer z-10"
+              [class.opacity-0]="estEnLecture()"
+              [class.group-hover:opacity-100]="estEnLecture()"
             >
-              <i class="fa-solid fa-utensils text-xs"></i>
-              <span>Plats Principaux</span>
+              @if (estEnLecture()) {
+                <i class="fa-solid fa-pause text-xl"></i>
+              } @else {
+                <i class="fa-solid fa-play text-xl pl-1"></i>
+              }
+            </button>
+          </div>
+
+          <!-- Boutons Filmer / Importer (Image 3) -->
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <!-- Bouton Filmer (Rouge) -->
+            <button
+              type="button"
+              (click)="declencherFilmer()"
+              [class]="estEnEnregistrement() ? 'bg-red-700 ring-2 ring-red-400' : 'bg-[#E51824] hover:bg-red-700'"
+              class="flex items-center justify-center gap-2 py-3 px-4 text-white text-xs font-black rounded-2xl active:scale-95 transition cursor-pointer"
+            >
+              <i class="fa-solid fa-video text-sm"></i>
+              <span>{{ estEnEnregistrement() ? 'Arrêter (' + tempsEnregistrement() + 's)' : 'Filmer' }}</span>
             </button>
 
-            <!-- Boissons -->
+            <!-- Bouton Importer (Blanc avec bordure) -->
             <button
               type="button"
-              (click)="categorieSelectionnee.set('BOISSONS')"
-              [class]="categorieSelectionnee() === 'BOISSONS'
-                ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'"
-              class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+              (click)="declencherImportVideo()"
+              class="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-gray-50 text-gray-800 text-xs font-black rounded-2xl border border-gray-200 active:scale-95 transition cursor-pointer"
             >
-              <i class="fa-solid fa-mug-hot text-xs"></i>
-              <span>Boissons</span>
+              <i class="fa-solid fa-arrow-down-to-bracket text-sm text-gray-500"></i>
+              <span>Importer</span>
             </button>
 
-            <!-- Desserts -->
-            <button
-              type="button"
-              (click)="categorieSelectionnee.set('DESSERTS')"
-              [class]="categorieSelectionnee() === 'DESSERTS'
-                ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'"
-              class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
-            >
-              <i class="fa-solid fa-cake-candles text-xs"></i>
-              <span>Desserts</span>
-            </button>
+            <!-- Input fichier masqué -->
+            <input
+              #inputFichierVideo
+              type="file"
+              accept="video/*"
+              (change)="surFichierVideoChoisi($event)"
+              class="hidden"
+            />
+          </div>
+        </div>
+      </div>
 
-            <!-- Entrées -->
+      <!-- COLONNE DROITE (7 colonnes) : ASSOCIATION AU MENU & DESCRIPTION (SANS CATÉGORIE) -->
+      <div class="lg:col-span-7 space-y-5">
+
+        <!-- CARTE 1 : ASSOCIATION AU MENU DU RESTAURANT (Image 3) -->
+        <div class="bg-white rounded-3xl p-6 border border-gray-100 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 block">PLAT SÉLECTIONNÉ</span>
+              <h2 class="text-base font-black text-gray-900 tracking-tight mt-0.5">
+                Association au menu du restaurant
+              </h2>
+            </div>
             <button
               type="button"
-              (click)="categorieSelectionnee.set('ENTREES')"
-              [class]="categorieSelectionnee() === 'ENTREES'
-                ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'"
-              class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer"
+              (click)="ouvrirChangementPlat()"
+              class="text-xs font-black text-[#E51824] hover:underline transition cursor-pointer"
             >
-              <span>Entrées</span>
+              Changer de plat
             </button>
+          </div>
+
+          <!-- Ligne du plat sélectionné avec image, prix, toggle disponibilité, boutons -->
+          <div class="bg-gray-50/60 rounded-2xl p-4 border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <!-- Miniature & Prix -->
+            <div class="flex items-center gap-3.5">
+              <img
+                [src]="platSelectionne().adresseImage"
+                [alt]="platSelectionne().nom"
+                class="w-16 h-16 rounded-2xl object-cover border border-gray-200 shrink-0"
+              />
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-xl font-black text-gray-900">
+                  {{ platSelectionne().prixFcfa | number:'1.0-0' }}
+                </span>
+                <span class="text-xs font-bold text-gray-500">FCFA</span>
+              </div>
+            </div>
+
+            <!-- Switch Disponibilité & Actions -->
+            <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200/60">
+              <!-- Module Switch Rupture / Disponible -->
+              <div class="bg-white px-3.5 py-1.5 rounded-xl border border-gray-200 flex flex-col items-center gap-0.5">
+                <span class="text-[9px] font-black text-gray-400 uppercase tracking-wider">DISPONIBILITÉ</span>
+                <div class="flex items-center gap-2 text-xs font-bold">
+                  <span [class]="!platEstDisponible() ? 'text-red-600 font-extrabold' : 'text-gray-400 font-medium'">
+                    Rupture
+                  </span>
+
+                  <!-- Bouton Toggle -->
+                  <button
+                    type="button"
+                    (click)="basculerDisponibilitePlat()"
+                    class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                    [class]="platEstDisponible() ? 'bg-emerald-500' : 'bg-gray-300'"
+                  >
+                    <span
+                      class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out"
+                      [class]="platEstDisponible() ? 'translate-x-5' : 'translate-x-0'"
+                    ></span>
+                  </button>
+
+                  <span [class]="platEstDisponible() ? 'text-emerald-600 font-extrabold' : 'text-gray-400 font-medium'">
+                    DISPONIBLE
+                  </span>
+                </div>
+              </div>
+
+              <!-- Boutons Éditer & Supprimer -->
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  (click)="ouvrirChangementPlat()"
+                  title="Modifier l'association"
+                  class="w-9 h-9 rounded-xl bg-white hover:bg-gray-100 text-gray-600 flex items-center justify-center border border-gray-200 transition cursor-pointer"
+                >
+                  <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+                <button
+                  type="button"
+                  (click)="ouvrirChangementPlat()"
+                  title="Supprimer l'association"
+                  class="w-9 h-9 rounded-xl bg-white hover:bg-red-50 text-gray-400 hover:text-red-600 flex items-center justify-center border border-gray-200 transition cursor-pointer"
+                >
+                  <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Description de la publication -->
-        <div class="space-y-2">
+        <!-- CARTE 2 : DESCRIPTION DE LA PUBLICATION (Image 3 - SANS SECTION CATÉGORIE) -->
+        <div class="bg-white rounded-3xl p-6 border border-gray-100 space-y-3">
           <div class="flex items-center justify-between">
             <label class="text-xs font-black text-gray-900 uppercase tracking-wider">
               DESCRIPTION DE LA PUBLICATION
@@ -359,193 +370,199 @@
               (ngModelChange)="texteDescription.set($event)"
               maxlength="100"
               rows="3"
-              placeholder="Décrivez votre plat avec des mots gourmands qui feront saliver les clients..."
+              placeholder="Véritable Ceebu Jën rouge au mérou blanc frais, légumes mijotés du terroir dakarois."
               class="w-full p-4 bg-gray-50 hover:bg-gray-100/70 focus:bg-white text-sm text-gray-800 rounded-2xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition resize-none font-medium leading-relaxed"
             ></textarea>
           </div>
-          <p class="text-[11px] text-gray-400">
-            Ce texte accompagnera la vidéo dans le feed des utilisateurs pour les inciter à commander en un clic.
-          </p>
         </div>
 
-      </div>
-
-      <!-- BOUTON PUBLIER CENTRÉ (CONFORME À L'IMAGE DU GÉRANT) -->
-      <div class="flex justify-center pt-1 pb-2">
+        <!-- BOUTON PUBLIER (Image 3) -->
         <button
           type="button"
           (click)="publierMaintenant()"
-          class="w-full sm:w-80 py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-sm shadow-xl shadow-red-500/25 flex items-center justify-center gap-2.5 transition cursor-pointer select-none group"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-98 text-white font-black text-sm transition flex items-center justify-center gap-2 cursor-pointer"
         >
-          <i class="fa-solid fa-video text-xs"></i>
+          <i class="fa-solid fa-video text-base"></i>
           <span>Publier</span>
         </button>
+
       </div>
 
     </div>
 
-  </div>
+  }
 
-  <!-- 4. BARRE FLOTTANTE INFÉRIEURE SOMBRE (CONFORME À LA CAPTURE D'ÉCRAN) -->
-  <div class="fixed bottom-4 left-4 right-4 sm:left-72 sm:right-8 z-30">
-    <div class="bg-[#24292e] text-white rounded-2xl px-5 py-4 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-gray-700/50">
-      
-      <!-- Statistiques gauche -->
-      <div class="flex items-center gap-6 divide-x divide-gray-700">
-        <div>
-          <div class="text-[10px] font-extrabold text-gray-400 tracking-wider uppercase">TOTAL PLATS</div>
-          <div class="text-lg font-black text-white">{{ totalPlats() }} articles</div>
-        </div>
-        <div class="pl-6">
-          <div class="text-[10px] font-extrabold text-gray-400 tracking-wider uppercase">EN RUPTURE</div>
-          <div class="text-lg font-black text-red-400">{{ enRupture() }} plats</div>
-        </div>
-      </div>
-
-      <!-- Actions droite : Aperçu Menu Client / Exporter la carte / Publier maintenant -->
-      <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-        <button
-          type="button"
-          routerLink="/gerant/menu"
-          class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-xs font-bold border border-gray-600 transition cursor-pointer"
-        >
-          Aperçu Menu Client
-        </button>
-
-        <button
-          type="button"
-          (click)="afficherNotification('Exportation de la carte du restaurant en cours...')"
-          class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-white hover:bg-gray-100 active:scale-95 text-gray-900 text-xs font-black shadow transition cursor-pointer"
-        >
-          Exporter la carte
-        </button>
-
-        <button
-          type="button"
-          (click)="publierMaintenant()"
-          class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white text-xs font-black shadow-lg shadow-red-500/30 transition cursor-pointer whitespace-nowrap"
-        >
-          Publier maintenant
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- MODALE : CHANGER DE PLAT ASSOCIÉ -->
-  @if (modaleChangementPlatOuverte()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-100 space-y-4">
-        
-        <div class="flex items-center justify-between border-b pb-3">
-          <div>
-            <h3 class="text-lg font-black text-gray-900">Associer un plat du menu</h3>
-            <p class="text-xs text-gray-500">Sélectionnez le plat qui sera mis en valeur dans la vidéo</p>
+  <!-- ========================================================================= -->
+  <!-- MODALE : LECTEUR VIDÉO POUR REGARDER LA VIDÉO EN GRAND                    -->
+  <!-- ========================================================================= -->
+  @if (videoEnLectureModal()) {
+    <div
+      class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+      (click)="fermerLecteurModal()"
+    >
+      <div
+        class="relative bg-slate-900 rounded-3xl max-w-sm sm:max-w-md w-full overflow-hidden border border-white/10"
+        (click)="$event.stopPropagation()"
+      >
+        <!-- En-tête du lecteur -->
+        <div class="p-4 bg-slate-900/90 border-b border-white/10 flex items-center justify-between text-white">
+          <div class="min-w-0 pr-3">
+            <h3 class="font-black text-sm truncate">{{ videoEnLectureModal()!.titrePlat }}</h3>
+            <span class="text-xs text-gray-400 block truncate">{{ videoEnLectureModal()!.detailsPlat }}</span>
           </div>
           <button
             type="button"
-            (click)="fermerChangementPlat()"
-            class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer"
+            (click)="fermerLecteurModal()"
+            class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0"
           >
             <i class="fa-solid fa-xmark text-sm"></i>
           </button>
         </div>
 
-        <div class="space-y-3 overflow-y-auto flex-1 pr-1">
+        <!-- Lecteur Vidéo HTML5 avec contrôles et lecture automatique -->
+        <div class="relative aspect-[9/16] max-h-[70vh] bg-black">
+          <video
+            [src]="videoEnLectureModal()!.videoUrl"
+            [poster]="videoEnLectureModal()!.imageAffiche"
+            controls
+            autoplay
+            playsinline
+            loop
+            class="w-full h-full object-cover"
+          ></video>
+        </div>
+
+        <!-- Pied de page du lecteur -->
+        <div class="p-3 bg-slate-900 text-white flex items-center justify-between text-xs font-semibold">
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-heart text-red-500"></i> {{ videoEnLectureModal()!.nombreJeaime }}</span>
+            <span class="flex items-center gap-1.5 text-gray-400"><i class="fa-regular fa-eye"></i> {{ videoEnLectureModal()!.nombreVues }}</span>
+          </div>
+          <button
+            type="button"
+            (click)="supprimerVideo(videoEnLectureModal()!); fermerLecteurModal()"
+            class="text-red-400 hover:text-red-300 font-bold flex items-center gap-1.5 cursor-pointer"
+          >
+            <i class="fa-solid fa-trash-can text-xs"></i>
+            <span>Supprimer</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- MODALE : CHANGEMENT DU PLAT ASSOCIÉ                                       -->
+  <!-- ========================================================================= -->
+  @if (modaleChangementPlatOuverte()) {
+    <div
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      (click)="fermerChangementPlat()"
+    >
+      <div
+        class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 border border-gray-100"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+          <div>
+            <h3 class="text-lg font-black text-gray-900">Associer un plat au clip vidéo</h3>
+            <p class="text-xs text-gray-500 mt-0.5">Sélectionnez le plat de votre menu à mettre en vedette.</p>
+          </div>
+          <button
+            type="button"
+            (click)="fermerChangementPlat()"
+            class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center transition cursor-pointer"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
           @for (plat of cataloguePlats(); track plat.identifiant) {
             <div
               (click)="selectionnerPlat(plat)"
-              [class]="platSelectionneId() === plat.identifiant ? 'ring-2 ring-red-500 bg-red-50/30' : 'hover:bg-gray-50'"
-              class="flex items-center justify-between p-3.5 rounded-2xl border border-gray-200 transition cursor-pointer"
+              [class]="platSelectionneId() === plat.identifiant
+                ? 'border-[#E51824] bg-red-50/40 ring-1 ring-red-400'
+                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
+              class="flex items-center gap-3.5 p-3 rounded-2xl border transition cursor-pointer"
             >
-              <div class="flex items-center gap-3">
-                <img
-                  [src]="plat.adresseImage"
-                  [alt]="plat.nom"
-                  class="w-14 h-14 rounded-xl object-cover"
-                />
-                <div>
-                  <h4 class="font-bold text-sm text-gray-900">{{ plat.nom }}</h4>
-                  <p class="text-xs text-gray-500 line-clamp-1">{{ plat.description }}</p>
-                  <span class="text-xs font-black text-red-600">
+              <img
+                [src]="plat.adresseImage"
+                [alt]="plat.nom"
+                class="w-14 h-14 rounded-xl object-cover shrink-0"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <h4 class="text-sm font-black text-gray-900 truncate">{{ plat.nom }}</h4>
+                  <span class="text-xs font-black text-[#E51824] shrink-0">
                     {{ plat.prixFcfa | number:'1.0-0' }} FCFA
                   </span>
                 </div>
-              </div>
-
-              <div>
-                @if (platSelectionneId() === plat.identifiant) {
-                  <span class="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center text-xs">
-                    <i class="fa-solid fa-check"></i>
+                <p class="text-xs text-gray-500 line-clamp-1 mt-0.5">{{ plat.description }}</p>
+                <div class="mt-1 flex items-center gap-2">
+                  <span
+                    [class]="plat.estDisponible ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                  >
+                    {{ plat.estDisponible ? 'Disponible' : 'En rupture' }}
                   </span>
-                } @else {
-                  <span class="text-xs font-bold text-gray-400">Choisir</span>
-                }
+                </div>
               </div>
             </div>
           }
         </div>
 
-        <div class="pt-3 border-t flex justify-end">
+        <div class="flex justify-end pt-2">
           <button
             type="button"
             (click)="fermerChangementPlat()"
-            class="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs cursor-pointer"
+            class="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition cursor-pointer"
           >
             Fermer
           </button>
         </div>
-
       </div>
     </div>
   }
 
-  <!-- MODALE : CONFIRMATION DE PUBLICATION EN DIRECT DANS LE FEED CLIENT -->
-  @if (modalePublicationReussie() && dernierePublicationPubliee(); as pub) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-gray-100 text-center space-y-5 animate-scale-up">
-        
-        <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
-          <i class="fa-solid fa-circle-check"></i>
+  <!-- ========================================================================= -->
+  <!-- MODALE : CONFIRMATION DE PUBLICATION EN DIRECT DANS LE FEED CLIENT        -->
+  <!-- ========================================================================= -->
+  @if (modalePublicationReussie()) {
+    <div
+      class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-3xl max-w-md w-full p-6 text-center space-y-5 border border-gray-100 animate-fade-in"
+      >
+        <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl">
+          <i class="fa-solid fa-check"></i>
         </div>
 
-        <div class="space-y-1">
-          <h3 class="text-xl font-black text-gray-900 tracking-tight">Vidéo publiée en direct !</h3>
+        <div class="space-y-1.5">
+          <h3 class="text-xl font-black text-gray-900">Vidéo publiée avec succès !</h3>
           <p class="text-xs text-gray-500 leading-relaxed">
-            Votre vidéo pour <strong class="text-gray-900">{{ pub.plat.nom }}</strong> est désormais en première position dans le fil d'accueil des clients AYYOU.
+            Votre vidéo pour <strong class="text-gray-800">"{{ platSelectionne().nom }}"</strong> est désormais visible en direct par tous les clients dans leur feed Teranga Eats.
           </p>
         </div>
 
-        <!-- Carte miniature du plat publié -->
-        <div class="bg-gray-50 rounded-2xl p-4 text-left flex items-center gap-3 border border-gray-100">
-          <img [src]="pub.adresseMedia" [alt]="pub.plat.nom" class="w-14 h-14 rounded-xl object-cover" />
-          <div class="min-w-0">
-            <div class="text-xs font-bold text-gray-900 truncate">{{ pub.plat.nom }}</div>
-            <div class="text-[11px] text-gray-500 line-clamp-1">"{{ pub.descriptionAccroche }}"</div>
-            <div class="text-xs font-black text-[#E51824]">{{ pub.plat.prixFcfa | number:'1.0-0' }} FCFA</div>
-          </div>
-        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <button
+            type="button"
+            (click)="modalePublicationReussie.set(false); basculerVue('MES_VIDEOS')"
+            class="w-full py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition cursor-pointer"
+          >
+            Rester sur Mes vidéos
+          </button>
 
-        <!-- Boutons d'action -->
-        <div class="space-y-2 pt-2">
           <button
             type="button"
             (click)="voirDansLeFeedClient()"
-            class="w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-xs shadow-lg shadow-red-500/25 transition flex items-center justify-center gap-2 cursor-pointer"
+            class="w-full py-3 px-4 rounded-xl bg-[#E51824] hover:bg-red-700 text-white text-xs font-black transition cursor-pointer"
           >
-            <i class="fa-solid fa-play text-xs"></i>
-            <span>Voir en direct dans le Feed Client</span>
-          </button>
-
-          <button
-            type="button"
-            (click)="modalePublicationReussie.set(false)"
-            class="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition cursor-pointer"
-          >
-            Rester sur Ayyou Studio
+            Voir dans le feed client
           </button>
         </div>
-
       </div>
     </div>
   }

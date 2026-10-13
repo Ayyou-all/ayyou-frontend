@@ -46,6 +46,10 @@ export class ServiceAuthentification {
   readonly estAuthentifie = computed(() => this.utilisateurConnecte() !== null);
   readonly estVisiteur = computed(() => this.utilisateurConnecte() === null);
   readonly roleActuel = computed(() => this.utilisateurConnecte()?.role ?? null);
+  readonly estClient = computed(() => this.utilisateurConnecte()?.role === 'CLIENT');
+  readonly estGerant = computed(() => this.utilisateurConnecte()?.role === 'RESTAURANT');
+  readonly estLivreur = computed(() => this.utilisateurConnecte()?.role === 'LIVREUR');
+  readonly estAdministrateur = computed(() => this.utilisateurConnecte()?.role === 'ADMINISTRATEUR');
 
   // Utilisateurs de démonstration par rôle métier
   private readonly utilisateursSimules: Record<RoleUtilisateur, Utilisateur> = {
@@ -73,19 +77,6 @@ export class ServiceAuthentification {
       adresse: 'Plateau, Dakar',
       estActif: true,
       dateCreation: '2026-01-10'
-    },
-    VENDEUR: {
-      identifiant: 'util-vendeur-01',
-      prenom: 'Awa',
-      nom: 'Sow',
-      courriel: 'awa.marche@ayyou.sn',
-      telephone: '+221 77 345 67 89',
-      role: 'VENDEUR',
-      nomEtablissement: 'Délices & Épices Kermel',
-      adressePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
-      adresse: 'Marché Kermel, Dakar',
-      estActif: true,
-      dateCreation: '2026-02-01'
     },
     LIVREUR: {
       identifiant: 'util-livreur-01',
@@ -131,8 +122,6 @@ export class ServiceAuthentification {
 
     if (identifiantNormalise.includes('restau') || identifiantNormalise.includes('teranga')) {
       utilisateurTrouve = this.utilisateursSimules.RESTAURANT;
-    } else if (identifiantNormalise.includes('vendeur') || identifiantNormalise.includes('kermel')) {
-      utilisateurTrouve = this.utilisateursSimules.VENDEUR;
     } else if (identifiantNormalise.includes('livreur')) {
       utilisateurTrouve = this.utilisateursSimules.LIVREUR;
     } else if (identifiantNormalise.includes('admin')) {
@@ -163,15 +152,25 @@ export class ServiceAuthentification {
   }
 
   /**
-   * Connexion directe via un rôle prédéfini (idéal pour les démonstrations de certification).
+   * Connexion directe via un rôle prédéfini (idéal pour les démonstrations et tests).
    */
   connecterAvecRolePredefini(role: RoleUtilisateur): Observable<Utilisateur> {
     const utilisateur = this.utilisateursSimules[role];
-    return this.connecter({
-      courriel: utilisateur.courriel,
-      motDePasse: 'Secret2026!',
-      seSouvenirDeMoi: true
-    });
+    this.chargementEnCours.set(true);
+    this.messageErreur.set(null);
+    return of(utilisateur).pipe(
+      delay(300),
+      tap((u) => {
+        this.sauvegarderSession({
+          jetonAcces: 'jeton_simule_' + Date.now(),
+          jetonRafraichissement: 'rafraichir_' + Date.now(),
+          utilisateur: u
+        });
+        this.utilisateurConnecte.set(u);
+        this.chargementEnCours.set(false);
+        this.messageSucces.set(`Bienvenue, ${u.prenom} !`);
+      })
+    );
   }
 
   /**

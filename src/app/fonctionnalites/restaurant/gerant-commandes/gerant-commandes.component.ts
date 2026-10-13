@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import {
@@ -25,19 +25,10 @@ export class GerantCommandesComponent {
   readonly modaleRefusOuverte = signal<boolean>(false);
   readonly motifRefus = signal<string>('Rupture d’ingrédients pour ce plat');
 
-  // État de l'alerte nouvelle commande entrante (conforme à l'image envoyée, sans estimation de temps)
-  readonly alerteVisible = signal<boolean>(true);
-  readonly alerteCommande = signal<{
-    numero: string;
-    titre: string;
-    sousTitre: string;
-    typeLivraison: string;
-  }>({
-    numero: '#1246',
-    titre: 'NOUVELLE COMMANDE !',
-    sousTitre: "VIENT D'ARRIVER",
-    typeLivraison: 'LIVRAISON RAPIDE'
-  });
+  @HostListener('document:keydown.escape')
+  surEchap(): void {
+    this.modaleRefusOuverte.set(false);
+  }
 
   // Notification Toast
   readonly notificationSucces = signal<string | null>(null);
@@ -52,9 +43,6 @@ export class GerantCommandesComponent {
    */
   accepterCommande(numero: string): void {
     this.serviceRestaurant.accepterCommande(numero);
-    if (this.alerteCommande().numero === numero) {
-      this.alerteVisible.set(false);
-    }
     this.notificationSucces.set(`Commande ${numero} acceptée ! Préparation en cours.`);
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
@@ -75,9 +63,6 @@ export class GerantCommandesComponent {
     if (!cmd) return;
 
     this.serviceRestaurant.refuserCommande(cmd.numero, this.motifRefus());
-    if (this.alerteCommande().numero === cmd.numero) {
-      this.alerteVisible.set(false);
-    }
 
     this.notificationSucces.set(`Commande ${cmd.numero} refusée et archivée dans l'historique.`);
     this.modaleRefusOuverte.set(false);
@@ -95,35 +80,33 @@ export class GerantCommandesComponent {
   }
 
   /**
-   * Remet le colis au livreur : la commande est terminée et part DIRECTEMENT dans l'historique en LIVRÉE.
+   * Remet le colis au livreur : la commande passe en cours d'acheminement vers le client.
    */
   remettreAuLivreur(numero: string): void {
-    this.serviceRestaurant.remettreAuLivreurEtTerminer(numero);
-    this.notificationSucces.set(`Commande ${numero} remise au livreur et archivée dans l'historique !`);
+    this.serviceRestaurant.remettreAuLivreur(numero);
+    this.notificationSucces.set(
+      `Commande ${numero} remise au livreur : livraison en cours vers le client.`
+    );
     setTimeout(() => this.notificationSucces.set(null), 3000);
-  }
-
-  /**
-   * Action rapide depuis le bandeau d'alerte : accepte directement la commande d'alerte.
-   */
-  accepterDepuisAlerte(): void {
-    this.accepterCommande(this.alerteCommande().numero);
-  }
-
-  /**
-   * Ferme l'alerte rouge.
-   */
-  fermerAlerte(): void {
-    this.alerteVisible.set(false);
   }
 
   /**
    * Simule l'arrivée d'une nouvelle commande avec le carillon sonore.
    */
   simulerArriveeCommande(): void {
-    this.alerteVisible.set(true);
+    const idAlea = `#${Math.floor(1250 + Math.random() * 50)}`;
+    this.serviceRestaurant.ajouterNotification({
+      id: `notif-${Date.now()}`,
+      titre: `Nouvelle commande ${idAlea}`,
+      message: 'Client en ligne • 1x Thiéboudienne • 3 500 FCFA',
+      texteVocal: `Nouvelle commande numéro ${idAlea.replace('#', '')}. Un Thiéboudienne en livraison.`,
+      heure: "À l'instant",
+      lue: false,
+      type: 'COMMANDE_NOUVELLE',
+      numeroCommande: idAlea
+    });
     this.jouerSonNouvelleCommande();
-    this.notificationSucces.set('🔔 Nouvelle commande reçue en cuisine !');
+    this.notificationSucces.set(`🔔 Nouvelle commande ${idAlea} reçue en cuisine !`);
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 

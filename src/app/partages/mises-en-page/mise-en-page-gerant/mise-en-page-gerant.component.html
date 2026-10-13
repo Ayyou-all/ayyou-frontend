@@ -2,57 +2,40 @@
 
   <!-- Notification Toast globale pour le gérant -->
   @if (notificationSucces()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationSucces() }}</span>
     </div>
   }
 
   <!-- ========================================================================= -->
-  <!-- 1. BARRE LATÉRALE BUREAU & TIROIR MOBILE (CONFORME AUX IMAGES DU GÉRANT)   -->
+  <!-- 1. BARRE LATÉRALE BUREAU (DESKTOP SEULEMENT)                              -->
   <!-- ========================================================================= -->
-
-  <!-- Arrière-plan sombre sur mobile -->
-  @if (menuMobileOuvert()) {
-    <div
-      (click)="fermerMenuMobile()"
-      class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden"
-    ></div>
-  }
-
   <aside
-    [class]="menuMobileOuvert() ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-    class="fixed lg:sticky top-0 left-0 h-screen w-64 lg:w-68 bg-white border-r border-slate-200/90 flex flex-col justify-between p-6 z-50 transition-transform duration-300 shadow-xl lg:shadow-none shrink-0"
+    class="hidden lg:flex lg:sticky top-0 left-0 h-screen w-64 lg:w-68 bg-white border-r border-slate-200/90 flex-col justify-between p-6 z-30 shrink-0 select-none"
   >
     <!-- Haut : Logo Teranga Eats & Liens -->
     <div class="space-y-8">
       
-      <!-- Logo AYYOU officiel du dossier public -->
+      <!-- Logo officiel du Restaurant Le Teranga (Logo AYYOU retiré du sidebar) -->
       <div class="flex items-center justify-between">
         <a routerLink="/gerant/commandes" class="flex items-center gap-3 cursor-pointer select-none group">
-          <img
-            src="/images/logo-ayyou.png"
-            alt="Logo AYYOU"
-            class="h-10 w-auto object-contain transition-transform group-hover:scale-105"
-          />
-          <div class="flex flex-col">
-            <span class="text-base font-black text-slate-900 font-['Outfit'] tracking-tight">
-              Teranga Eats
+          <div class="w-10 h-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+            <img
+              src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150"
+              alt="Logo Le Teranga"
+              class="w-full h-full object-cover transition-transform group-hover:scale-105"
+            />
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="text-base font-black text-slate-900 font-['Outfit'] tracking-tight truncate">
+              Le Teranga
             </span>
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Espace Restaurant
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+              Restaurant
             </span>
           </div>
         </a>
-
-        <!-- Bouton fermer sur mobile -->
-        <button
-          type="button"
-          (click)="fermerMenuMobile()"
-          class="lg:hidden w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center cursor-pointer"
-        >
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
       </div>
 
       <!-- Liens de navigation principale du gérant -->
@@ -60,16 +43,25 @@
         @for (item of listeMenu; track item.code) {
           <a
             [routerLink]="item.chemin"
-            (click)="fermerMenuMobile()"
             [class]="estLienActif(item.chemin)
-              ? 'bg-[#E51824] text-white font-extrabold shadow-md shadow-red-500/25'
+              ? 'bg-[#E51824] text-white font-extrabold'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-bold'"
-            class="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm transition-all cursor-pointer group"
+            class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all cursor-pointer group"
           >
-            <i
-              [class]="item.icone + ' text-base w-5 text-center transition-transform group-hover:scale-110 ' + (estLienActif(item.chemin) ? 'text-white' : 'text-slate-400 group-hover:text-slate-800')"
-            ></i>
-            <span>{{ item.libelle }}</span>
+            <div class="flex items-center gap-3.5 min-w-0">
+              <i
+                [class]="item.icone + ' text-base w-5 text-center transition-transform group-hover:scale-110 ' + (estLienActif(item.chemin) ? 'text-white' : 'text-slate-400 group-hover:text-slate-800')"
+              ></i>
+              <span class="truncate">{{ item.libelle }}</span>
+            </div>
+            @if (item.badge && item.badge() > 0) {
+              <span
+                [class]="estLienActif(item.chemin) ? 'bg-white text-[#E51824]' : 'bg-[#E51824] text-white'"
+                class="px-2 py-0.5 rounded-full text-[10px] font-black shrink-0"
+              >
+                {{ item.badge() }}
+              </span>
+            }
           </a>
         }
       </nav>
@@ -103,34 +95,40 @@
   <!-- ========================================================================= -->
   <div class="flex-1 flex flex-col min-w-0 min-h-screen">
 
-    <!-- En-tête supérieur : Statut Ouvert/Fermé, Flamme commandes, Cloche & Son -->
-    <header class="h-20 px-4 sm:px-6 lg:px-10 bg-white/90 backdrop-blur-md border-b border-slate-200/70 sticky top-0 z-30 flex items-center justify-between gap-4">
+    <!-- En-tête supérieur : Identité restaurant, Statut Ouvert/Fermé, Cloche & Son -->
+    <header class="h-16 sm:h-20 px-3.5 sm:px-6 lg:px-10 bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-4 select-none">
       
-      <!-- Gauche : Burger mobile + Nom Restaurant & Switch Ouvert/Fermé -->
-      <div class="flex items-center gap-3 sm:gap-6 min-w-0">
-        <!-- Bouton burger mobile -->
-        <button
-          type="button"
-          (click)="basculerMenuMobile()"
-          class="lg:hidden w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-100"
-          aria-label="Ouvrir le menu"
-        >
-          <i class="fa-solid fa-bars text-sm"></i>
-        </button>
+      <!-- Gauche : Logo AYYOU sur mobile + Nom Restaurant & Switch Ouvert/Fermé (Burger supprimé) -->
+      <div class="flex items-center gap-2 sm:gap-5 min-w-0">
+        <!-- Logo officiel Le Teranga visible sur smartphone -->
+        <a routerLink="/gerant/commandes" class="lg:hidden shrink-0">
+          <div class="w-7.5 h-7.5 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+            <img
+              src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150"
+              alt="Logo Le Teranga"
+              class="w-full h-full object-cover"
+            />
+          </div>
+        </a>
 
-        <!-- Titre de l'établissement -->
-        <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit'] truncate">
-          Le Teranga
-        </h2>
+        <!-- Titre et sous-titre de l'établissement -->
+        <div class="flex flex-col min-w-0">
+          <h2 class="text-base sm:text-2xl font-black text-slate-900 font-['Outfit'] truncate leading-tight">
+            Le Teranga
+          </h2>
+          <span class="lg:hidden text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
+            Restaurant
+          </span>
+        </div>
 
         <!-- Séparateur vertical -->
         <div class="hidden sm:block h-6 w-px bg-slate-200"></div>
 
-        <!-- Switch OUVERT / FERMÉ conforme à la maquette -->
-        <div class="flex items-center gap-2 select-none">
+        <!-- Switch OUVERT / FERMÉ -->
+        <div class="flex items-center gap-1.5 sm:gap-2 select-none shrink-0 ml-0.5 sm:ml-0">
           <span
             [class]="estOuvert() ? 'text-emerald-600 font-black' : 'text-slate-400 font-bold'"
-            class="text-xs uppercase tracking-wider"
+            class="text-[10px] sm:text-xs uppercase tracking-wider"
           >
             {{ estOuvert() ? 'OUVERT' : 'FERMÉ' }}
           </span>
@@ -139,68 +137,226 @@
             type="button"
             (click)="basculerStatutRestaurant()"
             [class]="estOuvert() ? 'bg-emerald-500' : 'bg-slate-300'"
-            class="w-12 h-6 rounded-full transition-colors relative cursor-pointer p-0.5 shrink-0 shadow-2xs"
+            class="w-10 sm:w-12 h-5 sm:h-6 rounded-full transition-colors relative cursor-pointer p-0.5 shrink-0"
             title="Changer le statut d'ouverture"
           >
             <div
-              [class]="estOuvert() ? 'translate-x-6' : 'translate-x-0'"
-              class="w-5 h-5 rounded-full bg-white shadow-sm transition-transform"
+              [class]="estOuvert() ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'"
+              class="w-4 sm:w-5 h-4 sm:h-5 rounded-full bg-white transition-transform"
             ></div>
           </button>
         </div>
       </div>
 
-      <!-- Droite : Badge '🔥 12 commandes aujourd'hui' + Cloche + Sonnette -->
-      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <!-- Droite : Badge commandes (desktop seulement) + Cloche Notifications + Sonnette -->
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
         
-        <!-- Badge rouge/orange avec flamme -->
-        <div class="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-red-50 text-[#E51824] border border-red-100 text-xs font-black shadow-2xs select-none">
-          <i class="fa-solid fa-fire text-sm text-[#E51824]"></i>
+        <!-- Badge rouge/orange avec flamme (masqué sur mobile, visible à partir de sm) -->
+        <div class="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-red-50 text-[#E51824] border border-red-100 text-xs font-black select-none">
+          <i class="fa-solid fa-fire text-xs sm:text-sm text-[#E51824]"></i>
           <span>{{ totalCommandesJour() }} commandes aujourd'hui</span>
         </div>
 
-        <!-- Bouton Notifications (Cloche avec point rouge) -->
-        <button
-          type="button"
-          class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 flex items-center justify-center relative shadow-2xs transition-colors cursor-pointer"
-          title="Notifications"
-        >
-          <i class="fa-regular fa-bell text-sm"></i>
-          <span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#E51824] ring-2 ring-white"></span>
-        </button>
+        <!-- Bouton Notifications (Cloche) + Panneau déroulant -->
+        <div class="relative">
+          <button
+            type="button"
+            (click)="basculerPanneauNotifications()"
+            class="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 flex items-center justify-center relative transition-colors cursor-pointer"
+            [title]="nombreNotificationsNonLues() > 0 ? (nombreNotificationsNonLues() + ' nouvelle(s) notification(s)') : 'Notifications'"
+          >
+            <i class="fa-regular fa-bell text-xs sm:text-sm"></i>
+            @if (nombreNotificationsNonLues() > 0) {
+              <span class="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 w-2 h-2 rounded-full bg-[#E51824] ring-2 ring-white"></span>
+            }
+          </button>
+
+          <!-- PANNEAU DES NOTIFICATIONS (Flat design épuré, zéro ombre) -->
+          @if (panneauNotificationsOuvert()) {
+            <!-- Overlay invisible pour fermer en cliquant à l'extérieur -->
+            <div
+              class="fixed inset-0 z-40"
+              (click)="fermerPanneauNotifications()"
+            ></div>
+
+            <div
+              class="absolute right-0 top-full mt-2 w-76 sm:w-96 bg-white border border-slate-200 rounded-2xl z-50 overflow-hidden text-slate-800"
+            >
+              <!-- En-tête du panneau -->
+              <div class="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs sm:text-sm font-black text-slate-900 font-['Outfit']">
+                    Notifications
+                  </span>
+                  @if (nombreNotificationsNonLues() > 0) {
+                    <span class="px-2 py-0.5 rounded-full bg-[#E51824] text-white text-[10px] font-black">
+                      {{ nombreNotificationsNonLues() }}
+                    </span>
+                  }
+                </div>
+                <div class="flex items-center gap-2">
+                  @if (nombreNotificationsNonLues() > 0) {
+                    <button
+                      type="button"
+                      (click)="toutMarquerCommeLu()"
+                      class="text-[11px] font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                    >
+                      Tout marquer lu
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    (click)="fermerPanneauNotifications()"
+                    class="w-6 h-6 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 flex items-center justify-center text-xs transition cursor-pointer"
+                  >
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Liste des notifications -->
+              <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                @if (notifications().length === 0) {
+                  <div class="p-6 text-center text-xs text-slate-400 font-medium">
+                    Aucune notification pour le moment.
+                  </div>
+                }
+                @for (notif of notifications(); track notif.id) {
+                  <div
+                    [class]="notif.lue ? 'bg-white hover:bg-slate-50' : 'bg-red-50/40 hover:bg-red-50/70'"
+                    class="p-3 transition flex items-start gap-2.5 sm:gap-3 select-none"
+                  >
+                    <!-- Icône -->
+                    <div
+                      [class]="notif.lue ? 'bg-slate-100 text-slate-600' : 'bg-red-100 text-[#E51824]'"
+                      class="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center text-xs shrink-0 mt-0.5"
+                    >
+                      <i [class]="notif.type === 'COMMANDE_NOUVELLE' ? 'fa-solid fa-receipt' : 'fa-solid fa-bell'"></i>
+                    </div>
+
+                    <!-- Contenu -->
+                    <div class="flex-1 min-w-0 space-y-1">
+                      <div class="flex items-center justify-between gap-1">
+                        <span
+                          [class]="notif.lue ? 'text-slate-700 font-bold' : 'text-slate-900 font-black'"
+                          class="text-xs truncate"
+                        >
+                          {{ notif.titre }}
+                        </span>
+                        <span class="text-[10px] text-slate-400 shrink-0">
+                          {{ notif.heure }}
+                        </span>
+                      </div>
+
+                      <p class="text-[11px] text-slate-600 leading-snug">
+                        {{ notif.message }}
+                      </p>
+
+                      <!-- Actions : Écouter l'audio + Voir les commandes -->
+                      <div class="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          (click)="annoncerNotification(notif); $event.stopPropagation()"
+                          class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-black flex items-center gap-1.5 transition cursor-pointer"
+                          title="Énoncer cette notification à voix haute"
+                        >
+                          <i class="fa-solid fa-volume-high text-[10px] text-[#E51824]"></i>
+                          <span>Écouter</span>
+                        </button>
+
+                        <a
+                          routerLink="/gerant/commandes"
+                          (click)="marquerCommeLue(notif.id); fermerPanneauNotifications()"
+                          class="px-2 py-0.5 rounded-lg text-[#E51824] hover:bg-red-50 text-[10px] font-black transition cursor-pointer"
+                        >
+                          Voir
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Bas du panneau -->
+              <div class="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
+                <a
+                  routerLink="/gerant/commandes"
+                  (click)="fermerPanneauNotifications()"
+                  class="text-xs font-bold text-[#E51824] hover:underline"
+                >
+                  Accéder à l'espace commandes &rarr;
+                </a>
+              </div>
+            </div>
+          }
+        </div>
 
         <!-- Bouton Sonnette d'alerte (Haut-parleur) -->
         <button
           type="button"
           (click)="basculerSon()"
           [class]="sonActive() ? 'bg-slate-50 text-slate-700' : 'bg-red-50 text-[#E51824]'"
-          class="w-10 h-10 rounded-2xl border border-slate-200 hover:bg-slate-100 flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+          class="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl border border-slate-200 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
           [title]="sonActive() ? 'Couper le son des alertes' : 'Activer le son des alertes'"
         >
-          <i [class]="sonActive() ? 'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm'"></i>
+          <i [class]="sonActive() ? 'fa-solid fa-volume-high text-xs sm:text-sm' : 'fa-solid fa-volume-xmark text-xs sm:text-sm'"></i>
         </button>
 
       </div>
 
     </header>
 
-    <!-- Zone principale contenant les écrans de Teranga Eats -->
-    <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+    <!-- Zone principale contenant les écrans de Teranga Eats avec marge basse pour la bottom bar mobile -->
+    <main class="flex-1 p-3.5 sm:p-6 lg:p-8 pb-24 lg:pb-8">
       <router-outlet></router-outlet>
     </main>
 
-    <!-- Barre de navigation mobile inférieure (pour un accès rapide du gérant sur smartphone) -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 flex items-center justify-around px-2 shadow-lg select-none">
-      @for (item of listeMenu; track item.code) {
-        <a
-          [routerLink]="item.chemin"
-          [class]="estLienActif(item.chemin) ? 'text-[#E51824]' : 'text-slate-400 hover:text-slate-700'"
-          class="flex flex-col items-center justify-center gap-1 py-1 px-3 text-[11px] font-bold transition-colors cursor-pointer"
-        >
-          <i [class]="item.icone + ' text-lg'"></i>
-          <span class="text-[10px]">{{ item.libelle }}</span>
-        </a>
-      }
+    <!-- ========================================================================= -->
+    <!-- 3. BARRE DE NAVIGATION INFÉRIEURE MOBILE ULTRA-ERGONOMIQUE ET RESPONSIVE  -->
+    <!-- ========================================================================= -->
+    <nav
+      class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200/90 z-40 px-1 select-none"
+    >
+      <div class="grid grid-cols-5 h-full max-w-lg mx-auto">
+        @for (item of listeMenu; track item.code) {
+          <a
+            [routerLink]="item.chemin"
+            [class]="estLienActif(item.chemin)
+              ? 'text-[#E51824]'
+              : 'text-slate-400 hover:text-slate-700'"
+            class="relative flex flex-col items-center justify-center py-1 transition-all cursor-pointer group"
+          >
+            <!-- Indicateur supérieur actif -->
+            @if (estLienActif(item.chemin)) {
+              <div class="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#E51824] rounded-b-full"></div>
+            }
+
+            <!-- Conteneur d'icône avec badge de notification -->
+            <div class="relative flex items-center justify-center h-6 w-6 mb-0.5">
+              <i
+                [class]="item.icone + ' text-base transition-transform ' + (estLienActif(item.chemin) ? 'scale-110 font-bold text-[#E51824]' : 'text-slate-400 group-hover:text-slate-600')"
+              ></i>
+
+              <!-- Badge dynamique de commandes nouvelles -->
+              @if (item.badge && item.badge() > 0) {
+                <span
+                  class="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-[#E51824] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white animate-pulse"
+                >
+                  {{ item.badge() }}
+                </span>
+              }
+            </div>
+
+            <!-- Libellé optimisé pour smartphone sans saut de ligne indésirable -->
+            <span
+              [class]="estLienActif(item.chemin) ? 'font-extrabold text-[#E51824]' : 'font-semibold text-slate-500'"
+              class="text-[10px] tracking-tight truncate max-w-full px-0.5 leading-tight text-center"
+            >
+              {{ item.libelleMobile }}
+            </span>
+          </a>
+        }
+      </div>
     </nav>
 
   </div>

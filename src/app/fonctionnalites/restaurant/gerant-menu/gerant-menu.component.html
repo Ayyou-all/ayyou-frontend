@@ -1,8 +1,8 @@
-<div class="space-y-6 pb-28">
+<div class="space-y-6 pb-12">
   <!-- Toast notification -->
   @if (notificationSucces()) {
     <div
-      class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-gray-700 animate-fade-in"
+      class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl border border-gray-700 animate-fade-in"
     >
       <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
       <span class="text-sm font-medium">{{ notificationSucces() }}</span>
@@ -10,7 +10,7 @@
   }
 
   <!-- En-tête mobile spécifique à la gestion du menu (sur desktop c'est dans le header ou en haut) -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-100">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-lg">
         <i class="fa-solid fa-utensils"></i>
@@ -49,7 +49,7 @@
       <button
         type="button"
         (click)="ouvrirAjoutPlat()"
-        class="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-sm rounded-xl shadow-md shadow-red-500/20 transition whitespace-nowrap"
+        class="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-sm rounded-xl transition whitespace-nowrap"
       >
         <i class="fa-solid fa-plus text-xs"></i>
         <span>Ajouter un plat</span>
@@ -77,7 +77,7 @@
     <div class="space-y-3">
       @for (plat of platsPrincipaux(); track plat.identifiant) {
         <div
-          class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+          class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 hover:border-gray-200 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
           [class.opacity-75]="!plat.estDisponible"
         >
           <!-- Info Plat + Photo -->
@@ -85,7 +85,7 @@
             <img
               [src]="plat.photoUrl"
               [alt]="plat.nom"
-              class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover flex-shrink-0 shadow-inner border border-gray-100"
+              class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover flex-shrink-0 border border-gray-100"
             />
             <div class="space-y-1 min-w-0">
               <h3 class="font-extrabold text-gray-900 text-base truncate">{{ plat.nom }}</h3>
@@ -136,7 +136,7 @@
                   [class]="plat.estDisponible ? 'bg-emerald-500' : 'bg-gray-300'"
                 >
                   <span
-                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out"
                     [class]="plat.estDisponible ? 'translate-x-5' : 'translate-x-0'"
                   ></span>
                 </button>
@@ -192,7 +192,7 @@
     <div class="space-y-3">
       @for (boisson of boissons(); track boisson.identifiant) {
         <div
-          class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-md transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+          class="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 hover:border-gray-200 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
           [class.opacity-75]="!boisson.estDisponible"
         >
           <!-- Info Boisson + Photo -->
@@ -200,7 +200,7 @@
             <img
               [src]="boisson.photoUrl"
               [alt]="boisson.nom"
-              class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover flex-shrink-0 shadow-inner border border-gray-100"
+              class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover flex-shrink-0 border border-gray-100"
             />
             <div class="space-y-1 min-w-0">
               <h3 class="font-extrabold text-gray-900 text-base truncate">{{ boisson.nom }}</h3>
@@ -234,7 +234,7 @@
                   [class]="boisson.estDisponible ? 'bg-emerald-500' : 'bg-gray-300'"
                 >
                   <span
-                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out"
                     [class]="boisson.estDisponible ? 'translate-x-5' : 'translate-x-0'"
                   ></span>
                 </button>
@@ -270,45 +270,10 @@
     </div>
   </section>
 
-  <!-- BARRE FLOTTANTE INFÉRIEURE (Image 2) -->
-  <div class="fixed bottom-4 left-4 right-4 sm:left-72 sm:right-8 z-30">
-    <div class="bg-[#24292e] text-white rounded-2xl px-5 py-4 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-gray-700/50">
-      <!-- Statistiques gauche -->
-      <div class="flex items-center gap-6 divide-x divide-gray-700">
-        <div>
-          <div class="text-[10px] font-extrabold text-gray-400 tracking-wider uppercase">TOTAL PLATS</div>
-          <div class="text-lg font-black text-white">24 articles</div>
-        </div>
-        <div class="pl-6">
-          <div class="text-[10px] font-extrabold text-gray-400 tracking-wider uppercase">EN RUPTURE</div>
-          <div class="text-lg font-black text-red-400">{{ enRuptureNombre() }} plats</div>
-        </div>
-      </div>
-
-      <!-- Actions droite -->
-      <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-        <button
-          type="button"
-          (click)="ouvrirApercuMenuClient()"
-          class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-xs font-bold border border-gray-600 transition"
-        >
-          Aperçu Menu Client
-        </button>
-        <button
-          type="button"
-          (click)="exporterCarte()"
-          class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-white hover:bg-gray-100 active:scale-95 text-gray-900 text-xs font-black shadow transition"
-        >
-          Exporter la carte
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- MODALE : AJOUTER UN PLAT -->
   @if (modaleAjoutOuverte()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-scale-up border border-gray-100">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 animate-scale-up border border-gray-100">
         <div class="flex items-center justify-between border-b pb-4">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
@@ -375,13 +340,72 @@
             ></textarea>
           </div>
 
+          <!-- Photo du plat (Upload d'image) -->
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">URL de la photo</label>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">
+              Photo du plat <span class="text-gray-400 font-normal">(Optionnel)</span>
+            </label>
+
+            @if (nouvellePhoto()) {
+              <!-- Prévisualisation de l'image sélectionnée -->
+              <div class="relative flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-200">
+                <img
+                  [src]="nouvellePhoto()"
+                  alt="Aperçu du plat"
+                  class="w-16 h-16 rounded-xl object-cover border border-gray-200 shrink-0"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-gray-900 truncate">
+                    {{ nomFichierPhoto() || 'Photo importée' }}
+                  </div>
+                  <div class="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                    <i class="fa-solid fa-circle-check text-[10px]"></i>
+                    <span>Image prête</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    (click)="inputPhotoAjout.click()"
+                    class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 text-xs font-bold cursor-pointer transition"
+                  >
+                    Changer
+                  </button>
+                  <button
+                    type="button"
+                    (click)="reinitialiserPhoto()"
+                    class="p-1.5 rounded-lg bg-white border border-gray-200 text-red-500 hover:bg-red-50 text-xs cursor-pointer transition"
+                    title="Supprimer la photo"
+                  >
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- Zone cliquable pour importer l'image -->
+              <div
+                (click)="inputPhotoAjout.click()"
+                class="border-2 border-dashed border-gray-200 hover:border-red-400 hover:bg-red-50/20 rounded-2xl p-5 text-center cursor-pointer transition group"
+              >
+                <div class="w-10 h-10 rounded-full bg-red-50 text-[#E51824] flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                  <i class="fa-solid fa-cloud-arrow-up text-base"></i>
+                </div>
+                <div class="text-xs font-bold text-gray-800">
+                  Cliquez pour importer une photo
+                </div>
+                <div class="text-[11px] text-gray-400 mt-0.5">
+                  PNG, JPG ou WEBP depuis votre appareil
+                </div>
+              </div>
+            }
+
             <input
-              type="text"
-              [ngModel]="nouvellePhoto()"
-              (ngModelChange)="nouvellePhoto.set($event)"
-              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none text-xs"
+              #inputPhotoAjout
+              type="file"
+              accept="image/*"
+              (change)="surFichierPhotoChoisi($event)"
+              class="hidden"
             />
           </div>
         </div>
@@ -398,7 +422,7 @@
             type="button"
             (click)="creerPlat()"
             [disabled]="!nouveauNom().trim()"
-            class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black text-xs shadow-md shadow-red-500/20"
+            class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black text-xs"
           >
             Enregistrer le plat
           </button>
@@ -410,7 +434,7 @@
   <!-- MODALE : ÉDITER UN PLAT -->
   @if (modaleEditionOuverte() && platEnEdition(); as plat) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-scale-up border border-gray-100">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 animate-scale-up border border-gray-100">
         <div class="flex items-center justify-between border-b pb-4">
           <h3 class="text-lg font-black text-gray-900">Modifier : {{ plat.nom }}</h3>
           <button
@@ -449,6 +473,35 @@
               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 outline-none"
             ></textarea>
           </div>
+
+          <!-- Photo du plat (Upload dans l'édition) -->
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">Photo du plat</label>
+            <div class="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-200">
+              <img
+                [src]="plat.photoUrl"
+                alt="Aperçu plat"
+                class="w-14 h-14 rounded-xl object-cover border border-gray-200 shrink-0"
+              />
+              <div class="flex-1 min-w-0">
+                <span class="text-xs text-gray-600 block">Changer la photo du plat</span>
+                <button
+                  type="button"
+                  (click)="inputPhotoEdition.click()"
+                  class="mt-1 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 text-xs font-bold cursor-pointer transition"
+                >
+                  <i class="fa-solid fa-camera mr-1 text-gray-400"></i> Importer une photo
+                </button>
+              </div>
+              <input
+                #inputPhotoEdition
+                type="file"
+                accept="image/*"
+                (change)="surFichierPhotoEdition($event)"
+                class="hidden"
+              />
+            </div>
+          </div>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-4 border-t">
@@ -462,7 +515,7 @@
           <button
             type="button"
             (click)="sauvegarderPlat()"
-            class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md shadow-red-500/20"
+            class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs"
           >
             Mettre à jour
           </button>
@@ -474,7 +527,7 @@
   <!-- MODALE : APERÇU DU MENU CLIENT -->
   @if (modaleApercuClientOuverte()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col border border-gray-100 overflow-hidden">
         <div class="p-5 border-b flex items-center justify-between bg-gray-50">
           <div>
             <h3 class="font-black text-gray-900 text-base">Aperçu Menu Client — Le Teranga</h3>
@@ -483,7 +536,7 @@
           <button
             type="button"
             (click)="modaleApercuClientOuverte.set(false)"
-            class="w-8 h-8 rounded-full bg-white hover:bg-gray-200 text-gray-500 flex items-center justify-center shadow-sm"
+            class="w-8 h-8 rounded-full bg-white hover:bg-gray-200 text-gray-500 flex items-center justify-center"
           >
             <i class="fa-solid fa-xmark text-sm"></i>
           </button>

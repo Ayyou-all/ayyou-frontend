@@ -50,7 +50,7 @@ export class TableauDeBordComponent {
   readonly listeIndicateurs: CarteIndicateurSuperadmin[] = [
     {
       titre: "Chiffre d'affaires",
-      valeur: '24 850,00 €',
+      valeur: '16 300 000 FCFA',
       icone: 'fa-solid fa-coins',
       classeCouleurIcone: 'text-emerald-500',
       classeFondIcone: 'bg-emerald-50',

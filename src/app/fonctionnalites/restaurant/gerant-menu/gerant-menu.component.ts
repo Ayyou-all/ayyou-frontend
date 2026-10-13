@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, HostListener, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -29,13 +29,21 @@ export class GerantMenuComponent {
   // Notification Toast
   readonly notificationSucces = signal<string | null>(null);
 
+  @HostListener('document:keydown.escape')
+  surEchap(): void {
+    this.modaleAjoutOuverte.set(false);
+    this.modaleEditionOuverte.set(false);
+    this.modaleApercuClientOuverte.set(false);
+  }
+
   // Modale d'ajout de plat
   readonly modaleAjoutOuverte = signal<boolean>(false);
   readonly nouveauNom = signal<string>('');
   readonly nouvelleDescription = signal<string>('');
   readonly nouveauPrix = signal<number>(4500);
   readonly nouvelleCategorie = signal<CategorieMenuGerant>('PLATS_PRINCIPAUX');
-  readonly nouvellePhoto = signal<string>('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300');
+  readonly nouvellePhoto = signal<string>('');
+  readonly nomFichierPhoto = signal<string>('');
 
   // Modale d'édition de plat
   readonly platEnEdition = signal<PlatGerant | null>(null);
@@ -158,7 +166,72 @@ export class GerantMenuComponent {
   ouvrirAjoutPlat(): void {
     this.nouveauNom.set('');
     this.nouvelleDescription.set('');
+    this.nouvellePhoto.set('');
+    this.nomFichierPhoto.set('');
     this.modaleAjoutOuverte.set(true);
+  }
+
+  /**
+   * Gère le fichier image sélectionné lors de l'ajout d'un plat (limité à 5 Mo).
+   */
+  surFichierPhotoChoisi(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const fichier = input.files[0];
+      const TAILLE_MAX_OCTETS = 5 * 1024 * 1024; // 5 Mo
+
+      if (fichier.size > TAILLE_MAX_OCTETS) {
+        this.notificationSucces.set("⚠️ L'image sélectionnée dépasse la taille maximale autorisée de 5 Mo.");
+        input.value = '';
+        setTimeout(() => this.notificationSucces.set(null), 4000);
+        return;
+      }
+
+      const lecteur = new FileReader();
+      lecteur.onload = (e) => {
+        if (e.target?.result) {
+          this.nouvellePhoto.set(e.target.result as string);
+          this.nomFichierPhoto.set(fichier.name);
+        }
+      };
+      lecteur.readAsDataURL(fichier);
+    }
+  }
+
+  /**
+   * Réinitialise la photo sélectionnée pour l'ajout.
+   */
+  reinitialiserPhoto(): void {
+    this.nouvellePhoto.set('');
+    this.nomFichierPhoto.set('');
+  }
+
+  /**
+   * Gère le fichier image lors de l'édition d'un plat (limité à 5 Mo).
+   */
+  surFichierPhotoEdition(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const fichier = input.files[0];
+      const TAILLE_MAX_OCTETS = 5 * 1024 * 1024; // 5 Mo
+
+      if (fichier.size > TAILLE_MAX_OCTETS) {
+        this.notificationSucces.set("⚠️ L'image sélectionnée dépasse la taille maximale autorisée de 5 Mo.");
+        input.value = '';
+        setTimeout(() => this.notificationSucces.set(null), 4000);
+        return;
+      }
+
+      const lecteur = new FileReader();
+      lecteur.onload = (e) => {
+        if (e.target?.result && this.platEnEdition()) {
+          this.platEnEdition.update((p) =>
+            p ? { ...p, photoUrl: e.target?.result as string } : null
+          );
+        }
+      };
+      lecteur.readAsDataURL(fichier);
+    }
   }
 
   /**
@@ -175,7 +248,7 @@ export class GerantMenuComponent {
       prix: this.nouveauPrix(),
       categorie: this.nouvelleCategorie(),
       estDisponible: true,
-      photoUrl: this.nouvellePhoto()
+      photoUrl: this.nouvellePhoto() || '/images/plat-accueil.jpg'
     };
 
     this.listePlats.update((liste) => [nouveau, ...liste]);

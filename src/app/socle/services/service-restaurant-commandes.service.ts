@@ -4,6 +4,17 @@ export type ColonneKanbanGerant = 'NOUVELLES' | 'PREPARATION' | 'PRETES';
 export type TypeCommande = 'LIVRAISON' | 'EMPORTÉ' | 'SUR PLACE';
 export type StatutHistorique = 'LIVRÉE' | 'ANNULÉE' | 'EN_COURS';
 
+export interface NotificationGerant {
+  id: string;
+  titre: string;
+  message: string;
+  texteVocal: string;
+  heure: string;
+  lue: boolean;
+  type: 'COMMANDE_NOUVELLE' | 'COMMANDE_PRETE' | 'LIVREUR_ARRIVE';
+  numeroCommande?: string;
+}
+
 export interface ArticleCommandeGerant {
   nom: string;
   quantite: number;
@@ -165,6 +176,45 @@ export class ServiceRestaurantCommandesService {
     }
   ]);
 
+  // Liste des notifications du gérant (commandes entrantes, alertes, etc.)
+  readonly notifications = signal<NotificationGerant[]>([
+    {
+      id: 'notif-1246',
+      titre: 'Nouvelle commande #1246',
+      message: 'Fatou Diop • 1x Mafé Poulet • 4 200 FCFA • Livraison rapide',
+      texteVocal: "Nouvelle commande numéro 1246. Fatou Diop, un Mafé Poulet, en livraison rapide.",
+      heure: "À l'instant",
+      lue: false,
+      type: 'COMMANDE_NOUVELLE',
+      numeroCommande: '#1246'
+    },
+    {
+      id: 'notif-1245',
+      titre: 'Nouvelle commande #1245',
+      message: 'Mamadou Faye • 2x Thiéboudienne, 1x Bissap • 8 500 FCFA',
+      texteVocal: "Nouvelle commande numéro 1245. Mamadou Faye, deux Thiéboudienne et un Bissap.",
+      heure: 'Il y a 4 min',
+      lue: false,
+      type: 'COMMANDE_NOUVELLE',
+      numeroCommande: '#1245'
+    },
+    {
+      id: 'notif-1240',
+      titre: 'Commande #1240 prête',
+      message: 'Prête pour le retrait par le livreur Moussa',
+      texteVocal: 'La commande numéro 1240 est prête pour le retrait par le livreur.',
+      heure: 'Il y a 10 min',
+      lue: true,
+      type: 'COMMANDE_PRETE',
+      numeroCommande: '#1240'
+    }
+  ]);
+
+  // Nombre de notifications non lues
+  readonly nombreNotificationsNonLues = computed(() =>
+    this.notifications().filter((n) => !n.lue).length
+  );
+
   // Colonnes Kanban filtrées
   readonly commandesNouvelles = computed(() =>
     this.commandesKanban().filter((c) => c.statut === 'NOUVELLES')
@@ -249,31 +299,86 @@ export class ServiceRestaurantCommandesService {
   }
 
   /**
-   * Remet le colis au livreur / Termine la commande :
-   * Elle quitte le Kanban et part DIRECTEMENT dans l'historique avec le statut LIVRÉE.
+   * Remet le colis au livreur :
+   * - Si LIVRAISON : la commande quitte la cuisine et part dans l'historique en statut EN_COURS (en cours de livraison par le coursier).
+   *   Elle ne passera à LIVRÉE qu'après la validation effective du code PIN par le livreur auprès du client.
+   * - Si SUR_PLACE ou A_EMPORTER : remise directe au client en main propre -> statut LIVRÉE.
    */
-  remettreAuLivreurEtTerminer(numero: string): void {
+  remettreAuLivreur(numero: string): void {
     const cmd = this.commandesKanban().find((c) => c.numero === numero);
     if (!cmd) return;
 
     // Retirer du Kanban
     this.commandesKanban.update((liste) => liste.filter((c) => c.numero !== numero));
 
-    // Ajouter directement dans l'historique
+    // Ajouter dans l'historique avec le statut métier approprié
     const dateNow = new Date();
     const heureStr = `${dateNow.getHours().toString().padStart(2, '0')}:${dateNow.getMinutes().toString().padStart(2, '0')}`;
     const articlesStr = cmd.articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
 
-    const ligneTerminee: LigneHistoriqueGerant = {
+    // Pour une livraison par coursier, le statut reste EN_COURS jusqu'à remise au client
+    const statutInitial: StatutHistorique =
+      cmd.typeLivraison === 'LIVRAISON' ? 'EN_COURS' : 'LIVRÉE';
+
+    const ligneHistorique: LigneHistoriqueGerant = {
       numero: cmd.numero,
       heure: heureStr,
       clientNom: cmd.clientNom,
-      type: cmd.typeLivraison === 'LIVRAISON' ? 'LIVRAISON' : cmd.typeLivraison === 'SUR_PLACE' ? 'SUR PLACE' : 'EMPORTÉ',
+      type:
+        cmd.typeLivraison === 'LIVRAISON'
+          ? 'LIVRAISON'
+          : cmd.typeLivraison === 'SUR_PLACE'
+            ? 'SUR PLACE'
+            : 'EMPORTÉ',
       articlesResume: articlesStr,
-      statut: 'LIVRÉE',
+      statut: statutInitial,
       montantTotal: cmd.totalValeurNumerique
     };
 
-    this.historiqueCommandes.update((hist) => [ligneTerminee, ...hist]);
+    this.historiqueCommandes.update((hist) => [ligneHistorique, ...hist]);
+  }
+
+  /**
+   * Alias de rétrocompatibilité préservant les appels existants
+   */
+  remettreAuLivreurEtTerminer(numero: string): void {
+    this.remettreAuLivreur(numero);
+  }
+
+  /**
+   * Marque la commande comme définitivement livrée dans l'historique après validation du code PIN par le livreur.
+   */
+  marquerCommandeLivreeParLivreur(numeroOuId: string): void {
+    const numeroNormalise = numeroOuId.startsWith('#') ? numeroOuId : `#${numeroOuId}`;
+    this.historiqueCommandes.update((liste) =>
+      liste.map((c) =>
+        c.numero === numeroNormalise || c.numero === numeroOuId
+          ? { ...c, statut: 'LIVRÉE' as const }
+          : c
+      )
+    );
+  }
+
+  /**
+   * Marque une notification spécifique comme lue.
+   */
+  marquerNotificationCommeLue(id: string): void {
+    this.notifications.update((liste) =>
+      liste.map((n) => (n.id === id ? { ...n, lue: true } : n))
+    );
+  }
+
+  /**
+   * Marque toutes les notifications comme lues.
+   */
+  toutMarquerCommeLu(): void {
+    this.notifications.update((liste) => liste.map((n) => ({ ...n, lue: true })));
+  }
+
+  /**
+   * Ajoute une nouvelle notification en tête de liste.
+   */
+  ajouterNotification(notif: NotificationGerant): void {
+    this.notifications.update((liste) => [notif, ...liste]);
   }
 }

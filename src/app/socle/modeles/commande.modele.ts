@@ -46,4 +46,5 @@ export interface CommandeClient {
   messageProximite?: string; // Ex: "LE LIVREUR EST PROCHE"
   articles: ArticleCommande[];
   estEnCours: boolean;
+  sourceVideoId?: string; // Attribution commerciale pour le studio vidéo
 }

@@ -170,6 +170,13 @@ export class ServiceCommandesService {
   }
 
   /**
+   * Ajoute une nouvelle commande dans la liste des commandes du client.
+   */
+  ajouterCommande(commande: CommandeClient): void {
+    this.listeCommandes.update((cmds) => [commande, ...cmds]);
+  }
+
+  /**
    * Ferme l'écran de livraison validée.
    */
   fermerValidationLivraison(): void {

@@ -42,47 +42,103 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
             />
           </div>
           <div class="flex-1 min-w-0">
-            <h2 class="text-lg font-extrabold text-slate-900 truncate">
-              {{ serviceAuthentification.utilisateurConnecte()?.prenom }} {{ serviceAuthentification.utilisateurConnecte()?.nom }}
-            </h2>
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg font-extrabold text-slate-900 truncate">
+                {{ serviceAuthentification.utilisateurConnecte()?.prenom }} {{ serviceAuthentification.utilisateurConnecte()?.nom }}
+              </h2>
+              @if (serviceAuthentification.estGerant()) {
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-700">Gérant</span>
+              } @else if (serviceAuthentification.estLivreur()) {
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">Livreur</span>
+              } @else if (serviceAuthentification.estAdministrateur()) {
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white">Admin</span>
+              } @else {
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">Client</span>
+              }
+            </div>
             <div class="text-xs text-slate-500">{{ serviceAuthentification.utilisateurConnecte()?.courriel }}</div>
             <div class="text-xs text-slate-500">{{ serviceAuthentification.utilisateurConnecte()?.telephone }}</div>
           </div>
         </div>
 
-        <!-- Menu des options et accès pro -->
+        <!-- Menu des options et accès pro sécurisé selon le rôle -->
         <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs space-y-2">
-          <a
-            routerLink="/livreur"
-            class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-slate-100"
-          >
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-red-50 text-[#E51824] flex items-center justify-center">
-                <i class="fa-solid fa-motorcycle"></i>
+          
+          <!-- Accès 1 : Espace Gérant Restaurant (Exclusivement pour RESTAURANT) -->
+          @if (serviceAuthentification.estGerant()) {
+            <a
+              routerLink="/gerant"
+              class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-orange-200/60 bg-orange-50/20"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-orange-100 text-[#E51824] flex items-center justify-center">
+                  <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div>
+                  <span class="block text-slate-900">Espace Gérant Restaurant</span>
+                  <span class="block text-xs font-normal text-slate-500">Gérer les commandes, le menu et le studio</span>
+                </div>
               </div>
-              <div>
-                <span class="block text-slate-900">Espace Livreur</span>
-                <span class="block text-xs font-normal text-slate-400">Gérer mes courses et mes gains</span>
-              </div>
-            </div>
-            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
-          </a>
+              <i class="fa-solid fa-chevron-right text-xs text-orange-500"></i>
+            </a>
+          }
 
-          <a
-            routerLink="/administration"
-            class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-slate-100"
-          >
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center">
-                <i class="fa-solid fa-shield-halved"></i>
+          <!-- Accès 2 : Espace Livreur (Exclusivement pour LIVREUR) -->
+          @if (serviceAuthentification.estLivreur()) {
+            <a
+              routerLink="/livreur"
+              class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-blue-200/60 bg-blue-50/20"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                  <i class="fa-solid fa-motorcycle"></i>
+                </div>
+                <div>
+                  <span class="block text-slate-900">Espace Livreur</span>
+                  <span class="block text-xs font-normal text-slate-500">Gérer mes courses et mes gains</span>
+                </div>
               </div>
-              <div>
-                <span class="block text-slate-900">Espace Superadmin</span>
-                <span class="block text-xs font-normal text-slate-400">Tableau de bord & validations de partenaires</span>
+              <i class="fa-solid fa-chevron-right text-xs text-blue-500"></i>
+            </a>
+          }
+
+          <!-- Accès 3 : Espace Superadmin (Exclusivement pour ADMINISTRATEUR) -->
+          @if (serviceAuthentification.estAdministrateur()) {
+            <a
+              routerLink="/administration"
+              class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-slate-200 bg-slate-50/50"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                  <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                  <span class="block text-slate-900">Espace Superadmin</span>
+                  <span class="block text-xs font-normal text-slate-500">Tableau de bord & validations de partenaires</span>
+                </div>
               </div>
-            </div>
-            <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
-          </a>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
+            </a>
+          }
+
+          <!-- Options Client (Commandes & Historique pour les clients réguliers) -->
+          @if (serviceAuthentification.estClient()) {
+            <a
+              routerLink="/commandes"
+              class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-slate-100"
+            >
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-rose-50 text-[#E51824] flex items-center justify-center">
+                  <i class="fa-solid fa-receipt"></i>
+                </div>
+                <div>
+                  <span class="block text-slate-900">Mes Commandes</span>
+                  <span class="block text-xs font-normal text-slate-400">Suivre et consulter l'historique de mes repas</span>
+                </div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
+            </a>
+          }
 
           <!-- Déconnexion -> Retour au Mode Visiteur -->
           <button
