@@ -67,9 +67,10 @@
     </div>
     <button
       type="button"
-      class="text-xs font-bold text-[#E51824] hover:underline transition cursor-pointer"
+      (click)="afficherNotification('Accès aux 12 vidéos publiées du restaurant Le Teranga')"
+      class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-xs shadow-md shadow-red-500/20 transition cursor-pointer select-none"
     >
-      Modifier l'ordre
+      Mes vidéos
     </button>
   </div>
 
@@ -367,6 +368,18 @@
           </p>
         </div>
 
+      </div>
+
+      <!-- BOUTON PUBLIER CENTRÉ (CONFORME À L'IMAGE DU GÉRANT) -->
+      <div class="flex justify-center pt-1 pb-2">
+        <button
+          type="button"
+          (click)="publierMaintenant()"
+          class="w-full sm:w-80 py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-sm shadow-xl shadow-red-500/25 flex items-center justify-center gap-2.5 transition cursor-pointer select-none group"
+        >
+          <i class="fa-solid fa-video text-xs"></i>
+          <span>Publier</span>
+        </button>
       </div>
 
     </div>
