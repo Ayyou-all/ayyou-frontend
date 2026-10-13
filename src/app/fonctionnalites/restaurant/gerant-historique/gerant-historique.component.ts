@@ -1,20 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-
-export type TypeCommande = 'LIVRAISON' | 'EMPORTÉ' | 'SUR PLACE';
-export type StatutHistorique = 'LIVRÉE' | 'ANNULÉE' | 'EN_COURS';
-
-export interface LigneHistoriqueGerant {
-  numero: string;
-  heure: string;
-  clientNom: string;
-  type: TypeCommande;
-  articlesResume: string;
-  statut: StatutHistorique;
-  montantTotal: number;
-}
+import {
+  LigneHistoriqueGerant,
+  ServiceRestaurantCommandesService
+} from '../../../socle/services/service-restaurant-commandes.service';
 
 @Component({
   selector: 'app-gerant-historique',
@@ -23,6 +14,8 @@ export interface LigneHistoriqueGerant {
   templateUrl: './gerant-historique.component.html'
 })
 export class GerantHistoriqueComponent {
+  private readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
+
   // Date sélectionnée
   readonly dateSelectionnee = signal<string>("Aujourd'hui, 24 Mai 2024");
 
@@ -42,118 +35,8 @@ export class GerantHistoriqueComponent {
   readonly pageActuelle = signal<number>(1);
   readonly elementsParPage = 5;
 
-  // Données de l'historique (exactes à l'Image 3)
-  readonly listeCommandes = signal<LigneHistoriqueGerant[]>([
-    {
-      numero: '#1245',
-      heure: '14:20',
-      clientNom: 'Mamadou Faye',
-      type: 'LIVRAISON',
-      articlesResume: '2x Thieboudienne, 1x Bissap',
-      statut: 'LIVRÉE',
-      montantTotal: 8500
-    },
-    {
-      numero: '#1244',
-      heure: '14:05',
-      clientNom: 'Aminata Sow',
-      type: 'EMPORTÉ',
-      articlesResume: '1x Yassa Poulet, 1x Coca',
-      statut: 'ANNULÉE',
-      montantTotal: 4800
-    },
-    {
-      numero: '#1243',
-      heure: '13:45',
-      clientNom: 'Moussa Ndoye',
-      type: 'LIVRAISON',
-      articlesResume: '3x Mafe Viande, 2x Bouye',
-      statut: 'LIVRÉE',
-      montantTotal: 15200
-    },
-    {
-      numero: '#1242',
-      heure: '13:30',
-      clientNom: 'Inconnu (Invité)',
-      type: 'SUR PLACE',
-      articlesResume: "1x Grillades Mixte, 1x Jus d'Orange",
-      statut: 'LIVRÉE',
-      montantTotal: 9000
-    },
-    {
-      numero: '#1241',
-      heure: '12:15',
-      clientNom: 'Fatou Camara',
-      type: 'LIVRAISON',
-      articlesResume: '4x Pastels Viande, 4x Pastels Poisson',
-      statut: 'LIVRÉE',
-      montantTotal: 6000
-    },
-    // Commandes page 2 & 3 pour simuler les 12 commandes
-    {
-      numero: '#1240',
-      heure: '12:00',
-      clientNom: 'Ousmane Ba',
-      type: 'LIVRAISON',
-      articlesResume: '2x Thieboudienne Penda Mbaye, 2x Bissap',
-      statut: 'LIVRÉE',
-      montantTotal: 12400
-    },
-    {
-      numero: '#1239',
-      heure: '11:45',
-      clientNom: 'Seydou Kane',
-      type: 'EMPORTÉ',
-      articlesResume: '1x Soupou Kandja',
-      statut: 'LIVRÉE',
-      montantTotal: 5000
-    },
-    {
-      numero: '#1238',
-      heure: '11:30',
-      clientNom: 'Aïssatou Diallo',
-      type: 'LIVRAISON',
-      articlesResume: '2x Yassa Guinar, 2x Dibi Agneau',
-      statut: 'LIVRÉE',
-      montantTotal: 18600
-    },
-    {
-      numero: '#1237',
-      heure: '11:10',
-      clientNom: 'Cheikh Tidiane',
-      type: 'SUR PLACE',
-      articlesResume: '1x Riz Gras, 1x Bouye',
-      statut: 'LIVRÉE',
-      montantTotal: 5500
-    },
-    {
-      numero: '#1236',
-      heure: '10:50',
-      clientNom: 'Mariama Ndiaye',
-      type: 'LIVRAISON',
-      articlesResume: '1x Dibi Poulet, 1x Bissap',
-      statut: 'LIVRÉE',
-      montantTotal: 6500
-    },
-    {
-      numero: '#1235',
-      heure: '10:30',
-      clientNom: 'Abdoulaye Wade',
-      type: 'LIVRAISON',
-      articlesResume: '1x Cothi Boulette, 1x Gingembre',
-      statut: 'LIVRÉE',
-      montantTotal: 5200
-    },
-    {
-      numero: '#1234',
-      heure: '10:00',
-      clientNom: 'Rokhaya Seck',
-      type: 'EMPORTÉ',
-      articlesResume: '2x Thieboudienne Blanc',
-      statut: 'LIVRÉE',
-      montantTotal: 5800
-    }
-  ]);
+  // Données de l'historique connectées en temps réel au service central
+  readonly listeCommandes = computed(() => this.serviceRestaurant.historiqueCommandes());
 
   // Commandes filtrées
   readonly commandesFiltrees = computed(() => {
@@ -176,7 +59,7 @@ export class GerantHistoriqueComponent {
 
   // Pagination dynamique
   readonly nombrePages = computed(() =>
-    Math.ceil(this.commandesFiltrees().length / this.elementsParPage)
+    Math.ceil(this.commandesFiltrees().length / this.elementsParPage) || 1
   );
 
   readonly commandesPaginees = computed(() => {
@@ -184,9 +67,9 @@ export class GerantHistoriqueComponent {
     return this.commandesFiltrees().slice(debut, debut + this.elementsParPage);
   });
 
-  // Métriques du résumé du jour
-  readonly totalCommandesJour = computed(() => 12);
-  readonly chiffreAffairesJour = computed(() => 102500);
+  // Métriques du résumé du jour en temps réel
+  readonly totalCommandesJour = computed(() => this.serviceRestaurant.totalCommandesJour());
+  readonly chiffreAffairesJour = computed(() => this.serviceRestaurant.chiffreAffairesJour());
 
   changerPage(page: number): void {
     if (page >= 1 && page <= this.nombrePages()) {

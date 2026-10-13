@@ -1,32 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-
-export type ColonneKanbanGerant = 'NOUVELLES' | 'PREPARATION' | 'PRETES';
-
-export interface ArticleCommandeGerant {
-  nom: string;
-  quantite: number;
-}
-
-export interface CommandeKanban {
-  numero: string; // ex: '#1245'
-  tempsEcouleOuRestant: string; // ex: 'Il y a 2 min', '12:45'
-  estTempsRestant?: boolean;
-  totalMontant: string;
-  totalValeurNumerique: number;
-  typeLivraison: 'LIVRAISON' | 'SUR_PLACE' | 'A_EMPORTER';
-  statut: ColonneKanbanGerant;
-  articles: ArticleCommandeGerant[];
-  remarqueClient?: string;
-  coursierNom?: string;
-  coursierVehicule?: string;
-  coursierPhoto?: string;
-  coursierArriveeMinutes?: number;
-  coursierTelephone?: string;
-  bordureActive?: boolean;
-}
+import {
+  ColonneKanbanGerant,
+  CommandeKanban,
+  ServiceRestaurantCommandesService
+} from '../../../socle/services/service-restaurant-commandes.service';
 
 @Component({
   selector: 'app-gerant-commandes',
@@ -35,182 +15,47 @@ export interface CommandeKanban {
   templateUrl: './gerant-commandes.component.html'
 })
 export class GerantCommandesComponent {
+  readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
+
   // Onglet sélectionné sur mobile (Nouvelles, En préparation, Prêtes)
   readonly ongletMobileActif = signal<ColonneKanbanGerant>('NOUVELLES');
-
-  // Modale de détail d'une commande
-  readonly commandeEnDetail = signal<CommandeKanban | null>(null);
-  readonly modaleDetailOuverte = signal<boolean>(false);
 
   // Modale de refus
   readonly commandeARefuser = signal<CommandeKanban | null>(null);
   readonly modaleRefusOuverte = signal<boolean>(false);
   readonly motifRefus = signal<string>('Rupture d’ingrédients pour ce plat');
 
-  // État de l'alerte nouvelle commande entrante (conforme à l'image envoyée)
+  // État de l'alerte nouvelle commande entrante (conforme à l'image envoyée, sans estimation de temps)
   readonly alerteVisible = signal<boolean>(true);
   readonly alerteCommande = signal<{
     numero: string;
     titre: string;
     sousTitre: string;
     typeLivraison: string;
-    tempsPrep: string;
   }>({
     numero: '#1246',
     titre: 'NOUVELLE COMMANDE !',
     sousTitre: "VIENT D'ARRIVER",
-    typeLivraison: 'LIVRAISON RAPIDE',
-    tempsPrep: 'PRÉP: 15M'
+    typeLivraison: 'LIVRAISON RAPIDE'
   });
 
   // Notification Toast
   readonly notificationSucces = signal<string | null>(null);
 
-  // Liste des commandes en temps réel (conformes à l'Image 1)
-  readonly listeCommandes = signal<CommandeKanban[]>([
-    // Colonne 1 : Nouvelles
-    {
-      numero: '#1245',
-      tempsEcouleOuRestant: 'Il y a 2 min',
-      totalMontant: '8 500 FCFA',
-      totalValeurNumerique: 8500,
-      typeLivraison: 'LIVRAISON',
-      statut: 'NOUVELLES',
-      articles: [
-        { nom: 'Thieboudienne', quantite: 2 },
-        { nom: 'Bissap (50cl)', quantite: 1 }
-      ],
-      remarqueClient: 'Pas de piment svp'
-    },
-    {
-      numero: '#1246',
-      tempsEcouleOuRestant: 'Il y a 5 min',
-      totalMontant: '4 200 FCFA',
-      totalValeurNumerique: 4200,
-      typeLivraison: 'LIVRAISON',
-      statut: 'NOUVELLES',
-      articles: [
-        { nom: 'Mafe Poulet', quantite: 1 }
-      ]
-    },
-    {
-      numero: '#1247',
-      tempsEcouleOuRestant: 'Il y a 7 min',
-      totalMontant: '6 000 FCFA',
-      totalValeurNumerique: 6000,
-      typeLivraison: 'A_EMPORTER',
-      statut: 'NOUVELLES',
-      articles: [
-        { nom: 'Dibi d’Agneau Braisé', quantite: 1 },
-        { nom: 'Jus de Bouye', quantite: 1 }
-      ]
-    },
-
-    // Colonne 2 : En préparation
-    {
-      numero: '#1242',
-      tempsEcouleOuRestant: '12:45',
-      estTempsRestant: true,
-      totalMontant: '5 800 FCFA',
-      totalValeurNumerique: 5800,
-      typeLivraison: 'LIVRAISON',
-      statut: 'PREPARATION',
-      bordureActive: true,
-      articles: [
-        { nom: 'Yassa Poulet (Premium)', quantite: 1 }
-      ]
-    },
-    {
-      numero: '#1241',
-      tempsEcouleOuRestant: '08:20 restant',
-      estTempsRestant: true,
-      totalMontant: '9 200 FCFA',
-      totalValeurNumerique: 9200,
-      typeLivraison: 'LIVRAISON',
-      statut: 'PREPARATION',
-      articles: [
-        { nom: 'Pastels Viande (Portion de 10)', quantite: 2 },
-        { nom: 'Bissap Menthe', quantite: 2 }
-      ]
-    },
-    {
-      numero: '#1243',
-      tempsEcouleOuRestant: '14:10 restant',
-      estTempsRestant: true,
-      totalMontant: '11 000 FCFA',
-      totalValeurNumerique: 11000,
-      typeLivraison: 'SUR_PLACE',
-      statut: 'PREPARATION',
-      articles: [
-        { nom: 'Couscous de Mil Sénégalais (Thiéré)', quantite: 2 }
-      ]
-    },
-
-    // Colonne 3 : Prêtes
-    {
-      numero: '#1240',
-      tempsEcouleOuRestant: 'Prête',
-      totalMontant: '12 400 FCFA',
-      totalValeurNumerique: 12400,
-      typeLivraison: 'LIVRAISON',
-      statut: 'PRETES',
-      coursierNom: 'Moussa S.',
-      coursierVehicule: 'Moto • Dakar Plateau',
-      coursierPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      coursierArriveeMinutes: 3,
-      coursierTelephone: '+221 77 123 45 67',
-      articles: [
-        { nom: 'Thieboudienne Penda Mbaye', quantite: 2 },
-        { nom: 'Alloco Banane Plantain', quantite: 1 },
-        { nom: 'Cocktail de Fruits Frais', quantite: 2 }
-      ]
-    },
-    {
-      numero: '#1239',
-      tempsEcouleOuRestant: 'En attente',
-      totalMontant: '3 500 FCFA',
-      totalValeurNumerique: 3500,
-      typeLivraison: 'A_EMPORTER',
-      statut: 'PRETES',
-      coursierNom: 'Client au comptoir',
-      coursierTelephone: '+221 77 987 65 43',
-      articles: [
-        { nom: 'Burger Sénégalais Braisé', quantite: 1 }
-      ]
-    }
-  ]);
-
-  // Commandes regroupées par statut
-  readonly commandesNouvelles = computed(() =>
-    this.listeCommandes().filter((c) => c.statut === 'NOUVELLES')
-  );
-
-  readonly commandesPreparation = computed(() =>
-    this.listeCommandes().filter((c) => c.statut === 'PREPARATION')
-  );
-
-  readonly commandesPretes = computed(() =>
-    this.listeCommandes().filter((c) => c.statut === 'PRETES')
-  );
+  // Données des colonnes liées en temps réel au service partagé du restaurant
+  readonly commandesNouvelles = computed(() => this.serviceRestaurant.commandesNouvelles());
+  readonly commandesPreparation = computed(() => this.serviceRestaurant.commandesPreparation());
+  readonly commandesPretes = computed(() => this.serviceRestaurant.commandesPretes());
 
   /**
-   * Accepte une nouvelle commande (passe en préparation).
+   * Accepte une nouvelle commande : bascule directement en préparation (sans étape de détails).
    */
   accepterCommande(numero: string): void {
-    this.listeCommandes.update((liste) =>
-      liste.map((c) =>
-        c.numero === numero
-          ? {
-              ...c,
-              statut: 'PREPARATION' as const,
-              tempsEcouleOuRestant: '15:00 restant',
-              estTempsRestant: true
-            }
-          : c
-      )
-    );
-
-    this.notificationSucces.set(`Commande ${numero} acceptée ! Préparation lancée en cuisine.`);
+    this.serviceRestaurant.accepterCommande(numero);
+    if (this.alerteCommande().numero === numero) {
+      this.alerteVisible.set(false);
+    }
+    this.notificationSucces.set(`Commande ${numero} acceptée ! Préparation en cours.`);
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
@@ -223,77 +68,46 @@ export class GerantCommandesComponent {
   }
 
   /**
-   * Confirme le refus de la commande.
+   * Confirme le refus : la commande est retirée et envoyée DIRECTEMENT dans les historiques en ANNULÉE.
    */
   confirmerRefus(): void {
     const cmd = this.commandeARefuser();
     if (!cmd) return;
 
-    this.listeCommandes.update((liste) => liste.filter((c) => c.numero !== cmd.numero));
-    this.notificationSucces.set(`Commande ${cmd.numero} refusée (${this.motifRefus()}).`);
+    this.serviceRestaurant.refuserCommande(cmd.numero, this.motifRefus());
+    if (this.alerteCommande().numero === cmd.numero) {
+      this.alerteVisible.set(false);
+    }
+
+    this.notificationSucces.set(`Commande ${cmd.numero} refusée et archivée dans l'historique.`);
     this.modaleRefusOuverte.set(false);
     this.commandeARefuser.set(null);
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
   /**
-   * Marque la commande comme prête.
+   * Marque la commande comme prête : bascule directement en colonne Prêtes.
    */
   marquerCommePrete(numero: string): void {
-    this.listeCommandes.update((liste) =>
-      liste.map((c) =>
-        c.numero === numero
-          ? {
-              ...c,
-              statut: 'PRETES' as const,
-              bordureActive: false,
-              coursierNom: c.coursierNom || 'Moussa S.',
-              coursierVehicule: c.coursierVehicule || 'Moto • Dakar Plateau',
-              coursierPhoto: c.coursierPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-              coursierArriveeMinutes: 3,
-              tempsEcouleOuRestant: 'Prête'
-            }
-          : c
-      )
-    );
-
-    this.notificationSucces.set(`Commande ${numero} prête ! Le coursier a été notifié pour le retrait.`);
+    this.serviceRestaurant.marquerCommePrete(numero);
+    this.notificationSucces.set(`Commande ${numero} prête ! Livreur notifié.`);
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
   /**
-   * Valide la remise du colis au livreur.
+   * Remet le colis au livreur : la commande est terminée et part DIRECTEMENT dans l'historique en LIVRÉE.
    */
   remettreAuLivreur(numero: string): void {
-    this.listeCommandes.update((liste) => liste.filter((c) => c.numero !== numero));
-    this.notificationSucces.set(`Commande ${numero} remise au livreur. En route chez le client !`);
+    this.serviceRestaurant.remettreAuLivreurEtTerminer(numero);
+    this.notificationSucces.set(`Commande ${numero} remise au livreur et archivée dans l'historique !`);
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
   /**
-   * Ouvre la modale de détail d'une commande.
+   * Action rapide depuis le bandeau d'alerte : accepte directement la commande d'alerte.
    */
-  ouvrirDetail(commande: CommandeKanban): void {
-    this.commandeEnDetail.set(commande);
-    this.modaleDetailOuverte.set(true);
-  }
-
-  /**
-   * Ferme la modale de détail.
-   */
-  fermerDetail(): void {
-    this.modaleDetailOuverte.set(false);
-    this.commandeEnDetail.set(null);
-  }
-
-  /**
-   * Ouvre la commande affichée dans l'alerte rouge (#1246).
-   */
-  voirCommandeAlerte(): void {
-    const cmd = this.listeCommandes().find((c) => c.numero === this.alerteCommande().numero);
-    if (cmd) {
-      this.ouvrirDetail(cmd);
-    }
+  accepterDepuisAlerte(): void {
+    this.accepterCommande(this.alerteCommande().numero);
   }
 
   /**
@@ -304,17 +118,17 @@ export class GerantCommandesComponent {
   }
 
   /**
-   * Simule l'arrivée d'une nouvelle commande avec le son officiel de cloche.
+   * Simule l'arrivée d'une nouvelle commande avec le carillon sonore.
    */
   simulerArriveeCommande(): void {
     this.alerteVisible.set(true);
     this.jouerSonNouvelleCommande();
-    this.notificationSucces.set('🔔 Nouvelle commande #1246 reçue en cuisine !');
+    this.notificationSucces.set('🔔 Nouvelle commande reçue en cuisine !');
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
   /**
-   * Joue le carillon sonore synthétisé de notification de commande.
+   * Synthèse sonore d'un carillon de cuisine de restaurant (Web Audio API sans dépendance).
    */
   jouerSonNouvelleCommande(): void {
     try {

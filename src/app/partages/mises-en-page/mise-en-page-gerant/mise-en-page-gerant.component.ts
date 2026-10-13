@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+
+import { ServiceRestaurantCommandesService } from '../../../socle/services/service-restaurant-commandes.service';
 
 export interface ElementMenuGerant {
   code: string;
@@ -18,6 +20,7 @@ export interface ElementMenuGerant {
 })
 export class MiseEnPageGerantComponent {
   readonly routeur = inject(Router);
+  readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
 
   // État du tiroir mobile
   readonly menuMobileOuvert = signal<boolean>(false);
@@ -28,8 +31,8 @@ export class MiseEnPageGerantComponent {
   // Alerte sonore activée ou coupée
   readonly sonActive = signal<boolean>(true);
 
-  // Nombre de commandes du jour
-  readonly totalCommandesJour = signal<number>(12);
+  // Nombre de commandes du jour (dynamique en temps réel)
+  readonly totalCommandesJour = computed(() => this.serviceRestaurant.totalCommandesJour());
 
   // Notification toast
   readonly notificationSucces = signal<string | null>(null);
