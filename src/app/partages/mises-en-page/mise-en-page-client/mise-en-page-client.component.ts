@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { DetailProduitComponent } from '../../../fonctionnalites/catalogue/detail-produit/detail-produit.component';
+import { ModaleConnexionRequiseComponent } from '../../composants/modale-connexion-requise/modale-connexion-requise.component';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
 import { ServicePanierService } from '../../../socle/services/service-panier.service';
@@ -17,7 +18,7 @@ export interface OngletNavigation {
 @Component({
   selector: 'app-mise-en-page-client',
   standalone: true,
-  imports: [CommonModule, RouterModule, DetailProduitComponent],
+  imports: [CommonModule, RouterModule, DetailProduitComponent, ModaleConnexionRequiseComponent],
   templateUrl: './mise-en-page-client.component.html'
 })
 export class MiseEnPageClientComponent {
@@ -66,8 +67,31 @@ export class MiseEnPageClientComponent {
     return this.routeur.url.startsWith(chemin);
   }
 
+  /**
+   * Intercepte le clic sur les onglets sensibles (Commandes, Profil) en mode visiteur.
+   */
+  gererClicOnglet(evenement: Event, onglet: OngletNavigation): void {
+    if ((onglet.code === 'commandes' || onglet.code === 'profil') && !this.serviceAuthentification.estAuthentifie()) {
+      evenement.preventDefault();
+      evenement.stopPropagation();
+      this.serviceAuthentification.exigerAuthentification(
+        'ESPACE_PRIVE',
+        () => {
+          this.routeur.navigate([onglet.chemin]);
+        },
+        {
+          titre: onglet.code === 'commandes' ? 'Mes Commandes' : 'Mon Profil',
+          description:
+            onglet.code === 'commandes'
+              ? 'Connectez-vous pour consulter vos commandes en cours et votre historique de livraison.'
+              : 'Connectez-vous pour accéder à votre profil, vos adresses et vos préférences.'
+        }
+      );
+    }
+  }
+
   deconnecter(): void {
     this.serviceAuthentification.deconnecter();
-    this.routeur.navigate(['/connexion']);
+    this.routeur.navigate(['/accueil']);
   }
 }

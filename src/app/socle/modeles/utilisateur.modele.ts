@@ -3,7 +3,7 @@
  * Tous les termes métier sont strictement rédigés en français.
  */
 
-export type RoleUtilisateur = 'CLIENT' | 'RESTAURANT' | 'VENDEUR' | 'LIVREUR' | 'ADMINISTRATEUR';
+export type RoleUtilisateur = 'CLIENT' | 'RESTAURANT' | 'LIVREUR' | 'ADMINISTRATEUR';
 
 export interface OptionRole {
   valeur: RoleUtilisateur;

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
+import { ServiceRestaurantCommandesService } from '../../../socle/services/service-restaurant-commandes.service';
 
 @Component({
   selector: 'app-validation-code',
@@ -11,10 +12,14 @@ import { ServiceLivreurService } from '../../../socle/services/service-livreur.s
 })
 export class ValidationCodeComponent {
   readonly serviceLivreur = inject(ServiceLivreurService);
+  private readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
   readonly routeur = inject(Router);
 
-  // Chiffres saisis par le livreur (ex: '8', '2')
-  readonly codeSaisi = signal<string>('82');
+  // Chiffres saisis par le livreur
+  readonly codeSaisi = signal<string>('');
+
+  // État de validation en cours pour bloquer les clics multiples
+  readonly validationEnCours = signal<boolean>(false);
 
   // État de succès de la livraison
   readonly livraisonReussie = signal<boolean>(false);
@@ -45,6 +50,7 @@ export class ValidationCodeComponent {
    * Appui sur une touche numérique.
    */
   appuyerTouche(touche: string): void {
+    if (this.validationEnCours() || this.livraisonReussie()) return;
     this.messageErreur.set(null);
     if (!touche) return;
 
@@ -62,17 +68,45 @@ export class ValidationCodeComponent {
   }
 
   /**
-   * Valide la livraison avec le code saisi et redirige vers l'écran de fin de livraison (Image 1).
+   * Valide la livraison avec le code saisi et vérifie sa conformité.
+   * En cas de code incorrect, la livraison n'est PAS clôturée et une alerte explicite est affichée.
    */
   confirmerLivraison(): void {
-    if (this.codeSaisi().length < 4) {
-      this.messageErreur.set('Veuillez saisir les 4 chiffres du code de sécurité.');
+    if (this.validationEnCours() || this.livraisonReussie()) return;
+
+    const courseActive = this.serviceLivreur.courseEnCours();
+    if (!courseActive) {
+      this.messageErreur.set('Aucune commande active à valider.');
       return;
     }
 
-    // Validation et passage à l'écran de récapitulatif final
+    const verification = this.serviceLivreur.verifierCodeValidation(
+      this.codeSaisi(),
+      courseActive.identifiantCommande
+    );
+
+    if (!verification.valide) {
+      this.messageErreur.set(verification.message);
+      return;
+    }
+
+    // Le code est strictement validé : passage à l'étape finale
+    this.validationEnCours.set(true);
+    this.messageErreur.set(null);
+
+    // Clôture effective côté livreur
     this.serviceLivreur.terminerCourse();
-    this.routeur.navigate(['/livreur/fin-livraison']);
+
+    // Propagation du statut LIVRÉE à l'historique restaurant si applicable
+    this.serviceRestaurant.marquerCommandeLivreeParLivreur(
+      courseActive.identifiantCommande
+    );
+
+    // Affichage visuel du succès puis transition maîtrisée
+    this.livraisonReussie.set(true);
+    setTimeout(() => {
+      this.routeur.navigate(['/livreur/fin-livraison']);
+    }, 1200);
   }
 
   /**

@@ -1,4 +1,9 @@
 import { Routes } from '@angular/router';
+import {
+  gardeAdministration,
+  gardeGerant,
+  gardeLivreur
+} from './socle/gardes/authentification.guard';
 
 export const routes: Routes = [
   {
@@ -18,7 +23,13 @@ export const routes: Routes = [
     title: 'Inscription — AYYOU'
   },
   {
+    path: 'restaurant',
+    redirectTo: 'gerant',
+    pathMatch: 'prefix'
+  },
+  {
     path: 'livreur',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/accueil-livreur/accueil-livreur.component'
@@ -72,6 +83,150 @@ export const routes: Routes = [
         './fonctionnalites/livreur/gains-livreur/gains-livreur.component'
       ).then((m) => m.GainsLivreurComponent),
     title: 'Mes Gains — AYYOU'
+  },
+  {
+    path: 'administration',
+    canActivate: [gardeAdministration],
+    loadComponent: () =>
+      import(
+        './partages/mises-en-page/mise-en-page-administration/mise-en-page-administration.component'
+      ).then((m) => m.MiseEnPageAdministrationComponent),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'tableau-de-bord'
+      },
+      {
+        path: 'tableau-de-bord',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/tableau-de-bord/tableau-de-bord.component'
+          ).then((m) => m.TableauDeBordComponent),
+        title: 'Tableau de bord — Superadmin AYYOU'
+      },
+      {
+        path: 'validations',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/validations/validations.component'
+          ).then((m) => m.ValidationsComponent),
+        title: 'Validations en attente — Superadmin AYYOU'
+      },
+      {
+        path: 'utilisateurs',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/utilisateurs/utilisateurs.component'
+          ).then((m) => m.UtilisateursComponent),
+        title: 'Gestion des Utilisateurs — Superadmin AYYOU'
+      },
+      {
+        path: 'commandes',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/commandes/commandes-admin.component'
+          ).then((m) => m.CommandesAdminComponent),
+        title: 'Gestion des Commandes — Superadmin AYYOU'
+      },
+      {
+        path: 'restaurants',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/restaurants/restaurants-admin.component'
+          ).then((m) => m.RestaurantsAdminComponent),
+        title: 'Gestion des Restaurants — Superadmin AYYOU'
+      },
+      {
+        path: 'livreurs',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/livreurs/livreurs-admin.component'
+          ).then((m) => m.LivreursAdminComponent),
+        title: 'Gestion des Livreurs — Superadmin AYYOU'
+      },
+      {
+        path: 'coursiers',
+        redirectTo: 'livreurs',
+        pathMatch: 'full'
+      },
+      {
+        path: 'statistiques',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/statistiques/statistiques-admin.component'
+          ).then((m) => m.StatistiquesAdminComponent),
+        title: 'Rapports et Statistiques — Superadmin AYYOU'
+      },
+      {
+        path: 'parametres',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/parametres/parametres-admin.component'
+          ).then((m) => m.ParametresAdminComponent),
+        title: 'Paramètres — Superadmin AYYOU'
+      }
+    ]
+  },
+  {
+    path: 'gerant',
+    canActivate: [gardeGerant],
+    loadComponent: () =>
+      import(
+        './partages/mises-en-page/mise-en-page-gerant/mise-en-page-gerant.component'
+      ).then((m) => m.MiseEnPageGerantComponent),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'commandes'
+      },
+      {
+        path: 'commandes',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-commandes/gerant-commandes.component'
+          ).then((m) => m.GerantCommandesComponent),
+        title: 'Gestion des Commandes — Teranga Eats'
+      },
+      {
+        path: 'menu',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-menu/gerant-menu.component'
+          ).then((m) => m.GerantMenuComponent),
+        title: 'Gestion du Menu — Teranga Eats'
+      },
+      {
+        path: 'historique',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-historique/gerant-historique.component'
+          ).then((m) => m.GerantHistoriqueComponent),
+        title: 'Historique des Commandes — Teranga Eats'
+      },
+      {
+        path: 'analytiques',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-analytiques/gerant-analytiques.component'
+          ).then((m) => m.GerantAnalytiquesComponent),
+        title: 'Performances & Analytiques — Teranga Eats'
+      },
+      {
+        path: 'menu-studio',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-ayyou-studio/gerant-ayyou-studio.component'
+          ).then((m) => m.GerantAyyouStudioComponent),
+        title: 'Menu & Studio — Teranga Eats'
+      },
+      {
+        path: 'ayyou-studio',
+        redirectTo: 'menu-studio',
+        pathMatch: 'full'
+      }
+    ]
   },
   {
     path: '',

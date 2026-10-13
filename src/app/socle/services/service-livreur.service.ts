@@ -9,7 +9,8 @@ import {
   DetailGainJournalier,
   EtapeCourseLivreur,
   LivreurProfil,
-  PropositionLivraison
+  PropositionLivraison,
+  ResultatValidationCode
 } from '../modeles/livreur.modele';
 
 @Injectable({
@@ -269,13 +270,66 @@ export class ServiceLivreurService {
   }
 
   /**
-   * Valide le code de confirmation saisi par le livreur (Image 3).
+   * Valide le code de sécurité saisi par le livreur auprès du client.
+   *
+   * RÈGLES MÉTIER :
+   * 1. Vérifie la présence d'une course active en cours de livraison.
+   * 2. Refuse la clôture si la commande est déjà marquée comme livrée (anti-double validation).
+   * 3. Vérifie que le code saisi est exactement composé de 4 chiffres.
+   * 4. Compare au code attendu pour la commande active (ex: course.codeValidation).
+   *
+   * SÉCURITÉ & ARCHITECTURE BACKEND :
+   * Le contrôle ci-dessous dans Angular est une simulation pour le prototype interactif.
+   * Avant toute mise en production, cette validation devra IMPÉRATIVEMENT être exécutée côté Backend
+   * via une route sécurisée (ex: POST /api/commandes/:id/valider-livraison) avec contrôle de session
+   * et limitation des tentatives (anti-bruteforce), afin d'éviter toute compromission du code côté client.
    */
-  verifierCodeValidation(codeSaisi: string): boolean {
+  verifierCodeValidation(
+    codeSaisi: string,
+    identifiantCommande?: string
+  ): ResultatValidationCode {
     const course = this.courseEnCours();
-    if (!course) return false;
-    // Accepte le code exact ou tout code de démo à 4 chiffres si besoin, par exemple '8245'
-    return codeSaisi.length === 4;
+    if (!course) {
+      return {
+        valide: false,
+        message: 'Aucune commande active en cours de livraison.'
+      };
+    }
+
+    if (this.etapeCourse() === 'LIVRE') {
+      return {
+        valide: false,
+        message: 'Cette livraison a déjà été validée et clôturée.'
+      };
+    }
+
+    if (identifiantCommande && course.identifiantCommande !== identifiantCommande) {
+      return {
+        valide: false,
+        message: 'Le code ne correspond pas à la commande active.'
+      };
+    }
+
+    const codeNettoye = (codeSaisi || '').trim();
+    if (codeNettoye.length !== 4 || !/^\d{4}$/.test(codeNettoye)) {
+      return {
+        valide: false,
+        message: 'Le code de sécurité doit comporter exactement 4 chiffres numériques.'
+      };
+    }
+
+    const codeAttendu = course.codeValidation;
+    if (codeNettoye !== codeAttendu) {
+      return {
+        valide: false,
+        message: 'Code de sécurité incorrect. Veuillez demander au client de vérifier son application.'
+      };
+    }
+
+    return {
+      valide: true,
+      message: 'Code de sécurité validé avec succès.'
+    };
   }
 
   /**

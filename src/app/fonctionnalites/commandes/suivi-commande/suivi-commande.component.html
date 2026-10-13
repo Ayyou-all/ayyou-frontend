@@ -103,83 +103,52 @@
         </div>
 
         <!-- ===================================================================== -->
-        <!-- CARTE GPS DE DAKAR : VUE STYLISÉE DES RUES + PIN DESTINATION + MOUSSA  -->
-        <!-- Conforme à l'illustration de la maquette 1                            -->
+        <!-- CARTE GPS RÉELLE DE DAKAR : OPENSTREETMAP / CARTO AVEC SUIVI EN DIRECT -->
+        <!-- Coordonnées réelles : Le Teranga (Plateau) -> Moussa -> Vous (Médina)   -->
         <!-- ===================================================================== -->
-        <div class="relative w-full h-72 sm:h-80 md:h-96 rounded-[32px] overflow-hidden bg-[#d6e5df] border border-slate-200/80 shadow-md select-none group">
+        <div class="relative w-full h-80 sm:h-96 rounded-[32px] overflow-hidden border border-slate-200/80 shadow-md select-none group">
           
-          <!-- Fond vectoriel stylisé représentant la voirie de Dakar (Cap-vert / Almadies / Plateau) -->
-          <svg class="absolute inset-0 w-full h-full object-cover" viewBox="0 0 400 300" preserveAspectRatio="none">
-            <!-- Zones bâties et blocs urbains (teintes pastel vert d'eau et sable) -->
-            <path d="M0,0 L400,0 L400,300 L0,300 Z" fill="#cfe1da"/>
-            <path d="M20,10 L160,20 L140,110 L10,80 Z" fill="#b9d6cb"/>
-            <path d="M180,30 L380,10 L390,130 L220,100 Z" fill="#b9d6cb"/>
-            <path d="M240,120 L390,150 L380,280 L230,260 Z" fill="#c4ddd4"/>
-            <path d="M30,130 L190,120 L160,260 L20,240 Z" fill="#dfd6c6"/>
-            
-            <!-- Tracé des rues et avenues blanches/crème -->
-            <path d="M-10,95 Q180,115 410,130" stroke="#ffffff" stroke-width="26" fill="none" stroke-linecap="round"/>
-            <path d="M170,-10 Q190,140 180,310" stroke="#ffffff" stroke-width="24" fill="none" stroke-linecap="round"/>
-            <path d="M30,0 L180,130" stroke="#ffffff" stroke-width="16" fill="none"/>
-            <path d="M220,120 L390,290" stroke="#ffffff" stroke-width="18" fill="none"/>
-            <path d="M0,220 L400,240" stroke="#ffffff" stroke-width="22" fill="none"/>
+          <!-- Conteneur Leaflet de la carte réelle de Dakar -->
+          <div id="carte-suivi-commande" class="w-full h-full z-0"></div>
 
-            <!-- Ligne de trajectoire GPS en pointillés jaunes dorés -->
-            <path
-              d="M170,220 Q210,180 235,145 Q245,120 240,95"
-              stroke="#f59e0b"
-              stroke-width="3"
-              stroke-dasharray="6,6"
-              fill="none"
-              stroke-linecap="round"
-            />
-
-            <!-- Points d'étape GPS bleus sur la route -->
-            <circle cx="230" cy="140" r="4.5" fill="#0284c7" />
-            <circle cx="240" cy="120" r="4.5" fill="#0284c7" />
-          </svg>
-
-          <!-- 1. Marqueur de destination (Pin sombre avec cercle blanc) -->
-          <div class="absolute top-[26%] right-[36%] z-20 flex flex-col items-center">
-            <div class="w-10 h-10 rounded-full bg-[#1e293b] text-white flex items-center justify-center shadow-xl border-2 border-white">
-              <div class="w-3.5 h-3.5 rounded-full bg-white"></div>
-            </div>
-            <!-- Ombre au sol -->
-            <div class="w-5 h-1.5 rounded-full bg-black/25 blur-2xs mt-1"></div>
+          <!-- Badge supérieur : Dakar en direct -->
+          <div class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border border-slate-100 flex items-center gap-2 text-slate-800 text-xs font-black">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Dakar en direct</span>
           </div>
 
-          <!-- 2. Marqueur du livreur : Badge rouge 'Moussa' avec moto (conforme maquette 1) -->
-          <div
-            class="absolute bottom-[28%] left-[26%] z-30 flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#E51824] text-white font-extrabold text-xs shadow-2xl border-2 border-white transition-transform duration-500 hover:scale-105 select-none"
-          >
-            <div class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-              <i class="fa-solid fa-motorcycle text-white text-[11px]"></i>
-            </div>
-            <span class="tracking-wide">Moussa</span>
+          <!-- Bouton flottant : Recentre sur le livreur / trajet -->
+          <div class="absolute top-3 right-3 z-20 flex flex-col gap-2">
+            <button
+              type="button"
+              (click)="recentrerSurCourse()"
+              class="w-10 h-10 rounded-2xl bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-transform active:scale-95 cursor-pointer border border-slate-100"
+              title="Ajuster la vue sur toute la course"
+            >
+              <i class="fa-solid fa-expand text-xs"></i>
+            </button>
+            <button
+              type="button"
+              (click)="recentrerSurLivreur()"
+              class="w-10 h-10 rounded-2xl bg-white/95 hover:bg-white text-[#E51824] shadow-md flex items-center justify-center transition-transform active:scale-95 cursor-pointer border border-slate-100"
+              title="Recentrer sur le livreur Moussa"
+            >
+              <i class="fa-solid fa-crosshairs text-sm"></i>
+            </button>
           </div>
-
-          <!-- Ombre du scooter au sol -->
-          <div class="absolute bottom-[26%] left-[32%] z-10 w-8 h-2.5 rounded-full bg-black/30 blur-2xs"></div>
 
           <!-- Bouton interactif pour simuler l'arrivée de la livraison -->
-          <div class="absolute bottom-3.5 right-3.5 z-30">
+          <div class="absolute bottom-3.5 right-3.5 z-20">
             <button
               type="button"
               (click)="confirmerLivraison()"
-              class="px-4 py-2 rounded-2xl bg-white/95 hover:bg-white text-slate-800 text-xs font-black shadow-lg backdrop-blur-md flex items-center gap-2 border border-slate-200 transition-transform active:scale-95 cursor-pointer"
+              class="px-4 py-2.5 rounded-2xl bg-white/95 hover:bg-white text-slate-800 text-xs font-black shadow-lg backdrop-blur-md flex items-center gap-2 border border-slate-200 transition-transform active:scale-95 cursor-pointer"
               title="Tester la livraison de la commande"
             >
               <i class="fa-solid fa-circle-check text-emerald-500"></i>
               <span>Simuler arrivée du livreur</span>
             </button>
           </div>
-
-          <!-- Badge d'indication en haut à gauche -->
-          <div class="absolute top-3.5 left-3.5 z-20 px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-[11px] font-bold text-slate-700 shadow-xs flex items-center gap-1.5">
-            <i class="fa-solid fa-location-crosshairs text-red-600 text-xs"></i>
-            <span>Dakar • Plateau</span>
-          </div>
-
         </div>
 
       </div>

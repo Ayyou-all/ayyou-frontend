@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommandeClient } from '../../socle/modeles/commande.modele';
+import { ServiceAuthentification } from '../../socle/services/service-authentification.service';
 import { ServiceCommandesService } from '../../socle/services/service-commandes.service';
 
 @Component({
@@ -12,7 +13,12 @@ import { ServiceCommandesService } from '../../socle/services/service-commandes.
 })
 export class CommandesComponent {
   readonly serviceCommandes = inject(ServiceCommandesService);
+  readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly routeur = inject(Router);
+
+  connexionRapideClient(): void {
+    this.serviceAuthentification.connexionRapideClientVisiteur().subscribe();
+  }
 
   // Onglet actif : 'EN_COURS' ou 'HISTORIQUE' (conforme à l'Image 3)
   readonly ongletActif = signal<'EN_COURS' | 'HISTORIQUE'>('EN_COURS');

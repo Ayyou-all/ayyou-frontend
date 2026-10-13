@@ -1,0 +1,449 @@
+<div class="space-y-6 max-w-7xl mx-auto">
+
+  <!-- Notification Toast -->
+  @if (notificationSucces()) {
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span>{{ notificationSucces() }}</span>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE : TITRE, SOUS-TITRE & ACTIONS SUPÉRIEURES (IMAGE 2)              -->
+  <!-- ========================================================================= -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
+        Rapports et Statistiques
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">
+        Analyse approfondie de l'activité commerciale et des performances de la plateforme.
+      </p>
+    </div>
+
+    <!-- Actions à droite : Sélecteur de période & Bouton Exporter -->
+    <div class="flex items-center gap-3 shrink-0">
+      <div class="relative flex items-center rounded-2xl border border-slate-200 bg-white py-2 px-3 shadow-2xs text-xs sm:text-sm">
+        <i class="fa-regular fa-calendar text-slate-400 mr-2 text-xs"></i>
+        <select
+          [ngModel]="periodeSelectionnee()"
+          (ngModelChange)="periodeSelectionnee.set($event)"
+          class="bg-transparent text-slate-700 font-bold focus:outline-none cursor-pointer appearance-none pr-5 text-xs sm:text-sm"
+        >
+          <option value="1 Oct 2023 - 31 Oct 2023">1 Oct 2023 - 31 Oct 2023</option>
+          <option value="1 Sep 2023 - 30 Sep 2023">1 Sep 2023 - 30 Sep 2023</option>
+          <option value="1 Nov 2023 - 30 Nov 2023">1 Nov 2023 - 30 Nov 2023</option>
+          <option value="Année 2023 Complète">Année 2023 Complète</option>
+        </select>
+        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 absolute right-3 pointer-events-none"></i>
+      </div>
+
+      <button
+        type="button"
+        (click)="exporterRapport()"
+        class="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer flex items-center gap-2"
+      >
+        <i class="fa-solid fa-arrow-down-to-bracket text-xs"></i>
+        <span>Exporter</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CARTES STATISTIQUES KPI (CONFORME À L'IMAGE 2)                           -->
+  <!-- ========================================================================= -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- 1. Revenu Total -->
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm shadow-2xs">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
+          {{ kpis.revenuTotal.evolution }}
+        </span>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-slate-400">Revenu Total</div>
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1 tracking-tight">
+          {{ kpis.revenuTotal.valeur }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Commandes Totales -->
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm shadow-2xs">
+          <i class="fa-solid fa-cart-shopping"></i>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-sky-50 text-sky-600 border border-sky-100">
+          {{ kpis.commandesTotales.evolution }}
+        </span>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-slate-400">Commandes Totales</div>
+        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+          {{ kpis.commandesTotales.valeur }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Utilisateurs Actifs -->
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shadow-2xs">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-600 border border-amber-100">
+          {{ kpis.utilisateursActifs.evolution }}
+        </span>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-slate-400">Utilisateurs Actifs</div>
+        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+          {{ kpis.utilisateursActifs.valeur }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Taux de Croissance -->
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center text-sm shadow-2xs">
+          <i class="fa-solid fa-arrow-trend-up"></i>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-purple-50 text-purple-600 border border-purple-100">
+          {{ kpis.tauxCroissance.evolution }}
+        </span>
+      </div>
+      <div>
+        <div class="text-xs font-semibold text-slate-400">Taux de Croissance</div>
+        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+          {{ kpis.tauxCroissance.valeur }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. SECTION MÉDIANE : ÉVOLUTION DES REVENUS & COMMANDES PAR CATÉGORIE       -->
+  <!-- ========================================================================= -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- CARTE GAUCHE : ÉVOLUTION DES REVENUS (7/12) -->
+    <div class="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-2xs space-y-6">
+      
+      <!-- En-tête de la carte avec switch Hebdomadaire / Mensuel -->
+      <div class="flex items-center justify-between">
+        <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+          Évolution des Revenus
+        </h3>
+
+        <!-- Switch Hebdomadaire / Mensuel -->
+        <div class="flex items-center p-1 rounded-xl bg-slate-100 text-xs font-bold select-none">
+          <button
+            type="button"
+            (click)="frequenceGraphique.set('HEBDOMADAIRE')"
+            [class]="frequenceGraphique() === 'HEBDOMADAIRE' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+            class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          >
+            Hebdomadaire
+          </button>
+          <button
+            type="button"
+            (click)="frequenceGraphique.set('MENSUEL')"
+            [class]="frequenceGraphique() === 'MENSUEL' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+            class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          >
+            Mensuel
+          </button>
+        </div>
+      </div>
+
+      <!-- Graphique SVG interactif haute résolution -->
+      <div class="relative w-full pt-4">
+        <div class="flex gap-4">
+          
+          <!-- Axe Y des valeurs (3000, 2500, 2000, 1500, 1000, 500, 0) -->
+          <div class="flex flex-col justify-between text-[11px] font-semibold text-slate-400 select-none pb-8 text-right h-56 w-9 shrink-0">
+            <span>3000</span>
+            <span>2500</span>
+            <span>2000</span>
+            <span>1500</span>
+            <span>1000</span>
+            <span>500</span>
+            <span>0</span>
+          </div>
+
+          <!-- Zone du canevas SVG -->
+          <div class="relative flex-1 h-56">
+            
+            <!-- Grille horizontale en pointillés -->
+            <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8">
+              @for (ligne of [1, 2, 3, 4, 5, 6, 7]; track ligne) {
+                <div class="w-full border-b border-slate-100"></div>
+              }
+            </div>
+
+            <!-- SVG Spline Curve -->
+            <svg class="w-full h-full overflow-visible" viewBox="0 0 520 220" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="gradientRevenus" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#E51824" stop-opacity="0.18" />
+                  <stop offset="100%" stop-color="#E51824" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              <!-- Remplissage dégradé sous la courbe -->
+              <path
+                d="M 35 195 
+                   C 70 170, 90 165, 110 165 
+                   C 140 165, 160 180, 185 175 
+                   C 220 170, 240 135, 260 135 
+                   C 290 135, 310 150, 335 145 
+                   C 370 140, 390 90, 410 90 
+                   C 440 90, 465 105, 485 105
+                   L 485 200 L 35 200 Z"
+                fill="url(#gradientRevenus)"
+              />
+
+              <!-- Ligne de courbe rouge -->
+              <path
+                d="M 35 195 
+                   C 70 170, 90 165, 110 165 
+                   C 140 165, 160 180, 185 175 
+                   C 220 170, 240 135, 260 135 
+                   C 290 135, 310 150, 335 145 
+                   C 370 140, 390 90, 410 90 
+                   C 440 90, 465 105, 485 105"
+                fill="none"
+                stroke="#E51824"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+
+              <!-- Points interactifs sur la courbe -->
+              @for (point of pointsCourbeRevenus; track point.date) {
+                <g
+                  (mouseenter)="pointSurvole.set(point)"
+                  (mouseleave)="pointSurvole.set(null)"
+                  class="cursor-pointer group"
+                >
+                  <circle
+                    [attr.cx]="point.xPourcentage"
+                    [attr.cy]="point.yPourcentage"
+                    r="12"
+                    fill="transparent"
+                  />
+                  <circle
+                    [attr.cx]="point.xPourcentage"
+                    [attr.cy]="point.yPourcentage"
+                    r="5"
+                    fill="#ffffff"
+                    stroke="#E51824"
+                    stroke-width="2.5"
+                    class="transition-transform group-hover:scale-125"
+                  />
+                  <circle
+                    [attr.cx]="point.xPourcentage"
+                    [attr.cy]="point.yPourcentage"
+                    r="2.5"
+                    fill="#E51824"
+                  />
+                </g>
+              }
+            </svg>
+
+            <!-- Infobulle dynamique au survol -->
+            @if (pointSurvole()) {
+              <div
+                class="absolute -top-3 z-20 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xl -translate-x-1/2 pointer-events-none transition-all"
+                [style.left]="(pointSurvole()!.xPourcentage / 5.2) + '%'"
+              >
+                <div class="text-[10px] text-slate-400">{{ pointSurvole()!.date }}</div>
+                <div>{{ pointSurvole()!.label }}</div>
+              </div>
+            }
+
+            <!-- Axe horizontal X (Dates du mois : 01 Oct à 31 Oct) -->
+            <div class="h-6 flex items-center justify-between text-[11px] font-semibold text-slate-400 pt-2 select-none">
+              @for (point of pointsCourbeRevenus; track point.date) {
+                <span>{{ point.date }}</span>
+              }
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CARTE DROITE : COMMANDES PAR CATÉGORIE (5/12) -->
+    <div class="lg:col-span-4 bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-2xs space-y-6 flex flex-col justify-between">
+      
+      <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+        Commandes par Catégorie
+      </h3>
+
+      <!-- Donut Chart SVG -->
+      <div class="flex items-center justify-center py-2">
+        <div class="relative w-48 h-48">
+          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+            <!-- Cercle de fond -->
+            <circle cx="50" cy="50" r="38" stroke="#f1f5f9" stroke-width="15" fill="none" />
+            
+            <!-- Segment 1: Fast Food 45% (Rouge #E51824) -->
+            <circle
+              cx="50" cy="50" r="38"
+              stroke="#E51824"
+              stroke-width="15"
+              stroke-dasharray="107 238"
+              stroke-dashoffset="0"
+              fill="none"
+              class="transition-all hover:opacity-90"
+            />
+
+            <!-- Segment 2: Sénégalais 30% (Noir #1e293b) -->
+            <circle
+              cx="50" cy="50" r="38"
+              stroke="#1e293b"
+              stroke-width="15"
+              stroke-dasharray="71 238"
+              stroke-dashoffset="-107"
+              fill="none"
+              class="transition-all hover:opacity-90"
+            />
+
+            <!-- Segment 3: Desserts 15% (Bleu ardoise #475569) -->
+            <circle
+              cx="50" cy="50" r="38"
+              stroke="#475569"
+              stroke-width="15"
+              stroke-dasharray="36 238"
+              stroke-dashoffset="-178"
+              fill="none"
+              class="transition-all hover:opacity-90"
+            />
+
+            <!-- Segment 4: Boissons 10% (Gris clair #cbd5e1) -->
+            <circle
+              cx="50" cy="50" r="38"
+              stroke="#cbd5e1"
+              stroke-width="15"
+              stroke-dasharray="24 238"
+              stroke-dashoffset="-214"
+              fill="none"
+              class="transition-all hover:opacity-90"
+            />
+          </svg>
+
+          <!-- Centre vide du donut -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span class="text-xl font-black text-slate-900 font-['Outfit']">8,432</span>
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Total</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Légende carrée en dessous (Image 2) -->
+      <div class="grid grid-cols-2 gap-2 text-xs font-bold pt-2 border-t border-slate-100">
+        <div class="flex items-center gap-2 text-slate-700">
+          <span class="w-3 h-3 rounded-sm bg-[#E51824]"></span>
+          <span>Fast Food</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-700">
+          <span class="w-3 h-3 rounded-sm bg-[#1e293b]"></span>
+          <span>Sénégalais</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-700">
+          <span class="w-3 h-3 rounded-sm bg-[#475569]"></span>
+          <span>Desserts</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-700">
+          <span class="w-3 h-3 rounded-sm bg-[#cbd5e1]"></span>
+          <span>Boissons</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 4. SECTION INFÉRIEURE : PERFORMANCE DES MEILLEURS RESTAURANTS              -->
+  <!-- ========================================================================= -->
+  <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-2xs space-y-6">
+    
+    <div>
+      <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+        Performance des Meilleurs Restaurants
+      </h3>
+      <p class="text-xs text-slate-400 font-medium mt-0.5">
+        Top 5 basé sur le volume de commandes ce mois-ci.
+      </p>
+    </div>
+
+    <!-- Graphique horizontal des barres -->
+    <div class="space-y-4 pt-2">
+      @for (resto of topRestaurants; track resto.nom) {
+        <div class="grid grid-cols-12 items-center gap-4 text-xs font-bold">
+          <!-- Nom du restaurant -->
+          <div class="col-span-3 text-slate-700 truncate text-right">
+            {{ resto.nom }}
+          </div>
+
+          <!-- Barre sombre -->
+          <div class="col-span-8 bg-slate-100 h-8 rounded-lg overflow-hidden flex items-center">
+            <div
+              class="h-full bg-slate-900 rounded-lg flex items-center justify-end pr-3 text-white text-[11px] font-bold transition-all duration-500"
+              [style.width]="resto.pourcentageBarre + '%'"
+            >
+              {{ resto.commandes }}
+            </div>
+          </div>
+
+          <!-- Valeur numérique -->
+          <div class="col-span-1 text-slate-400 font-mono text-[11px]">
+            {{ resto.commandes }}
+          </div>
+        </div>
+      }
+
+      <!-- Axe horizontal X gradué de 0 à 800 (Image 2) -->
+      <div class="grid grid-cols-12 gap-4 text-[10px] font-mono text-slate-400 pt-3 border-t border-slate-100">
+        <div class="col-span-3"></div>
+        <div class="col-span-8 flex justify-between px-1">
+          <span>0</span>
+          <span>100</span>
+          <span>200</span>
+          <span>300</span>
+          <span>400</span>
+          <span>500</span>
+          <span>600</span>
+          <span>700</span>
+          <span>800</span>
+        </div>
+        <div class="col-span-1"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 5. BOUTON INFÉRIEUR : '← RETOUR AU DASHBOARD PRINCIPAL'                    -->
+  <!-- ========================================================================= -->
+  <div class="flex justify-center pt-2">
+    <a
+      routerLink="/administration/tableau-de-bord"
+      class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-black text-xs shadow-2xs transition-all cursor-pointer"
+    >
+      <i class="fa-solid fa-arrow-left text-xs"></i>
+      <span>Retour au Dashboard principal</span>
+    </a>
+  </div>
+
+</div>

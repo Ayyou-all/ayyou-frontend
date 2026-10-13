@@ -11,6 +11,7 @@ import {
 import { Router, RouterModule } from '@angular/router';
 import { PublicationFil } from '../../socle/modeles/fil-actualite.modele';
 import { Plat } from '../../socle/modeles/plat.modele';
+import { ServiceAuthentification } from '../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../socle/services/service-catalogue.service';
 import { ServicePanierService } from '../../socle/services/service-panier.service';
 import { DetailProduitComponent } from '../catalogue/detail-produit/detail-produit.component';
@@ -24,6 +25,7 @@ import { DetailProduitComponent } from '../catalogue/detail-produit/detail-produ
 export class AccueilComponent {
   readonly serviceCatalogue = inject(ServiceCatalogueService);
   readonly servicePanier = inject(ServicePanierService);
+  readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly routeur = inject(Router);
 
   // Plat actuellement en consultation via le modal (Image 1)
@@ -200,22 +202,52 @@ export class AccueilComponent {
 
   /**
    * Bascule le J'aime sur la publication active.
+   * En mode visiteur, exige la connexion au préalable.
    */
   basculerJaime(): void {
     const pub = this.publicationCourante();
-    if (pub) {
-      this.serviceCatalogue.basculerJaimePublication(pub.identifiant);
+    if (!pub) {
+      return;
     }
+
+    if (!this.serviceAuthentification.estAuthentifie()) {
+      this.serviceAuthentification.exigerAuthentification(
+        'LIKE',
+        () => this.serviceCatalogue.basculerJaimePublication(pub.identifiant),
+        {
+          titre: `Aimez ${pub.plat.nom}`,
+          description: `Connectez-vous pour liker ce plat de ${pub.plat.nomRestaurant} et l'ajouter à vos favoris.`
+        }
+      );
+      return;
+    }
+
+    this.serviceCatalogue.basculerJaimePublication(pub.identifiant);
   }
 
   /**
    * Bascule l'abonnement au restaurant.
+   * En mode visiteur, exige la connexion au préalable.
    */
   basculerAbonnement(): void {
     const pub = this.publicationCourante();
-    if (pub) {
-      this.serviceCatalogue.basculerAbonnementPublication(pub.identifiant);
+    if (!pub) {
+      return;
     }
+
+    if (!this.serviceAuthentification.estAuthentifie()) {
+      this.serviceAuthentification.exigerAuthentification(
+        'ABONNEMENT',
+        () => this.serviceCatalogue.basculerAbonnementPublication(pub.identifiant),
+        {
+          titre: `S'abonner à ${pub.plat.nomRestaurant}`,
+          description: `Connectez-vous pour vous abonner à ${pub.plat.nomRestaurant} et recevoir ses nouvelles vidéos gourmandes.`
+        }
+      );
+      return;
+    }
+
+    this.serviceCatalogue.basculerAbonnementPublication(pub.identifiant);
   }
 
   /**
@@ -227,8 +259,21 @@ export class AccueilComponent {
 
   /**
    * Ajoute le plat affiché au panier ou ouvre sa fiche détaillée.
+   * En mode visiteur, exige la connexion pour pouvoir commander.
    */
   commanderPlatActuel(plat: Plat): void {
+    if (!this.serviceAuthentification.estAuthentifie()) {
+      this.serviceAuthentification.exigerAuthentification(
+        'COMMANDE',
+        () => this.ouvrirDetailPlat(plat),
+        {
+          titre: `Commander ${plat.nom}`,
+          description: `Connectez-vous pour commander ${plat.nom} de ${plat.nomRestaurant} et être livré rapidement à Dakar.`
+        }
+      );
+      return;
+    }
+
     this.ouvrirDetailPlat(plat);
   }
 
@@ -241,8 +286,33 @@ export class AccueilComponent {
 
   /**
    * Partager le plat.
+   * En mode visiteur, exige la connexion au préalable.
    */
   partagerPlat(): void {
+    const pub = this.publicationCourante();
+    if (!pub) {
+      return;
+    }
+
+    if (!this.serviceAuthentification.estAuthentifie()) {
+      this.serviceAuthentification.exigerAuthentification(
+        'PARTAGE',
+        () => this.procederAuPartagePlat(),
+        {
+          titre: `Partager ${pub.plat.nom}`,
+          description: `Connectez-vous pour recommander et partager ce plat de ${pub.plat.nomRestaurant} avec vos proches.`
+        }
+      );
+      return;
+    }
+
+    this.procederAuPartagePlat();
+  }
+
+  /**
+   * Exécution réelle du partage du plat.
+   */
+  private procederAuPartagePlat(): void {
     if (typeof navigator !== 'undefined' && navigator.share) {
       navigator.share({
         title: this.publicationCourante()?.plat.nom,

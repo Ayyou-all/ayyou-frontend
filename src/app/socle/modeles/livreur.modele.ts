@@ -61,4 +61,9 @@ export interface DetailGainJournalier {
   couleurFond: string; // Ex: "bg-amber-50 text-red-600"
 }
 
+export interface ResultatValidationCode {
+  valide: boolean;
+  message: string;
+}
+
 
