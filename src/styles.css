@@ -59,3 +59,15 @@ h1, h2, h3, h4, h5, h6 {
 .animation-apparition {
   animation: apparitionDouce 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes sonnetteWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20%, 60% { transform: rotate(-14deg); }
+  40%, 80% { transform: rotate(14deg); }
+}
+
+.animate-wiggle {
+  animation: sonnetteWiggle 1.4s ease-in-out infinite;
+  transform-origin: top center;
+}
+

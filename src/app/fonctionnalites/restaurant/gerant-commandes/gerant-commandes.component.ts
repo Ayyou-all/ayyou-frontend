@@ -47,6 +47,22 @@ export class GerantCommandesComponent {
   readonly modaleRefusOuverte = signal<boolean>(false);
   readonly motifRefus = signal<string>('Rupture d’ingrédients pour ce plat');
 
+  // État de l'alerte nouvelle commande entrante (conforme à l'image envoyée)
+  readonly alerteVisible = signal<boolean>(true);
+  readonly alerteCommande = signal<{
+    numero: string;
+    titre: string;
+    sousTitre: string;
+    typeLivraison: string;
+    tempsPrep: string;
+  }>({
+    numero: '#1246',
+    titre: 'NOUVELLE COMMANDE !',
+    sousTitre: "VIENT D'ARRIVER",
+    typeLivraison: 'LIVRAISON RAPIDE',
+    tempsPrep: 'PRÉP: 15M'
+  });
+
   // Notification Toast
   readonly notificationSucces = signal<string | null>(null);
 
@@ -268,5 +284,58 @@ export class GerantCommandesComponent {
   fermerDetail(): void {
     this.modaleDetailOuverte.set(false);
     this.commandeEnDetail.set(null);
+  }
+
+  /**
+   * Ouvre la commande affichée dans l'alerte rouge (#1246).
+   */
+  voirCommandeAlerte(): void {
+    const cmd = this.listeCommandes().find((c) => c.numero === this.alerteCommande().numero);
+    if (cmd) {
+      this.ouvrirDetail(cmd);
+    }
+  }
+
+  /**
+   * Ferme l'alerte rouge.
+   */
+  fermerAlerte(): void {
+    this.alerteVisible.set(false);
+  }
+
+  /**
+   * Simule l'arrivée d'une nouvelle commande avec le son officiel de cloche.
+   */
+  simulerArriveeCommande(): void {
+    this.alerteVisible.set(true);
+    this.jouerSonNouvelleCommande();
+    this.notificationSucces.set('🔔 Nouvelle commande #1246 reçue en cuisine !');
+    setTimeout(() => this.notificationSucces.set(null), 3000);
+  }
+
+  /**
+   * Joue le carillon sonore synthétisé de notification de commande.
+   */
+  jouerSonNouvelleCommande(): void {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.2);
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.6);
+    } catch {
+      // Audio bloqué ou non disponible
+    }
   }
 }
