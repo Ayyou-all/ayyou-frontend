@@ -32,6 +32,8 @@ export interface RestaurantAdministration {
   logoIcone: string;
   fondLogo: string;
   telephone: string;
+  adresseLogo?: string | null;
+  adresseCouverture?: string | null;
   totalCommandes?: number;
   platsMenu?: PlatMenuApercu[];
 }
@@ -137,6 +139,8 @@ export class RestaurantsAdminComponent implements OnInit {
             logoIcone: 'fa-solid fa-utensils',
             fondLogo: statut === 'ACTIF' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600',
             telephone: e.telephone || e.telephoneGerant || '',
+            adresseLogo: e.adresse_logo || e.logo || null,
+            adresseCouverture: e.adresse_couverture || e.couverture || null,
             totalCommandes: e.totalCommandes || 0,
             platsMenu: (e.platsMenu && e.platsMenu.length > 0) ? e.platsMenu : [
               { nom: 'Plat Signature Maison', description: 'Préparé à base d’ingrédients frais locaux', prix: 4500 }

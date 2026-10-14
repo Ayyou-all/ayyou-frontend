@@ -227,12 +227,18 @@
               
               <!-- 1. LOGO -->
               <td class="py-4 px-6">
-                <div
-                  [class]="resto.fondLogo"
-                  class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm shadow-2xs shrink-0"
-                >
-                  <i [class]="resto.logoIcone"></i>
-                </div>
+                @if (resto.adresseLogo) {
+                  <div class="w-10 h-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-2xs shrink-0">
+                    <img [src]="resto.adresseLogo" [alt]="resto.nom" class="w-full h-full object-cover" />
+                  </div>
+                } @else {
+                  <div
+                    [class]="resto.fondLogo"
+                    class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm shadow-2xs shrink-0"
+                  >
+                    <i [class]="resto.logoIcone"></i>
+                  </div>
+                }
               </td>
 
               <!-- 2. NOM DU RESTAURANT + CODE ID -->
@@ -449,12 +455,18 @@
         </button>
 
         <div class="flex items-center gap-3.5">
-          <div
-            [class]="restaurantEnConsultation()!.fondLogo"
-            class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs"
-          >
-            <i [class]="restaurantEnConsultation()!.logoIcone"></i>
-          </div>
+          @if (restaurantEnConsultation()!.adresseLogo) {
+            <div class="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0 shadow-2xs">
+              <img [src]="restaurantEnConsultation()!.adresseLogo" [alt]="restaurantEnConsultation()!.nom" class="w-full h-full object-cover" />
+            </div>
+          } @else {
+            <div
+              [class]="restaurantEnConsultation()!.fondLogo"
+              class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs"
+            >
+              <i [class]="restaurantEnConsultation()!.logoIcone"></i>
+            </div>
+          }
           <div>
             <h3 class="text-xl font-black text-slate-900 font-['Outfit']">
               Carte & Menus : {{ restaurantEnConsultation()!.nom }}

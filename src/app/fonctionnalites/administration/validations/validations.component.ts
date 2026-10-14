@@ -138,8 +138,8 @@ export class ValidationsComponent implements OnInit {
             region: e.quartier_ville || e.adresse || 'Dakar',
             adresseComplete: e.adresse || 'Dakar, Sénégal',
             type: 'RESTAURANT' as const,
-            iconeOuPhoto: 'fa-solid fa-utensils',
-            estPhoto: false,
+            iconeOuPhoto: e.adresse_logo || e.logo || 'fa-solid fa-utensils',
+            estPhoto: !!(e.adresse_logo || e.logo),
             classeFondIcone: 'bg-rose-50 text-[#E51824]',
             documentsFournis: docsValides,
             documentsTotal: docs.length,
@@ -169,8 +169,8 @@ export class ValidationsComponent implements OnInit {
             region: l.zone_principale || 'Dakar',
             adresseComplete: l.zone_principale || 'Dakar, Sénégal',
             type: 'LIVREUR' as const,
-            iconeOuPhoto: 'fa-solid fa-motorcycle',
-            estPhoto: false,
+            iconeOuPhoto: l.photo || 'fa-solid fa-motorcycle',
+            estPhoto: !!l.photo,
             classeFondIcone: 'bg-purple-50 text-purple-600',
             documentsFournis: docsValides,
             documentsTotal: docs.length,
@@ -260,6 +260,11 @@ export class ValidationsComponent implements OnInit {
     const region = this.filtreRegion();
 
     return this.listePartenaires().filter((partenaire) => {
+      // Un partenaire déjà validé ne doit plus apparaître dans la section des validations
+      if (partenaire.statut === 'VALIDE') {
+        return false;
+      }
+
       // Filtre d'onglet
       if (onglet === 'RESTAURANTS' && partenaire.type !== 'RESTAURANT') {
         return false;
