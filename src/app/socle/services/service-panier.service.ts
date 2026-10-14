@@ -62,7 +62,7 @@ export class ServicePanierService {
         nomRestaurant: resto?.nom || plat.nomRestaurant || 'Restaurant',
         adresseLogoRestaurant: resto?.adresseLogo || '',
         delaiLivraison: resto?.delaiLivraisonMinutes ? `${resto.delaiLivraisonMinutes} min` : '20-30 min',
-        adresseLivraison: 'Plateau, Avenue Hassan II',
+        adresseLivraison: '',
         methodePaiement: 'WAVE',
         lignes: [],
         sousTotalFcfa: 0,

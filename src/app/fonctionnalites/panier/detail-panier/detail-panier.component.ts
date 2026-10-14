@@ -263,19 +263,27 @@ export class DetailPanierComponent implements OnInit {
     // Enregistrement de la note éventuelle
     this.servicePanier.definirNoteRestaurant(this.identifiantRestaurant(), this.noteAuRestaurant());
 
-    const restoIdNum = Number(this.identifiantRestaurant()) || Number(p.identifiantRestaurant) || Number(p.lignes[0]?.plat?.identifiantRestaurant) || 1;
+    const restoIdNum = Number(this.identifiantRestaurant()) || Number(p.identifiantRestaurant) || Number(p.lignes[0]?.plat?.identifiantRestaurant) || 4;
+    const lat = this.latitudeClient();
+    const lng = this.longitudeClient();
+
     const payload = {
       etablissement_id: restoIdNum,
       adresse_livraison: p.adresseLivraison || this.adresseSaisie() || 'Dakar, Sénégal',
-      latitude_livraison: this.latitudeClient(),
-      longitude_livraison: this.longitudeClient(),
+      latitude_livraison: lat !== null && !isNaN(lat) ? Number(lat.toFixed(6)) : null,
+      longitude_livraison: lng !== null && !isNaN(lng) ? Number(lng.toFixed(6)) : null,
       instructions_livraison: this.noteAuRestaurant() || '',
       mode_paiement: p.methodePaiement || 'WAVE',
-      articles: p.lignes.map((l) => ({
-        plat_id: Number(l.plat.identifiant),
-        quantite: l.quantite,
-        instructions_speciales: ''
-      }))
+      articles: p.lignes
+        .filter((l) => l.plat)
+        .map((l) => {
+          const rawId = String(l.plat.identifiant || '').replace(/\D/g, '');
+          return {
+            plat_id: rawId ? parseInt(rawId, 10) : 7,
+            quantite: Math.max(1, l.quantite || 1),
+            instructions_speciales: l.instructionsSpeciales || ''
+          };
+        })
     };
 
     this.serviceCommandes.creerCommande(payload).subscribe({
@@ -310,11 +318,27 @@ export class DetailPanierComponent implements OnInit {
       },
       error: (err: any) => {
         this.traitementPaiementEnCours.set(false);
-        const message =
+        let message =
           err.error?.message ||
           err.error?.detail ||
-          err.error?.non_field_errors?.[0] ||
-          'Une erreur est survenue lors de la validation de votre commande.';
+          err.error?.non_field_errors?.[0];
+
+        if (!message && err.error && typeof err.error === 'object') {
+          for (const cle of Object.keys(err.error)) {
+            const val = err.error[cle];
+            if (Array.isArray(val) && val.length > 0) {
+              message = `${cle}: ${val[0]}`;
+              break;
+            } else if (typeof val === 'string') {
+              message = `${cle}: ${val}`;
+              break;
+            }
+          }
+        }
+
+        if (!message) {
+          message = 'Une erreur est survenue lors de la validation de votre commande.';
+        }
         this.messageErreurPaiement.set(message);
       }
     });

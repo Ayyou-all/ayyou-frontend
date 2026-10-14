@@ -115,13 +115,34 @@ export class ServiceRestaurantCommandesService {
   private idsCommandesConnues = new Set<string>();
 
   constructor() {
-    this.demarrerEcouteTempsReel(3500);
+    if (this.estRoleGerant()) {
+      this.demarrerEcouteTempsReel(3500);
+    }
+  }
+
+  /**
+   * Vérifie si l'utilisateur actuellement connecté est un gérant de restaurant.
+   */
+  estRoleGerant(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    try {
+      const brut = localStorage.getItem('ayyou_utilisateur_connecte');
+      if (brut) {
+        const u = JSON.parse(brut);
+        return u?.role === 'RESTAURANT' || u?.role === 'GERANT_RESTAURANT';
+      }
+    } catch {}
+    return false;
   }
 
   /**
    * Démarre l'écoute temps réel des commandes restaurant via polling automatique.
    */
   demarrerEcouteTempsReel(intervalleMs: number = 3500): void {
+    if (!this.estRoleGerant()) {
+      this.arreterEcouteTempsReel();
+      return;
+    }
     this.chargerCommandesRestaurant(true);
     if (!this.intervallePolling) {
       this.intervallePolling = setInterval(() => {
@@ -173,6 +194,12 @@ export class ServiceRestaurantCommandesService {
    * Charge les commandes réelles de l'établissement depuis l'API Django.
    */
   chargerCommandesRestaurant(afficherChargement: boolean = false): void {
+    if (!this.estRoleGerant()) {
+      this.arreterEcouteTempsReel();
+      if (afficherChargement) this.chargementEnCours.set(false);
+      return;
+    }
+
     if (afficherChargement) {
       this.chargementEnCours.set(true);
     }
@@ -284,9 +311,12 @@ export class ServiceRestaurantCommandesService {
           this.chargementEnCours.set(false);
         }
       },
-      error: () => {
+      error: (err: any) => {
         if (afficherChargement) {
           this.chargementEnCours.set(false);
+        }
+        if (err?.status === 401 || err?.status === 403) {
+          this.arreterEcouteTempsReel();
         }
       }
     });
