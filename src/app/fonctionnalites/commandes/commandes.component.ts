@@ -16,10 +16,6 @@ export class CommandesComponent {
   readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly routeur = inject(Router);
 
-  connexionRapideClient(): void {
-    this.serviceAuthentification.connexionRapideClientVisiteur().subscribe();
-  }
-
   // Onglet actif : 'EN_COURS' ou 'HISTORIQUE' (conforme à l'Image 3)
   readonly ongletActif = signal<'EN_COURS' | 'HISTORIQUE'>('EN_COURS');
 

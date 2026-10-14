@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MethodePaiement, PanierRestaurant } from '../../../socle/modeles/panier.modele';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
+import { ServiceCommandesService } from '../../../socle/services/service-commandes.service';
 import { ServiceOrchestrateurCommandesService } from '../../../socle/services/service-orchestrateur-commandes.service';
 import { ServicePanierService } from '../../../socle/services/service-panier.service';
 
@@ -20,7 +21,12 @@ export class DetailPanierComponent {
   readonly servicePanier = inject(ServicePanierService);
   readonly serviceCatalogue = inject(ServiceCatalogueService);
   readonly serviceAuthentification = inject(ServiceAuthentification);
+  readonly serviceCommandes = inject(ServiceCommandesService);
   readonly serviceOrchestrateur = inject(ServiceOrchestrateurCommandesService);
+
+  // Traitement en cours et erreurs de paiement
+  readonly traitementPaiementEnCours = signal<boolean>(false);
+  readonly messageErreurPaiement = signal<string | null>(null);
 
   // Modal de modification de l'adresse de livraison
   readonly modalModifierAdresse = signal<boolean>(false);
@@ -28,7 +34,7 @@ export class DetailPanierComponent {
 
   // Modal de confirmation de commande réussie
   readonly commandeReussie = signal<boolean>(false);
-  readonly numeroCommandeSimulee = signal<string>('AYY-8429');
+  readonly numeroCommandeSimulee = signal<string>('');
   readonly commandeCreeeId = signal<string | null>(null);
 
   // Détection des articles en rupture de stock
@@ -163,27 +169,79 @@ export class DetailPanierComponent {
       return;
     }
 
+    const p = this.panier();
+    if (!p.lignes || p.lignes.length === 0) {
+      return;
+    }
+
+    this.traitementPaiementEnCours.set(true);
+    this.messageErreurPaiement.set(null);
+
     // Enregistrement de la note éventuelle
     this.servicePanier.definirNoteRestaurant(this.identifiantRestaurant(), this.noteAuRestaurant());
 
-    // Création orchestrée de la commande réelle (propage vers le restaurant et le coursier)
-    const commandeCreee = this.serviceOrchestrateur.creerCommandeDepuisPanier(
-      this.panier(),
-      this.noteAuRestaurant()
-    );
+    const restoIdNum = Number(this.identifiantRestaurant()) || Number(p.identifiantRestaurant) || Number(p.lignes[0]?.plat?.identifiantRestaurant) || 1;
+    const payload = {
+      etablissement_id: restoIdNum,
+      adresse_livraison: p.adresseLivraison || this.adresseSaisie() || 'Dakar, Sénégal',
+      instructions_livraison: this.noteAuRestaurant() || '',
+      mode_paiement: p.methodePaiement || 'WAVE',
+      articles: p.lignes.map((l) => ({
+        plat_id: Number(l.plat.identifiant),
+        quantite: l.quantite,
+        instructions_speciales: ''
+      }))
+    };
 
-    this.commandeCreeeId.set(commandeCreee.identifiant);
-    this.numeroCommandeSimulee.set(commandeCreee.identifiant);
-    this.commandeReussie.set(true);
+    this.serviceCommandes.creerCommande(payload).subscribe({
+      next: (commandeCreee: any) => {
+        this.traitementPaiementEnCours.set(false);
+        const refCommande = commandeCreee.reference || commandeCreee.identifiant || String(commandeCreee.id);
+        const commandeId = commandeCreee.id || refCommande;
+        this.commandeCreeeId.set(String(commandeId));
+        this.numeroCommandeSimulee.set(refCommande);
+
+        // Initialisation du paiement PayTech (Wave / Orange Money)
+        this.serviceCommandes.initierPaiementPayTech(commandeCreee.id).subscribe({
+          next: (tentative: any) => {
+            this.servicePanier.supprimerPanier(this.identifiantRestaurant());
+            if (tentative && tentative.url_redirection) {
+              // Redirection vers le guichet de paiement PayTech sécurisé
+              window.location.href = tentative.url_redirection;
+              return;
+            }
+            this.commandeReussie.set(true);
+          },
+          error: () => {
+            // En cas d'indisponibilité du webhook PayTech, la commande existe et peut être suivie
+            this.servicePanier.supprimerPanier(this.identifiantRestaurant());
+            this.commandeReussie.set(true);
+          }
+        });
+      },
+      error: (err: any) => {
+        this.traitementPaiementEnCours.set(false);
+        const message =
+          err.error?.message ||
+          err.error?.detail ||
+          err.error?.non_field_errors?.[0] ||
+          'Une erreur est survenue lors de la validation de votre commande.';
+        this.messageErreurPaiement.set(message);
+      }
+    });
   }
 
   /**
    * Finalise la commande et redirige vers le suivi de commande GPS en direct.
    */
   allerVersCommandes(): void {
-    const idCommande = this.commandeCreeeId() || 'ORD-99238';
+    const idCommande = this.commandeCreeeId();
     this.commandeReussie.set(false);
-    this.routeur.navigate(['/commandes/suivi', idCommande]);
+    if (idCommande) {
+      this.routeur.navigate(['/commandes/suivi', idCommande]);
+    } else {
+      this.routeur.navigate(['/commandes']);
+    }
   }
 
   /**

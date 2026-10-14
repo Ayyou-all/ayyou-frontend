@@ -61,13 +61,13 @@
           <i class="fa-solid fa-money-bill-wave"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ kpis.revenuTotal.evolution }}
+          {{ kpis().revenuTotal.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Revenu Total</div>
         <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1 tracking-tight">
-          {{ kpis.revenuTotal.valeur }}
+          {{ kpis().revenuTotal.valeur }}
         </div>
       </div>
     </div>
@@ -79,13 +79,13 @@
           <i class="fa-solid fa-cart-shopping"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-sky-50 text-sky-600 border border-sky-100">
-          {{ kpis.commandesTotales.evolution }}
+          {{ kpis().commandesTotales.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Commandes Totales</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ kpis.commandesTotales.valeur }}
+          {{ kpis().commandesTotales.valeur }}
         </div>
       </div>
     </div>
@@ -97,13 +97,13 @@
           <i class="fa-solid fa-user-check"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-600 border border-amber-100">
-          {{ kpis.utilisateursActifs.evolution }}
+          {{ kpis().utilisateursActifs.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Utilisateurs Actifs</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ kpis.utilisateursActifs.valeur }}
+          {{ kpis().utilisateursActifs.valeur }}
         </div>
       </div>
     </div>
@@ -115,13 +115,13 @@
           <i class="fa-solid fa-arrow-trend-up"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-purple-50 text-purple-600 border border-purple-100">
-          {{ kpis.tauxCroissance.evolution }}
+          {{ kpis().tauxCroissance.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Taux de Croissance</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ kpis.tauxCroissance.valeur }}
+          {{ kpis().tauxCroissance.valeur }}
         </div>
       </div>
     </div>
@@ -199,26 +199,13 @@
 
               <!-- Remplissage dégradé sous la courbe -->
               <path
-                d="M 35 195 
-                   C 70 170, 90 165, 110 165 
-                   C 140 165, 160 180, 185 175 
-                   C 220 170, 240 135, 260 135 
-                   C 290 135, 310 150, 335 145 
-                   C 370 140, 390 90, 410 90 
-                   C 440 90, 465 105, 485 105
-                   L 485 200 L 35 200 Z"
+                [attr.d]="cheminSurfaceSvg()"
                 fill="url(#gradientRevenus)"
               />
 
               <!-- Ligne de courbe rouge -->
               <path
-                d="M 35 195 
-                   C 70 170, 90 165, 110 165 
-                   C 140 165, 160 180, 185 175 
-                   C 220 170, 240 135, 260 135 
-                   C 290 135, 310 150, 335 145 
-                   C 370 140, 390 90, 410 90 
-                   C 440 90, 465 105, 485 105"
+                [attr.d]="cheminLigneSvg()"
                 fill="none"
                 stroke="#E51824"
                 stroke-width="3"
@@ -226,7 +213,7 @@
               />
 
               <!-- Points interactifs sur la courbe -->
-              @for (point of pointsCourbeRevenus; track point.date) {
+              @for (point of pointsCourbeRevenus(); track point.date) {
                 <g
                   (mouseenter)="pointSurvole.set(point)"
                   (mouseleave)="pointSurvole.set(null)"
@@ -270,7 +257,7 @@
 
             <!-- Axe horizontal X (Dates du mois : 01 Oct à 31 Oct) -->
             <div class="h-6 flex items-center justify-between text-[11px] font-semibold text-slate-400 pt-2 select-none">
-              @for (point of pointsCourbeRevenus; track point.date) {
+              @for (point of pointsCourbeRevenus(); track point.date) {
                 <span>{{ point.date }}</span>
               }
             </div>
@@ -343,7 +330,7 @@
 
           <!-- Centre vide du donut -->
           <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span class="text-xl font-black text-slate-900 font-['Outfit']">8,432</span>
+            <span class="text-xl font-black text-slate-900 font-['Outfit']">{{ kpis().commandesTotales.valeur }}</span>
             <span class="text-[10px] text-slate-400 font-bold uppercase">Total</span>
           </div>
         </div>
@@ -383,13 +370,13 @@
         Performance des Meilleurs Restaurants
       </h3>
       <p class="text-xs text-slate-400 font-medium mt-0.5">
-        Top 5 basé sur le volume de commandes ce mois-ci.
+        Classement basé sur le volume de commandes réel de la plateforme.
       </p>
     </div>
 
     <!-- Graphique horizontal des barres -->
     <div class="space-y-4 pt-2">
-      @for (resto of topRestaurants; track resto.nom) {
+      @for (resto of topRestaurants(); track resto.nom) {
         <div class="grid grid-cols-12 items-center gap-4 text-xs font-bold">
           <!-- Nom du restaurant -->
           <div class="col-span-3 text-slate-700 truncate text-right">
@@ -410,6 +397,11 @@
           <div class="col-span-1 text-slate-400 font-mono text-[11px]">
             {{ resto.commandes }}
           </div>
+        </div>
+      } @empty {
+        <div class="py-8 text-center text-slate-400">
+          <i class="fa-solid fa-store text-2xl mb-2 text-slate-300"></i>
+          <div class="text-xs font-semibold">Aucun établissement enregistré pour le moment</div>
         </div>
       }
 

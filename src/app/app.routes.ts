@@ -187,7 +187,7 @@ export const routes: Routes = [
           import(
             './fonctionnalites/restaurant/gerant-commandes/gerant-commandes.component'
           ).then((m) => m.GerantCommandesComponent),
-        title: 'Gestion des Commandes — Teranga Eats'
+        title: 'Gestion des Commandes — Espace Restaurant AYYOU'
       },
       {
         path: 'menu',
@@ -195,7 +195,7 @@ export const routes: Routes = [
           import(
             './fonctionnalites/restaurant/gerant-menu/gerant-menu.component'
           ).then((m) => m.GerantMenuComponent),
-        title: 'Gestion du Menu — Teranga Eats'
+        title: 'Gestion du Menu — Espace Restaurant AYYOU'
       },
       {
         path: 'historique',
@@ -203,7 +203,7 @@ export const routes: Routes = [
           import(
             './fonctionnalites/restaurant/gerant-historique/gerant-historique.component'
           ).then((m) => m.GerantHistoriqueComponent),
-        title: 'Historique des Commandes — Teranga Eats'
+        title: 'Historique des Commandes — Espace Restaurant AYYOU'
       },
       {
         path: 'analytiques',
@@ -211,7 +211,7 @@ export const routes: Routes = [
           import(
             './fonctionnalites/restaurant/gerant-analytiques/gerant-analytiques.component'
           ).then((m) => m.GerantAnalytiquesComponent),
-        title: 'Performances & Analytiques — Teranga Eats'
+        title: 'Performances & Analytiques — Espace Restaurant AYYOU'
       },
       {
         path: 'menu-studio',
@@ -219,12 +219,20 @@ export const routes: Routes = [
           import(
             './fonctionnalites/restaurant/gerant-ayyou-studio/gerant-ayyou-studio.component'
           ).then((m) => m.GerantAyyouStudioComponent),
-        title: 'Menu & Studio — Teranga Eats'
+        title: 'Studio & Vidéos — Espace Restaurant AYYOU'
       },
       {
         path: 'ayyou-studio',
         redirectTo: 'menu-studio',
         pathMatch: 'full'
+      },
+      {
+        path: 'profil',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-profil/gerant-profil.component'
+          ).then((m) => m.GerantProfilComponent),
+        title: 'Mon Profil & Établissement — Espace Restaurant AYYOU'
       }
     ]
   },

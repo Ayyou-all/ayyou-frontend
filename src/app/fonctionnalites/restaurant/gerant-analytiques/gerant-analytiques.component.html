@@ -1,13 +1,13 @@
 <div class="space-y-6 pb-16">
 
-  <!-- 1. EN-TÊTE : Titre "Le Teranga", Date & Barre de Recherche avec filtre -->
+  <!-- 1. EN-TÊTE : Titre Restaurant, Date & Barre de Recherche avec filtre -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-100">
     <!-- Nom et Date -->
     <div class="flex flex-wrap items-center gap-3.5">
-      <h1 class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Le Teranga</h1>
+      <h1 class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">{{ nomRestaurant() }}</h1>
       <div class="flex items-center gap-2 text-xs font-semibold text-gray-500 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
         <i class="fa-regular fa-calendar text-gray-400"></i>
-        <span>Aujourd'hui, 24 Mai 2024</span>
+        <span>{{ dateAujourdhuiTexte() }}</span>
       </div>
     </div>
 
@@ -176,17 +176,13 @@
         </defs>
 
         <!-- Lignes horizontales de repère & Étiquettes Axe Y -->
-        <!-- 150k F -->
-        <line x1="75" y1="40" x2="890" y2="40" stroke="#F1F5F9" stroke-width="1.2" stroke-dasharray="3 3" />
-        <text x="65" y="44" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">150k F</text>
+        <!-- Max -->
+        <line x1="75" y1="55" x2="890" y2="55" stroke="#F1F5F9" stroke-width="1.2" stroke-dasharray="3 3" />
+        <text x="65" y="59" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">{{ donneesCourbe().labelMax }}</text>
 
-        <!-- 100k F -->
-        <line x1="75" y1="100" x2="890" y2="100" stroke="#F1F5F9" stroke-width="1.2" stroke-dasharray="3 3" />
-        <text x="65" y="104" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">100k F</text>
-
-        <!-- 50k F -->
-        <line x1="75" y1="160" x2="890" y2="160" stroke="#F1F5F9" stroke-width="1.2" stroke-dasharray="3 3" />
-        <text x="65" y="164" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">50k F</text>
+        <!-- Milieu -->
+        <line x1="75" y1="135" x2="890" y2="135" stroke="#F1F5F9" stroke-width="1.2" stroke-dasharray="3 3" />
+        <text x="65" y="139" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">{{ donneesCourbe().labelMilieu }}</text>
 
         <!-- 0 F -->
         <line x1="75" y1="220" x2="890" y2="220" stroke="#E2E8F0" stroke-width="1.2" />
@@ -194,13 +190,13 @@
 
         <!-- AIRE REMPLIE SOUS LA COURBE (Gradient) -->
         <path
-          d="M 90,115 C 160,110 200,102 240,100 C 310,95 350,90 400,90 C 470,90 510,98 560,94 C 620,90 660,65 720,50 C 780,42 810,48 870,58 L 870,220 L 90,220 Z"
+          [attr.d]="donneesCourbe().cheminAire"
           fill="url(#degradeRevenusCourbe)"
         />
 
-        <!-- COURBE ROUGE (Ligne continue lisse Bézier) -->
+        <!-- COURBE ROUGE (Ligne continue) -->
         <path
-          d="M 90,115 C 160,110 200,102 240,100 C 310,95 350,90 400,90 C 470,90 510,98 560,94 C 620,90 660,65 720,50 C 780,42 810,48 870,58"
+          [attr.d]="donneesCourbe().cheminLigne"
           fill="none"
           stroke="#E51824"
           stroke-width="3"
@@ -208,34 +204,27 @@
         />
 
         <!-- POINTS CLÉS SUR LA COURBE (7 jours : Lun..Dim) -->
-        <!-- Lun -->
-        <circle cx="90" cy="115" r="3.5" fill="#E51824" />
-        <text x="90" y="244" font-size="11" font-weight="600" fill="#64748B" text-anchor="middle">Lun</text>
-
-        <!-- Mar -->
-        <circle cx="220" cy="101" r="3.5" fill="#E51824" />
-        <text x="220" y="244" font-size="11" font-weight="600" fill="#64748B" text-anchor="middle">Mar</text>
-
-        <!-- Mer -->
-        <circle cx="350" cy="90" r="3.5" fill="#E51824" />
-        <text x="350" y="244" font-size="11" font-weight="600" fill="#64748B" text-anchor="middle">Mer</text>
-
-        <!-- Jeu -->
-        <circle cx="480" cy="95" r="3.5" fill="#E51824" />
-        <text x="480" y="244" font-size="11" font-weight="600" fill="#64748B" text-anchor="middle">Jeu</text>
-
-        <!-- Ven -->
-        <circle cx="610" cy="80" r="3.5" fill="#E51824" />
-        <text x="610" y="244" font-size="11" font-weight="600" fill="#64748B" text-anchor="middle">Ven</text>
-
-        <!-- Sam (Pic maximal ~145k F) -->
-        <circle cx="740" cy="48" r="4.5" fill="#E51824" />
-        <circle cx="740" cy="48" r="8" fill="#E51824" fill-opacity="0.2" />
-        <text x="740" y="244" font-size="11" font-weight="700" fill="#E51824" text-anchor="middle">Sam</text>
-
-        <!-- Dim -->
-        <circle cx="870" cy="58" r="3.5" fill="#E51824" />
-        <text x="870" y="244" font-size="11" font-weight="600" fill="#64748B" text-anchor="middle">Dim</text>
+        @for (pt of donneesCourbe().points; track pt.label) {
+          <circle
+            [attr.cx]="pt.x"
+            [attr.cy]="pt.y"
+            [attr.r]="pt.montant > 0 && pt.montant === donneesCourbe().maxRev ? 5 : 3.5"
+            fill="#E51824"
+          />
+          @if (pt.montant > 0 && pt.montant === donneesCourbe().maxRev) {
+            <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="9" fill="#E51824" fill-opacity="0.2" />
+          }
+          <text
+            [attr.x]="pt.x"
+            y="244"
+            font-size="11"
+            [attr.font-weight]="pt.montant > 0 && pt.montant === donneesCourbe().maxRev ? '700' : '600'"
+            [attr.fill]="pt.montant > 0 && pt.montant === donneesCourbe().maxRev ? '#E51824' : '#64748B'"
+            text-anchor="middle"
+          >
+            {{ pt.label }}
+          </text>
+        }
       </svg>
     </div>
   </div>
@@ -249,68 +238,45 @@
 
       <!-- Visualisation Donut SVG -->
       <div class="py-6 flex flex-col items-center justify-center">
-        <div class="relative w-44 h-44 flex items-center justify-center">
-          <svg viewBox="0 0 160 160" class="w-full h-full -rotate-90">
-            <!-- Segment 1 : Plats (Rouge #E51824 ~ 60%) -->
-            <!-- Circonférence pour r=55: 2 * PI * 55 = 345.57. 60% = 207.34 -->
-            <circle
-              cx="80"
-              cy="80"
-              r="55"
-              fill="transparent"
-              stroke="#E51824"
-              stroke-width="26"
-              stroke-dasharray="207.34 345.57"
-              stroke-dashoffset="0"
-            />
-
-            <!-- Segment 2 : Boissons (Bleu #3B82F6 ~ 25%) -->
-            <!-- 25% = 86.39 -->
-            <circle
-              cx="80"
-              cy="80"
-              r="55"
-              fill="transparent"
-              stroke="#3B82F6"
-              stroke-width="26"
-              stroke-dasharray="86.39 345.57"
-              stroke-dashoffset="-207.34"
-            />
-
-            <!-- Segment 3 : Desserts (Gris #CBD5E1 ~ 15%) -->
-            <!-- 15% = 51.83 -->
-            <circle
-              cx="80"
-              cy="80"
-              r="55"
-              fill="transparent"
-              stroke="#CBD5E1"
-              stroke-width="26"
-              stroke-dasharray="51.83 345.57"
-              stroke-dashoffset="-293.73"
-            />
-          </svg>
-        </div>
-
-        <!-- Légende en dessous avec petits carrés -->
-        <div class="flex items-center justify-center gap-6 mt-6">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-xs bg-[#E51824]"></span>
-            <span class="text-xs font-bold text-gray-600">Plats</span>
+        @if (segmentsDonut().length > 0) {
+          <div class="relative w-44 h-44 flex items-center justify-center">
+            <svg viewBox="0 0 160 160" class="w-full h-full -rotate-90">
+              @for (seg of segmentsDonut(); track seg.nom) {
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="55"
+                  fill="transparent"
+                  [attr.stroke]="seg.couleur"
+                  stroke-width="26"
+                  [attr.stroke-dasharray]="seg.dasharray"
+                  [attr.stroke-dashoffset]="seg.dashoffset"
+                />
+              }
+            </svg>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-xs bg-[#3B82F6]"></span>
-            <span class="text-xs font-bold text-gray-600">Boissons</span>
+
+          <!-- Légende en dessous avec pourcentages réels -->
+          <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-6">
+            @for (seg of segmentsDonut(); track seg.nom) {
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-xs" [style.background-color]="seg.couleur"></span>
+                <span class="text-xs font-bold text-gray-700">{{ seg.nom }} ({{ seg.pourcentage }}%)</span>
+              </div>
+            }
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-xs bg-[#CBD5E1]"></span>
-            <span class="text-xs font-bold text-gray-600">Desserts</span>
+        } @else {
+          <div class="py-12 flex flex-col items-center justify-center text-center">
+            <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mb-2">
+              <i class="fa-solid fa-chart-pie text-lg"></i>
+            </div>
+            <p class="text-xs font-semibold text-gray-400">Aucune catégorie vendue pour l'instant</p>
           </div>
-        </div>
+        }
       </div>
     </div>
 
-    <!-- CARTE DROITE : Commandes de la semaine (Barres verticales avec Samedi rouge) -->
+    <!-- CARTE DROITE : Commandes de la semaine (Barres verticales) -->
     <div class="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col justify-between">
       <h2 class="text-base font-black text-gray-900 tracking-tight">Commandes de la semaine</h2>
 
@@ -319,16 +285,19 @@
         <div class="flex items-end gap-3 sm:gap-4 h-48 sm:h-52 pt-4 px-2">
           <!-- Axe Y repères -->
           <div class="flex flex-col justify-between h-full text-[10px] font-bold text-gray-400 pr-1 pb-6 select-none">
-            <span>80</span>
-            <span>40</span>
-            <span>20</span>
+            <span>Max</span>
+            <span>50%</span>
             <span>0</span>
           </div>
 
           <!-- Colonnes de barres -->
-          <div class="flex-1 grid grid-cols-6 gap-2 sm:gap-3 h-full items-end pb-6 border-b border-gray-100">
+          <div class="flex-1 grid grid-cols-7 gap-2 sm:gap-3 h-full items-end pb-6 border-b border-gray-100">
             @for (barre of barresSemaine(); track $index) {
-              <div class="flex flex-col items-center h-full justify-end group">
+              <div class="flex flex-col items-center h-full justify-end group relative" [title]="barre.quantite + ' commandes'">
+                <!-- Tooltip hover -->
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-gray-900 text-white text-[10px] font-bold py-0.5 px-1.5 rounded pointer-events-none whitespace-nowrap z-10">
+                  {{ barre.quantite }} cmd
+                </div>
                 <!-- Barre -->
                 <div
                   class="w-full max-w-[42px] rounded-t-sm transition-all duration-300"

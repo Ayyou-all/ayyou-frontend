@@ -11,121 +11,8 @@ import { Plat } from '../modeles/plat.modele';
   providedIn: 'root'
 })
 export class ServicePanierService {
-  // Liste des paniers par restaurant (pré-remplie conformément aux maquettes : Chez Fatou, Chez Aissatou, Le Grill)
-  readonly listePaniersRestaurants = signal<PanierRestaurant[]>([
-    {
-      identifiantRestaurant: 'resto-chez-fatou',
-      nomRestaurant: 'Chez Fatou',
-      adresseLogoRestaurant: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-      delaiLivraison: '25-35 min',
-      adresseLivraison: 'Plateau, Avenue Hassan II',
-      methodePaiement: 'WAVE',
-      noteRestaurant: '',
-      lignes: [
-        {
-          plat: {
-            identifiant: 'plat-thieb-fatou',
-            identifiantRestaurant: 'resto-chez-fatou',
-            nomRestaurant: 'Chez Fatou',
-            nom: 'Thieboudienne Royal',
-            description: 'Riz rouge, Mérou frais, légumes du jour et sauce gombo onctueuse.',
-            prixFcfa: 3500,
-            adresseImage: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-            categorie: 'Plats',
-            statut: 'DISPONIBLE'
-          },
-          quantite: 1
-        },
-        {
-          plat: {
-            identifiant: 'plat-bissap-fatou',
-            identifiantRestaurant: 'resto-chez-fatou',
-            nomRestaurant: 'Chez Fatou',
-            nom: 'Bissap Frais Maison',
-            description: '50cl, Sans sucre ajouté, menthe fraîche infusée.',
-            prixFcfa: 1000,
-            adresseImage: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400',
-            categorie: 'Boissons',
-            statut: 'DISPONIBLE'
-          },
-          quantite: 2
-        }
-      ],
-      sousTotalFcfa: 5500,
-      fraisLivraisonFcfa: 1000,
-      totalFcfa: 6500
-    },
-    {
-      identifiantRestaurant: 'resto-chez-aissatou',
-      nomRestaurant: 'Chez Aissatou',
-      adresseLogoRestaurant: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150',
-      delaiLivraison: '25-35 min',
-      adresseLivraison: 'Keur Massar, Rond point 6',
-      methodePaiement: 'WAVE',
-      noteRestaurant: '',
-      lignes: [
-        {
-          plat: {
-            identifiant: 'plat-aissatou-salade',
-            identifiantRestaurant: 'resto-chez-aissatou',
-            nomRestaurant: 'Chez Aissatou',
-            nom: 'Bowl Gourmand Keur Massar',
-            description: 'Patates douces rôties, graines torréfiées et fromage frais.',
-            prixFcfa: 3500,
-            adresseImage: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
-            categorie: 'Plats',
-            statut: 'DISPONIBLE'
-          },
-          quantite: 1
-        },
-        {
-          plat: {
-            identifiant: 'plat-bissap-aissatou',
-            identifiantRestaurant: 'resto-chez-aissatou',
-            nomRestaurant: 'Chez Aissatou',
-            nom: 'Bissap Frais',
-            description: '50cl, fleur d’hibiscus du Sénégal.',
-            prixFcfa: 1000,
-            adresseImage: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400',
-            categorie: 'Boissons',
-            statut: 'DISPONIBLE'
-          },
-          quantite: 4
-        }
-      ],
-      sousTotalFcfa: 7500,
-      fraisLivraisonFcfa: 1000,
-      totalFcfa: 8500
-    },
-    {
-      identifiantRestaurant: 'resto-le-grill',
-      nomRestaurant: 'Le Grill',
-      adresseLogoRestaurant: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-      delaiLivraison: '30-40 min',
-      adresseLivraison: 'Almadies, Corniche Ouest',
-      methodePaiement: 'ORANGE_MONEY',
-      noteRestaurant: '',
-      lignes: [
-        {
-          plat: {
-            identifiant: 'plat-grill-brochettes',
-            identifiantRestaurant: 'resto-le-grill',
-            nomRestaurant: 'Le Grill',
-            nom: 'Brochettes de bœuf dibiterie',
-            description: 'Assaisonnées aux oignons pimentés et moutarde.',
-            prixFcfa: 4000,
-            adresseImage: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',
-            categorie: 'Plats',
-            statut: 'DISPONIBLE'
-          },
-          quantite: 1
-        }
-      ],
-      sousTotalFcfa: 4000,
-      fraisLivraisonFcfa: 1000,
-      totalFcfa: 5000
-    }
-  ]);
+  // Liste réactive des paniers par restaurant (démarre vide sans données mockées)
+  readonly listePaniersRestaurants = signal<PanierRestaurant[]>([]);
 
   // Nombre de paniers actifs (ex: 3 pour "Mes paniers 3")
   readonly nombrePaniersActifs = computed(() => {
@@ -240,6 +127,10 @@ export class ServicePanierService {
   viderPanierRestaurant(identifiantRestaurant: string): void {
     const paniers = this.listePaniersRestaurants().filter((p) => p.identifiantRestaurant !== identifiantRestaurant);
     this.listePaniersRestaurants.set(paniers);
+  }
+
+  supprimerPanier(identifiantRestaurant: string): void {
+    this.viderPanierRestaurant(identifiantRestaurant);
   }
 
   /**

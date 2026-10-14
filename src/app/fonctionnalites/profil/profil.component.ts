@@ -191,16 +191,6 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
               <i class="fa-solid fa-user-plus text-sm text-slate-500"></i>
               <span>Créer un compte</span>
             </a>
-
-            <!-- Connexion rapide démo 1 clic -->
-            <button
-              type="button"
-              (click)="connexionRapideClient()"
-              class="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-900 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <i class="fa-solid fa-bolt text-amber-600"></i>
-              <span>Connexion rapide Démo (Fatou Diop)</span>
-            </button>
           </div>
 
           <!-- Lien retour à l'accueil -->
@@ -223,10 +213,6 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
 export class ProfilComponent {
   readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly routeur = inject(Router);
-
-  connexionRapideClient(): void {
-    this.serviceAuthentification.connexionRapideClientVisiteur().subscribe();
-  }
 
   deconnecter(): void {
     this.serviceAuthentification.deconnecter();

@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, HostListener, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
 import { PublicationFil } from '../../../socle/modeles/fil-actualite.modele';
 import { Plat } from '../../../socle/modeles/plat.modele';
@@ -36,6 +39,7 @@ export interface PlatStudioOption {
   templateUrl: './gerant-ayyou-studio.component.html'
 })
 export class GerantAyyouStudioComponent {
+  private readonly http = inject(HttpClient);
   private readonly serviceCatalogue = inject(ServiceCatalogueService);
   private readonly routeur = inject(Router);
 
@@ -47,6 +51,7 @@ export class GerantAyyouStudioComponent {
 
   // Recherche
   readonly rechercheTexte = signal<string>('');
+  readonly chargementEnCours = signal<boolean>(false);
 
   // État de lecture de la vidéo aperçu dans la vue publication
   readonly estEnLecture = signal<boolean>(false);
@@ -64,109 +69,82 @@ export class GerantAyyouStudioComponent {
   }
 
   // Vidéo source active pour la publication
-  readonly urlVideoActive = signal<string>(
-    'https://assets.mixkit.co/videos/preview/mixkit-serving-dinner-in-a-restaurant-42795-large.mp4'
-  );
+  readonly urlVideoActive = signal<string>('');
+  readonly fichierVideoChoisi = signal<File | null>(null);
+  readonly nomFichierVideo = signal<string>('');
 
-  // Image d'affiche (Thiéboudienne rouge)
-  readonly urlAfficheActive = signal<string>('/images/plat-accueil.jpg');
+  // Image d'affiche (poster de couverture)
+  readonly urlAfficheActive = signal<string>('');
 
-  // Description de la publication (max 100 caractères, Image 3)
-  readonly texteDescription = signal<string>(
-    'Véritable Ceebu Jën rouge au mérou blanc frais, légumes mijotés du terroir dakarois.'
-  );
+  // Description de la publication (max 100 caractères)
+  readonly texteDescription = signal<string>('');
 
-  // Liste des vidéos publiées (conforme à l'Image 2)
-  readonly listeVideosPubliees = signal<VideoPublieeItem[]>([
-    {
-      id: 'vid-thieb',
-      titrePlat: 'Thiéboudienne Rouge',
-      detailsPlat: '4 500 FCFA • Best-seller',
-      imageAffiche: '/images/plat-accueil.jpg',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-serving-dinner-in-a-restaurant-42795-large.mp4',
-      nombreJeaime: '1420',
-      nombreVues: '4.2k',
-      datePublication: 'Publié il y a 2 jours'
-    },
-    {
-      id: 'vid-yassa',
-      titrePlat: 'Yassa Poulet',
-      detailsPlat: '3 800 FCFA • Citron & Oignons',
-      imageAffiche: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-chef-cooking-a-dish-in-a-kitchen-42798-large.mp4',
-      nombreJeaime: '890',
-      nombreVues: '2.8k',
-      datePublication: 'Publié il y a 5 jours'
-    },
-    {
-      id: 'vid-pastels',
-      titrePlat: 'Pastels au Poisson',
-      detailsPlat: '2 000 FCFA • Entrée croustillante',
-      imageAffiche: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-serving-dinner-in-a-restaurant-42795-large.mp4',
-      nombreJeaime: '2 140',
-      nombreVues: '6.4k',
-      datePublication: 'Publié il y a 1 sem'
-    },
-    {
-      id: 'vid-bissap',
-      titrePlat: 'Bissap Maison',
-      detailsPlat: '1 000 FCFA • Infusion florale',
-      imageAffiche: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=800',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-serving-dinner-in-a-restaurant-42795-large.mp4',
-      nombreJeaime: '670',
-      nombreVues: '1.9k',
-      datePublication: 'Publié il y a 2 sem'
-    }
-  ]);
+  // Liste des vidéos publiées réelles du restaurant
+  readonly listeVideosPubliees = signal<VideoPublieeItem[]>([]);
 
-  // Liste des plats disponibles pour l'association
-  readonly cataloguePlats = signal<PlatStudioOption[]>([
-    {
-      identifiant: 'plat-ceebu-jen',
-      nom: 'Ceebu Jën Rouge (Thiéboudienne)',
-      prixFcfa: 4500,
-      categorie: 'PLATS_PRINCIPAUX',
-      adresseImage: '/images/plat-accueil.jpg',
-      description: 'Riz au poisson à la sénégalaise, servi avec légumes frais et nététou.',
-      estDisponible: true
-    },
-    {
-      identifiant: 'plat-yassa-poulet',
-      nom: 'Yassa Poulet Caramélisé',
-      prixFcfa: 3800,
-      categorie: 'PLATS_PRINCIPAUX',
-      adresseImage: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400',
-      description: 'Poulet fermier mariné au citron vert et oignons dorés.',
-      estDisponible: false
-    },
-    {
-      identifiant: 'plat-pastels',
-      nom: 'Pastels au Poisson Dorés',
-      prixFcfa: 2000,
-      categorie: 'ENTREES',
-      adresseImage: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
-      description: 'Beignets croustillants farcis au poisson avec sauce tomate pimentée.',
-      estDisponible: true
-    },
-    {
-      identifiant: 'plat-bissap',
-      nom: 'Bissap Maison Frais',
-      prixFcfa: 1000,
-      categorie: 'BOISSONS',
-      adresseImage: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400',
-      description: 'Infusion fraîche d’hibiscus parfumé à la menthe douce.',
-      estDisponible: true
-    }
-  ]);
+  // Liste des plats réels de l'établissement disponibles pour l'association
+  readonly cataloguePlats = signal<PlatStudioOption[]>([]);
 
   // Plat sélectionné actuellement pour la vidéo
-  readonly platSelectionneId = signal<string>('plat-ceebu-jen');
+  readonly platSelectionneId = signal<string>('');
 
-  readonly platSelectionne = computed(() => {
+  // Enregistrement caméra réel
+  private fluxCamera: MediaStream | null = null;
+  private enregistreurMedia: MediaRecorder | null = null;
+  private morceauxEnregistrement: Blob[] = [];
+  private intervalEnregistrement: any = null;
+
+  constructor() {
+    this.chargerStudio();
+  }
+
+  chargerStudio(): void {
+    this.chargementEnCours.set(true);
+
+    // 1. Chargement des vidéos réelles depuis Django
+    this.http.get<VideoPublieeItem[]>(`${environment.apiUrl}/publications/studio/`).pipe(
+      catchError(() => of([]))
+    ).subscribe({
+      next: (videos) => {
+        this.listeVideosPubliees.set(videos);
+        this.chargementEnCours.set(false);
+      },
+      error: () => this.chargementEnCours.set(false)
+    });
+
+    // 2. Chargement des plats réels de l'établissement
+    this.http.get<any[]>(`${environment.apiUrl}/catalogue/mes-plats/`).pipe(
+      map((plats) =>
+        plats.map((p) => ({
+          identifiant: String(p.id),
+          nom: p.nom,
+          prixFcfa: Number(p.prix_fcfa),
+          categorie: p.section_menu || 'PLATS_PRINCIPAUX',
+          adresseImage: p.adresse_image || '/images/plat-accueil.jpg',
+          description: p.description || '',
+          estDisponible: Boolean(p.est_disponible)
+        }))
+      ),
+      catchError(() => of([]))
+    ).subscribe({
+      next: (plats) => {
+        this.cataloguePlats.set(plats);
+        if (plats.length > 0 && !this.platSelectionneId()) {
+          this.platSelectionneId.set(plats[0].identifiant);
+          this.platEstDisponible.set(plats[0].estDisponible);
+          if (plats[0].adresseImage) {
+            this.urlAfficheActive.set(plats[0].adresseImage);
+          }
+        }
+      }
+    });
+  }
+
+  readonly platSelectionne = computed<PlatStudioOption | null>(() => {
     return (
       this.cataloguePlats().find((p) => p.identifiant === this.platSelectionneId()) ??
-      this.cataloguePlats()[0]
+      this.cataloguePlats()[0] ??
+      null
     );
   });
 
@@ -182,7 +160,7 @@ export class GerantAyyouStudioComponent {
 
   // État d'enregistrement caméra
   readonly estEnEnregistrement = signal<boolean>(false);
-  readonly tempsEnregistrement = signal<number>(28);
+  readonly tempsEnregistrement = signal<number>(0);
 
   // Notification Toast
   readonly notificationMessage = signal<string | null>(null);
@@ -223,15 +201,22 @@ export class GerantAyyouStudioComponent {
   }
 
   /**
-   * Supprime une vidéo publiée de la liste.
+   * Supprime une vidéo publiée de la liste et de la base Django.
    */
   supprimerVideo(video: VideoPublieeItem, event?: Event): void {
     if (event) {
       event.stopPropagation();
     }
     this.menuOptionsOuvertId.set(null);
-    this.listeVideosPubliees.update((liste) => liste.filter((v) => v.id !== video.id));
-    this.afficherNotification(`La vidéo "${video.titrePlat}" a été supprimée.`);
+    this.http.delete(`${environment.apiUrl}/publications/studio/${video.id}/`).subscribe({
+      next: () => {
+        this.listeVideosPubliees.update((liste) => liste.filter((v) => v.id !== video.id));
+        this.afficherNotification(`La vidéo "${video.titrePlat}" a été supprimée.`);
+      },
+      error: () => {
+        this.afficherNotification(`Erreur lors de la suppression de la vidéo.`);
+      }
+    });
   }
 
   /**
@@ -303,13 +288,17 @@ export class GerantAyyouStudioComponent {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const fichier = input.files[0];
+      this.fichierVideoChoisi.set(fichier);
+      this.nomFichierVideo.set(fichier.name);
       const urlBlob = URL.createObjectURL(fichier);
       this.urlVideoActive.set(urlBlob);
       this.afficherNotification(`Vidéo "${fichier.name}" importée avec succès !`);
-      
+
       setTimeout(() => {
         const video = this.videoApercuRef?.nativeElement;
         if (video) {
+          video.srcObject = null;
+          video.src = urlBlob;
           video.currentTime = 0;
           video.play().then(() => this.estEnLecture.set(true)).catch(() => {});
         }
@@ -318,90 +307,144 @@ export class GerantAyyouStudioComponent {
   }
 
   /**
-   * Déclenche la simulation d'enregistrement vidéo ("Filmer").
+   * Déclenche l'enregistrement vidéo réel avec la caméra de l'appareil ("Filmer").
    */
-  declencherFilmer(): void {
+  async declencherFilmer(): Promise<void> {
     if (this.estEnEnregistrement()) {
+      if (this.enregistreurMedia && this.enregistreurMedia.state !== 'inactive') {
+        this.enregistreurMedia.stop();
+      }
+      if (this.intervalEnregistrement) {
+        clearInterval(this.intervalEnregistrement);
+      }
       this.estEnEnregistrement.set(false);
       this.afficherNotification('Enregistrement terminé et prêt pour la publication !');
       return;
     }
 
-    this.estEnEnregistrement.set(true);
-    this.tempsEnregistrement.set(0);
-    this.afficherNotification('Enregistrement vidéo en direct activé (HD 1080p)...');
+    try {
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1080 }, height: { ideal: 1920 } },
+          audio: true
+        });
+        this.fluxCamera = stream;
+        this.morceauxEnregistrement = [];
 
-    const intervalId = setInterval(() => {
-      if (!this.estEnEnregistrement()) {
-        clearInterval(intervalId);
-        return;
-      }
-      this.tempsEnregistrement.update((t) => {
-        if (t >= 30) {
-          clearInterval(intervalId);
-          this.estEnEnregistrement.set(false);
-          this.afficherNotification('Clip de 30 secondes enregistré avec succès !');
-          return 30;
+        const mimeOptions = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+          ? { mimeType: 'video/webm;codecs=vp9' }
+          : MediaRecorder.isTypeSupported('video/mp4')
+          ? { mimeType: 'video/mp4' }
+          : undefined;
+
+        const recorder = new MediaRecorder(stream, mimeOptions);
+        this.enregistreurMedia = recorder;
+
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            this.morceauxEnregistrement.push(e.data);
+          }
+        };
+
+        recorder.onstop = () => {
+          const typeMime = recorder.mimeType || 'video/mp4';
+          const ext = typeMime.includes('webm') ? 'webm' : 'mp4';
+          const blob = new Blob(this.morceauxEnregistrement, { type: typeMime });
+          const fichier = new File([blob], `capture_ayyou_${Date.now()}.${ext}`, { type: typeMime });
+          this.fichierVideoChoisi.set(fichier);
+          this.nomFichierVideo.set(fichier.name);
+          const urlBlob = URL.createObjectURL(blob);
+          this.urlVideoActive.set(urlBlob);
+
+          if (this.fluxCamera) {
+            this.fluxCamera.getTracks().forEach((t) => t.stop());
+            this.fluxCamera = null;
+          }
+
+          setTimeout(() => {
+            const video = this.videoApercuRef?.nativeElement;
+            if (video) {
+              video.srcObject = null;
+              video.src = urlBlob;
+              video.currentTime = 0;
+              video.play().then(() => this.estEnLecture.set(true)).catch(() => {});
+            }
+          }, 300);
+        };
+
+        const videoElem = this.videoApercuRef?.nativeElement;
+        if (videoElem) {
+          videoElem.src = '';
+          videoElem.srcObject = stream;
+          videoElem.play().catch(() => {});
         }
-        return t + 1;
-      });
-    }, 1000);
+
+        recorder.start(1000);
+        this.estEnEnregistrement.set(true);
+        this.tempsEnregistrement.set(0);
+        this.afficherNotification('🔴 Enregistrement caméra en direct activé...');
+
+        this.intervalEnregistrement = setInterval(() => {
+          this.tempsEnregistrement.update((t) => {
+            if (t >= 300) {
+              this.declencherFilmer();
+              return 300;
+            }
+            return t + 1;
+          });
+        }, 1000);
+      } else {
+        this.declencherImportVideo();
+      }
+    } catch (err) {
+      console.warn("Accès caméra non disponible, bascule vers sélection fichier:", err);
+      this.declencherImportVideo();
+    }
   }
 
   /**
-   * Publie la vidéo en direct dans le feed vidéo client et l'ajoute aux vidéos publiées.
+   * Publie la vidéo en direct dans le feed vidéo client et l'ajoute aux vidéos publiées via l'API Django.
    */
   publierMaintenant(): void {
     const platCourant = this.platSelectionne();
-    const platComplet: Plat = {
-      identifiant: platCourant.identifiant,
-      identifiantRestaurant: 'resto-le-teranga',
-      nomRestaurant: 'Le Teranga',
-      nom: platCourant.nom,
-      description: platCourant.description,
-      prixFcfa: platCourant.prixFcfa,
-      adresseImage: platCourant.adresseImage,
-      categorie: platCourant.categorie,
-      statut: this.platEstDisponible() ? 'DISPONIBLE' : 'INDISPONIBLE'
-    };
+    if (!platCourant) {
+      this.afficherNotification("⚠️ Veuillez ajouter ou sélectionner un plat avant de publier.");
+      return;
+    }
 
-    const nouvellePublication: PublicationFil = {
-      identifiant: `pub-teranga-${Date.now()}`,
-      identifiantRestaurant: 'resto-le-teranga',
-      nomRestaurant: 'Le Teranga',
-      nomUtilisateurRestaurant: '@leteranga',
-      adresseLogoRestaurant: '/images/logo-ayyou.png',
-      estAbonne: false,
-      plat: platComplet,
-      descriptionAccroche: this.texteDescription().trim() || 'Venez déguster notre spécialité du jour !',
-      adresseMedia: platCourant.adresseImage,
-      adresseVideo: this.urlVideoActive(),
-      typeMedia: 'VIDEO',
-      nombreJeaime: '1',
-      estAime: false,
-      nombrePartages: 0
-    };
+    const fichier = this.fichierVideoChoisi();
+    if (!fichier) {
+      this.afficherNotification("⚠️ Veuillez choisir ou filmer une vidéo avant de publier.");
+      return;
+    }
 
-    // Publication dans le feed client
-    this.serviceCatalogue.publierVideoFil(nouvellePublication);
+    const platIdNum = Number(platCourant.identifiant);
+    const formData = new FormData();
+    formData.append('titre', platCourant.nom);
+    formData.append('description', this.texteDescription().trim() || `Découvrez notre plat « ${platCourant.nom} » sur AYYOU !`);
+    formData.append('type_media', 'VIDEO');
+    if (!isNaN(platIdNum) && platIdNum > 0) {
+      formData.append('plat_id', String(platIdNum));
+    }
+    formData.append('fichier_media', fichier);
 
-    // Ajout dans la liste des vidéos publiées du restaurant
-    this.listeVideosPubliees.update((liste) => [
-      {
-        id: nouvellePublication.identifiant,
-        titrePlat: platCourant.nom,
-        detailsPlat: `${platCourant.prixFcfa} FCFA • Spécialité`,
-        imageAffiche: platCourant.adresseImage,
-        videoUrl: this.urlVideoActive(),
-        nombreJeaime: '1',
-        nombreVues: '1',
-        datePublication: 'À l’instant'
+    this.chargementEnCours.set(true);
+    this.http.post<any>(`${environment.apiUrl}/publications/studio/`, formData).subscribe({
+      next: (nouvellePub) => {
+        this.chargementEnCours.set(false);
+        this.chargerStudio();
+        this.modalePublicationReussie.set(true);
+        this.fichierVideoChoisi.set(null);
+        this.urlVideoActive.set('');
+        this.nomFichierVideo.set('');
+        this.texteDescription.set('');
       },
-      ...liste
-    ]);
-
-    this.dernierePublicationPubliee.set(nouvellePublication);
-    this.modalePublicationReussie.set(true);
+      error: (err) => {
+        this.chargementEnCours.set(false);
+        const errDetail = err.error?.fichier_media?.[0] || err.error?.plat_id?.[0] || err.error?.detail || err.message || "Erreur lors de la publication de la vidéo.";
+        this.afficherNotification(`⚠️ ${errDetail}`);
+      }
+    });
   }
 
   /**

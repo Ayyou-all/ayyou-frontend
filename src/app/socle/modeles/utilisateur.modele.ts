@@ -46,6 +46,12 @@ export interface FormulaireInscription {
   typeVehicule?: 'MOTO' | 'VELO' | 'VOITURE' | 'SCOOTER';
   adresse?: string;
   conditionsAcceptees: boolean;
+  documentJustificatif?: File | null;
+  documentType?: string;
+  logo?: File | null;
+  couverture?: File | null;
+  permisRecto?: File | null;
+  permisVerso?: File | null;
 }
 
 export interface ReponseAuthentification {

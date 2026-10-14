@@ -91,23 +91,12 @@ export class GerantCommandesComponent {
   }
 
   /**
-   * Simule l'arrivée d'une nouvelle commande avec le carillon sonore.
+   * Recharge les commandes en direct depuis la base de données Django.
    */
-  simulerArriveeCommande(): void {
-    const idAlea = `#${Math.floor(1250 + Math.random() * 50)}`;
-    this.serviceRestaurant.ajouterNotification({
-      id: `notif-${Date.now()}`,
-      titre: `Nouvelle commande ${idAlea}`,
-      message: 'Client en ligne • 1x Thiéboudienne • 3 500 FCFA',
-      texteVocal: `Nouvelle commande numéro ${idAlea.replace('#', '')}. Un Thiéboudienne en livraison.`,
-      heure: "À l'instant",
-      lue: false,
-      type: 'COMMANDE_NOUVELLE',
-      numeroCommande: idAlea
-    });
-    this.jouerSonNouvelleCommande();
-    this.notificationSucces.set(`🔔 Nouvelle commande ${idAlea} reçue en cuisine !`);
-    setTimeout(() => this.notificationSucces.set(null), 3000);
+  rafraichirCommandes(): void {
+    this.serviceRestaurant.chargerCommandesRestaurant();
+    this.notificationSucces.set('Commandes synchronisées en direct avec la base de données.');
+    setTimeout(() => this.notificationSucces.set(null), 2500);
   }
 
   /**

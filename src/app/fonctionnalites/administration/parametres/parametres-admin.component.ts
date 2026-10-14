@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
@@ -11,7 +11,7 @@ export type OngletParametres = 'GENERAL' | 'SECURITE' | 'NOTIFICATIONS' | 'PAIEM
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './parametres-admin.component.html'
 })
-export class ParametresAdminComponent {
+export class ParametresAdminComponent implements OnInit {
   // Onglet actif
   readonly ongletActif = signal<OngletParametres>('GENERAL');
 
@@ -33,10 +33,28 @@ export class ParametresAdminComponent {
   readonly motDePasseActuel = signal<string>('');
   readonly nouveauMotDePasse = signal<string>('');
 
+  ngOnInit(): void {
+    const savedMaintenance = localStorage.getItem('ayyou_mode_maintenance');
+    if (savedMaintenance !== null) {
+      this.modeMaintenanceActif.set(savedMaintenance === 'true');
+    }
+    const savedPlatformName = localStorage.getItem('ayyou_nom_plateforme');
+    if (savedPlatformName) {
+      this.nomPlateforme.set(savedPlatformName);
+    }
+    const savedContact = localStorage.getItem('ayyou_email_contact');
+    if (savedContact) {
+      this.emailContact.set(savedContact);
+    }
+  }
+
   /**
    * Enregistre l'ensemble des modifications système.
    */
   enregistrerModifications(): void {
+    localStorage.setItem('ayyou_nom_plateforme', this.nomPlateforme());
+    localStorage.setItem('ayyou_email_contact', this.emailContact());
+    localStorage.setItem('ayyou_mode_maintenance', String(this.modeMaintenanceActif()));
     this.notificationSucces.set('Les paramètres de la plateforme ont été enregistrés avec succès.');
     setTimeout(() => this.notificationSucces.set(null), 3000);
   }
@@ -46,6 +64,7 @@ export class ParametresAdminComponent {
    */
   basculerModeMaintenance(): void {
     this.modeMaintenanceActif.update((v) => !v);
+    localStorage.setItem('ayyou_mode_maintenance', String(this.modeMaintenanceActif()));
     const etat = this.modeMaintenanceActif() ? 'activé' : 'désactivé';
     this.notificationSucces.set(`Mode maintenance ${etat}.`);
     setTimeout(() => this.notificationSucces.set(null), 3000);

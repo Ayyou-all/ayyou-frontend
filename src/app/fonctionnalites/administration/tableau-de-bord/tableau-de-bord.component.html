@@ -4,7 +4,7 @@
   <!-- 1. GRILLE DES 4 CARTES KPI (CONFORME À L'IMAGE 1)                         -->
   <!-- ========================================================================= -->
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-    @for (carte of listeIndicateurs; track carte.titre) {
+    @for (carte of listeIndicateurs(); track carte.titre) {
       <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-2xs hover:shadow-md transition-shadow duration-300 flex flex-col justify-between space-y-4">
         
         <!-- Ligne supérieure : Icône dans un cercle doux + Badge d'évolution -->
@@ -131,26 +131,13 @@
 
             <!-- Surface remplie sous la courbe -->
             <path
-              d="M 35 220 
-                 C 80 230, 100 240, 135 235 
-                 C 170 230, 200 190, 235 185 
-                 C 270 180, 300 200, 335 195 
-                 C 370 190, 400 155, 435 145 
-                 C 470 135, 500 70, 535 65 
-                 C 570 60, 600 95, 635 105
-                 L 635 260 L 35 260 Z"
+              [attr.d]="cheminSurfaceSvg()"
               fill="url(#degradeCommandes)"
             />
 
             <!-- Ligne rouge principale caractéristique de la maquette -->
             <path
-              d="M 35 220 
-                 C 80 230, 100 240, 135 235 
-                 C 170 230, 200 190, 235 185 
-                 C 270 180, 300 200, 335 195 
-                 C 370 190, 400 155, 435 145 
-                 C 470 135, 500 70, 535 65 
-                 C 570 60, 600 95, 635 105"
+              [attr.d]="cheminLigneSvg()"
               fill="none"
               stroke="#E51824"
               stroke-width="3"
@@ -158,7 +145,7 @@
             />
 
             <!-- Points interactifs sur la courbe -->
-            @for (point of pointsGraphiqueSemaine; track point.jour) {
+            @for (point of pointsGraphiqueSemaine(); track point.jour) {
               <g
                 (mouseenter)="pointSurvole.set(point)"
                 (mouseleave)="pointSurvole.set(null)"
@@ -203,15 +190,11 @@
             </div>
           }
 
-          <!-- Axe horizontal X (Jours de la semaine : Lun à Dim) -->
+          <!-- Axe horizontal X (Jours réels de la semaine) -->
           <div class="h-8 flex items-center justify-between text-xs font-semibold text-slate-400 px-7 pt-2 select-none">
-            <span>Lun</span>
-            <span>Mar</span>
-            <span>Mer</span>
-            <span>Jeu</span>
-            <span>Ven</span>
-            <span>Sam</span>
-            <span>Dim</span>
+            @for (pt of pointsGraphiqueSemaine(); track pt.jour) {
+              <span>{{ pt.jour }}</span>
+            }
           </div>
 
         </div>
@@ -258,7 +241,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-50 text-sm">
-          @for (val of dernieresValidations; track val.identifiant) {
+          @for (val of dernieresValidations(); track val.identifiant) {
             <tr class="hover:bg-slate-50/70 transition-colors">
               
               <!-- 1. Colonne NOM (Avatar/Icône + Nom + Spécialité/Véhicule) -->
@@ -326,6 +309,15 @@
                 </button>
               </td>
 
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="py-8 px-4 text-center text-slate-400">
+                <div class="flex flex-col items-center justify-center gap-2">
+                  <i class="fa-regular fa-circle-check text-2xl text-emerald-500"></i>
+                  <span class="text-xs font-semibold">Aucun partenaire en attente de modération pour le moment</span>
+                </div>
+              </td>
             </tr>
           }
         </tbody>

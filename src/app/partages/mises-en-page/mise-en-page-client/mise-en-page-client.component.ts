@@ -3,6 +3,7 @@ import { Component, computed, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { DetailProduitComponent } from '../../../fonctionnalites/catalogue/detail-produit/detail-produit.component';
 import { ModaleConnexionRequiseComponent } from '../../composants/modale-connexion-requise/modale-connexion-requise.component';
+import { ChatbotCulinaireComponent } from '../../composants/chatbot-culinaire/chatbot-culinaire.component';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
 import { ServicePanierService } from '../../../socle/services/service-panier.service';
@@ -18,7 +19,13 @@ export interface OngletNavigation {
 @Component({
   selector: 'app-mise-en-page-client',
   standalone: true,
-  imports: [CommonModule, RouterModule, DetailProduitComponent, ModaleConnexionRequiseComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    DetailProduitComponent,
+    ModaleConnexionRequiseComponent,
+    ChatbotCulinaireComponent
+  ],
   templateUrl: './mise-en-page-client.component.html'
 })
 export class MiseEnPageClientComponent {

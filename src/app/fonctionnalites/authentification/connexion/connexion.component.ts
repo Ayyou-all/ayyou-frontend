@@ -23,11 +23,10 @@ export class ConnexionComponent {
   protected readonly serviceAuthentification = inject(ServiceAuthentification);
   private readonly routeur = inject(Router);
 
-  // Valeurs du formulaire réactives (Connexion sécurisée par e-mail)
-  protected readonly courrielSaisi = signal<string>('fatou.diop@ayyou.sn');
-  protected readonly motDePasseSaisi = signal<string>('AYYOU2026!');
+  // Valeurs du formulaire réactives (Saisie réelle par l'utilisateur)
+  protected readonly courrielSaisi = signal<string>('');
+  protected readonly motDePasseSaisi = signal<string>('');
   protected readonly motDePasseVisible = signal<boolean>(false);
-  protected readonly afficherComptesDemo = signal<boolean>(false);
 
   protected basculerVisibiliteMotDePasse(): void {
     this.motDePasseVisible.update((valeur) => !valeur);
@@ -54,20 +53,24 @@ export class ConnexionComponent {
         next: (utilisateur) => {
           this.redirigerSelonRole(utilisateur.role);
         },
-        error: () => {
-          this.serviceAuthentification.messageErreur.set(
-            'Adresse e-mail ou mot de passe incorrect. Veuillez réessayer.'
-          );
+        error: (erreur) => {
+          if (erreur?.status === 0) {
+            this.serviceAuthentification.messageErreur.set(
+              'Impossible de contacter le serveur Django. Veuillez vérifier que le backend est démarré sur le port 8000.'
+            );
+          } else if (erreur?.status === 429) {
+            this.serviceAuthentification.messageErreur.set(
+              'Trop de tentatives de connexion. Veuillez patienter une minute avant de réessayer.'
+            );
+          } else {
+            const message =
+              erreur?.error?.message ||
+              erreur?.error?.detail ||
+              'Adresse e-mail ou mot de passe incorrect. Veuillez réessayer.';
+            this.serviceAuthentification.messageErreur.set(message);
+          }
         }
       });
-  }
-
-  protected connexionRapideDemonstration(role: RoleUtilisateur): void {
-    this.serviceAuthentification.connecterAvecRolePredefini(role).subscribe({
-      next: (utilisateur) => {
-        this.redirigerSelonRole(utilisateur.role);
-      }
-    });
   }
 
   private redirigerSelonRole(role: RoleUtilisateur): void {

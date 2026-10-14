@@ -7,6 +7,10 @@ import {
   ServiceRestaurantCommandesService
 } from '../../../socle/services/service-restaurant-commandes.service';
 
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+
 @Component({
   selector: 'app-gerant-historique',
   standalone: true,
@@ -15,9 +19,31 @@ import {
 })
 export class GerantHistoriqueComponent {
   private readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
+  private readonly serviceAuth = inject(ServiceAuthentification);
+  private readonly http = inject(HttpClient);
 
-  // Date sélectionnée
-  readonly dateSelectionnee = signal<string>("Aujourd'hui, 24 Mai 2024");
+  // Nom dynamique de l'établissement
+  readonly nomRestaurant = signal<string>('Mon Restaurant');
+
+  // Date sélectionnée réelle
+  readonly dateSelectionnee = signal<string>('');
+
+  constructor() {
+    const user = this.serviceAuth.utilisateurConnecte();
+    if (user?.nomEtablissement) {
+      this.nomRestaurant.set(user.nomEtablissement);
+    }
+    const d = new Date();
+    const dateStr = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    this.dateSelectionnee.set(`Aujourd'hui, ${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}`);
+
+    this.http.get<any>(`${environment.apiUrl}/etablissements/mon-etablissement/`).subscribe({
+      next: (etab) => {
+        if (etab?.nom) this.nomRestaurant.set(etab.nom);
+      },
+      error: () => {}
+    });
+  }
 
   // Recherche
   readonly rechercheTexte = signal<string>('');
@@ -71,6 +97,11 @@ export class GerantHistoriqueComponent {
   readonly totalCommandesJour = computed(() => this.serviceRestaurant.totalCommandesJour());
   readonly chiffreAffairesJour = computed(() => this.serviceRestaurant.chiffreAffairesJour());
 
+  readonly pagesDisponibles = computed(() => {
+    const total = this.nombrePages();
+    return Array.from({ length: total }, (_, i) => i + 1);
+  });
+
   changerPage(page: number): void {
     if (page >= 1 && page <= this.nombrePages()) {
       this.pageActuelle.set(page);
@@ -78,19 +109,43 @@ export class GerantHistoriqueComponent {
   }
 
   exporterHistorique(): void {
-    this.notificationSucces.set('Génération du fichier Excel/CSV des commandes...');
-    setTimeout(() => {
-      this.notificationSucces.set('Export "commandes-le-teranga-24-mai.csv" téléchargé.');
+    const commandes = this.listeCommandes();
+    if (!commandes || commandes.length === 0) {
+      this.notificationSucces.set('Aucune commande à exporter dans l\'historique.');
       setTimeout(() => this.notificationSucces.set(null), 3000);
-    }, 1200);
+      return;
+    }
+
+    const entetes = ['Numero', 'Heure', 'Client', 'Type', 'Articles', 'Statut', 'Montant_FCFA'];
+    const lignes = commandes.map((c) => [
+      `"${c.numero}"`,
+      `"${c.heure}"`,
+      `"${c.clientNom}"`,
+      `"${c.type}"`,
+      `"${c.articlesResume.replace(/"/g, '""')}"`,
+      `"${c.statut}"`,
+      c.montantTotal
+    ]);
+
+    const csvContent = '\uFEFF' + [entetes.join(';'), ...lignes.map((l) => l.join(';'))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const lien = document.createElement('a');
+    const slug = this.nomRestaurant().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const nomFichier = `historique-${slug}-${new Date().toISOString().split('T')[0]}.csv`;
+    lien.setAttribute('href', url);
+    lien.setAttribute('download', nomFichier);
+    document.body.appendChild(lien);
+    lien.click();
+    document.body.removeChild(lien);
+    URL.revokeObjectURL(url);
+
+    this.notificationSucces.set(`Export "${nomFichier}" téléchargé avec succès.`);
+    setTimeout(() => this.notificationSucces.set(null), 3500);
   }
 
   genererRapportPdf(): void {
-    this.notificationSucces.set('Génération du rapport journalier PDF en cours...');
-    setTimeout(() => {
-      this.notificationSucces.set('Rapport PDF officiel "bilan-journalier-24mai.pdf" prêt.');
-      setTimeout(() => this.notificationSucces.set(null), 3000);
-    }, 1500);
+    window.print();
   }
 
   afficherDetail(commande: LigneHistoriqueGerant): void {

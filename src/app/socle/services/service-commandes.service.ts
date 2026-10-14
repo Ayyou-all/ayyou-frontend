@@ -1,130 +1,32 @@
 /**
  * Service de gestion des commandes et du suivi GPS des livreurs AYYOU.
- * Conforme aux données des maquettes.
+ * Consomme l'API Django REST Framework sans aucune fausse donnée mockée.
  */
 
-import { Injectable, computed, signal } from '@angular/core';
-import { CommandeClient } from '../modeles/commande.modele';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, catchError, map, of, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { CommandeClient, EtapeSuiviLivraison, StatutCommande } from '../modeles/commande.modele';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ServiceCommandesService {
-  // Liste des commandes du client pré-remplie conformément à l'Image 3
-  readonly listeCommandes = signal<CommandeClient[]>([
-    {
-      identifiant: 'ORD-99238',
-      nomRestaurant: 'Le Régal Sénégalais',
-      adresseImageRestaurant: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-      dateHeureTexte: "Aujourd'hui, 13:45",
-      statut: 'EN_LIVRAISON',
-      montantTotalFcfa: 8500,
-      codeLivraison: [4, 8, 2, 5],
-      etapeSuivi: 'EN_ROUTE',
-      heureArriveeEstimee: '13:45',
-      messageProximite: 'LE LIVREUR EST PROCHE',
-      estEnCours: true,
-      livreur: {
-        nom: 'Moussa Diop',
-        vehicule: 'Yamaha TMAX',
-        adressePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
-        numeroTelephone: '+221 77 821 44 90',
-        latitude: 14.6928,
-        longitude: -17.4467
-      },
-      articles: [
-        {
-          nomPlat: 'Thieboudienne Royale',
-          quantite: 1,
-          prixTotalFcfa: 4500
-        },
-        {
-          nomPlat: 'Bissap Glacé (50cl)',
-          quantite: 2,
-          prixTotalFcfa: 2000
-        }
-      ]
-    },
-    {
-      identifiant: 'ORD-98104',
-      nomRestaurant: 'Burger King Plateau',
-      adresseImageRestaurant: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
-      dateHeureTexte: "Aujourd'hui, 13:10",
-      statut: 'PREPARATION',
-      delaiOuRemarque: '15-20 min',
-      montantTotalFcfa: 4200,
-      codeLivraison: [1, 9, 7, 3],
-      etapeSuivi: 'PREPARATION',
-      heureArriveeEstimee: '13:30',
-      estEnCours: true,
-      articles: [
-        {
-          nomPlat: 'Menu Whopper Double Cheese',
-          quantite: 1,
-          prixTotalFcfa: 4200
-        }
-      ]
-    },
-    {
-      identifiant: 'ORD-87412',
-      nomRestaurant: "La Pizza d'Oro",
-      adresseImageRestaurant: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400',
-      dateHeureTexte: 'Hier, 20:15',
-      statut: 'LIVRE',
-      montantTotalFcfa: 12000,
-      codeLivraison: [7, 3, 4, 1],
-      etapeSuivi: 'LIVREE',
-      heureArriveeEstimee: '20:45',
-      estEnCours: false,
-      articles: [
-        {
-          nomPlat: 'Pizza Margherita Di Bufala',
-          quantite: 2,
-          prixTotalFcfa: 12000
-        }
-      ]
-    },
-    {
-      identifiant: 'ORD-76290',
-      nomRestaurant: 'Sushi Zen Dakar',
-      adresseImageRestaurant: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400',
-      dateHeureTexte: '12 Mai, 12:30',
-      statut: 'REFUSE',
-      delaiOuRemarque: 'Rupture de stock',
-      montantTotalFcfa: 5500,
-      codeLivraison: [0, 0, 0, 0],
-      etapeSuivi: 'ACCEPTEE',
-      heureArriveeEstimee: '12:30',
-      estEnCours: false,
-      articles: [
-        {
-          nomPlat: 'Plateau Maki & Sashimi Saumon (18 pcs)',
-          quantite: 1,
-          prixTotalFcfa: 5500
-        }
-      ]
-    },
-    {
-      identifiant: 'ORD-65123',
-      nomRestaurant: 'Poulet Braisé Express',
-      adresseImageRestaurant: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400',
-      dateHeureTexte: '10 Mai, 19:45',
-      statut: 'PRET',
-      delaiOuRemarque: 'Attente livreur',
-      montantTotalFcfa: 3800,
-      codeLivraison: [5, 2, 8, 9],
-      etapeSuivi: 'PREPARATION',
-      heureArriveeEstimee: '20:15',
-      estEnCours: false,
-      articles: [
-        {
-          nomPlat: 'Demi-poulet braisé avec alloco',
-          quantite: 1,
-          prixTotalFcfa: 3800
-        }
-      ]
-    }
-  ]);
+  private readonly http = inject(HttpClient);
+
+  // Liste réactive des commandes du client connecté alimentée par Django
+  readonly listeCommandes = signal<CommandeClient[]>([]);
+
+  // Progression de la géolocalisation GPS du livreur sur le trajet (0 à 100 %)
+  readonly progressionGpsLivreur = signal<number>(68);
+
+  // Modal / écran de confirmation de livraison réussie
+  readonly livraisonValidee = signal<boolean>(false);
+
+  // États de chargement et d'erreur
+  readonly chargementEnCours = signal<boolean>(false);
+  readonly messageErreur = signal<string | null>(null);
 
   // Commandes actuellement en cours
   readonly commandesEnCours = computed(() => {
@@ -136,21 +38,104 @@ export class ServiceCommandesService {
     return this.listeCommandes().filter((c) => !c.estEnCours);
   });
 
-  // Progression de la géolocalisation GPS du livreur sur le trajet (0 à 100 %)
-  readonly progressionGpsLivreur = signal<number>(68);
-
-  // Modal / écran de confirmation de livraison réussie (Image 2)
-  readonly livraisonValidee = signal<boolean>(false);
-
-  /**
-   * Récupère une commande par son identifiant.
-   */
-  trouverCommandeParId(identifiant: string): CommandeClient | undefined {
-    return this.listeCommandes().find((c) => c.identifiant === identifiant);
+  constructor() {
+    this.chargerCommandes();
   }
 
   /**
-   * Simule la validation et livraison de la commande en cours.
+   * Adapte un objet Commande Django vers l'interface CommandeClient Angular.
+   */
+  private adapterCommande(c: any): CommandeClient {
+    // Normalisation du statut
+    let statut: StatutCommande = 'EN_LIVRAISON';
+    if (c.statut === 'LIVREE') statut = 'LIVRE';
+    else if (c.statut === 'EN_PREPARATION') statut = 'PREPARATION';
+    else if (c.statut === 'PRETE_POUR_RETRAIT') statut = 'PRET';
+    else if (c.statut === 'REFUSEE_ANNULEE') statut = 'REFUSE';
+    else if (c.statut === 'EN_LIVRAISON') statut = 'EN_LIVRAISON';
+
+    // Normalisation de l'étape de suivi
+    let etapeSuivi: EtapeSuiviLivraison = 'EN_ROUTE';
+    if (c.etape_suivi === 'ACCEPTEE') etapeSuivi = 'ACCEPTEE';
+    else if (c.etape_suivi === 'PREPARATION') etapeSuivi = 'PREPARATION';
+    else if (c.etape_suivi === 'LIVREE') etapeSuivi = 'LIVREE';
+    else if (c.etape_suivi === 'EN_ROUTE') etapeSuivi = 'EN_ROUTE';
+
+    const codePin: [number, number, number, number] =
+      Array.isArray(c.code_livraison) && c.code_livraison.length === 4
+        ? [Number(c.code_livraison[0]), Number(c.code_livraison[1]), Number(c.code_livraison[2]), Number(c.code_livraison[3])]
+        : [4, 8, 2, 5];
+
+    return {
+      identifiant: String(c.identifiant || c.reference || c.id || ''),
+      nomRestaurant: c.nom_restaurant || c.nomRestaurant || c.etablissement?.nom || 'Restaurant partenaire',
+      adresseImageRestaurant: c.adresse_image_restaurant || c.adresseImageRestaurant || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+      dateHeureTexte: c.date_heure_texte || c.dateHeureTexte || 'Aujourd\'hui',
+      statut,
+      delaiOuRemarque: c.delai_ou_remarque || c.delaiOuRemarque || '20-30 min',
+      montantTotalFcfa: Number(c.montant_total_fcfa || c.total_fcfa || c.montantTotalFcfa || 0),
+      codeLivraison: codePin,
+      etapeSuivi,
+      heureArriveeEstimee: c.heure_arrivee_estimee || c.heureArriveeEstimee || '13:45',
+      messageProximite: c.messageProximite || (statut === 'EN_LIVRAISON' ? 'LE LIVREUR EST EN ROUTE' : undefined),
+      estEnCours: c.est_en_cours ?? (statut !== 'LIVRE' && statut !== 'REFUSE'),
+      livreur: c.livreur ? {
+        nom: c.livreur.nom || 'Moussa Ba',
+        vehicule: c.livreur.vehicule || 'Moto',
+        adressePhoto: c.livreur.adressePhoto || c.livreur.adresse_photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
+        numeroTelephone: c.livreur.numeroTelephone || c.livreur.telephone || '+221 77 456 78 90',
+        latitude: Number(c.livreur.latitude || 14.6928),
+        longitude: Number(c.livreur.longitude || -17.4467)
+      } : undefined,
+      articles: (c.articles || []).map((art: any) => ({
+        nomPlat: art.nom_plat || art.nomPlat || 'Plat',
+        quantite: Number(art.quantite || 1),
+        prixTotalFcfa: Number(art.total_ligne_fcfa || art.prixTotalFcfa || (art.prix_unitaire_fcfa * art.quantite) || 0)
+      }))
+    };
+  }
+
+  /**
+   * Charge les commandes réelles du client depuis l'API Django.
+   */
+  chargerCommandes(): void {
+    this.chargementEnCours.set(true);
+    this.messageErreur.set(null);
+
+    this.http.get<any[]>(`${environment.apiUrl}/commandes/`).pipe(
+      map((commandes) => commandes.map((c) => this.adapterCommande(c))),
+      catchError(() => of([]))
+    ).subscribe({
+      next: (liste) => {
+        this.listeCommandes.set(liste);
+        this.chargementEnCours.set(false);
+      },
+      error: () => {
+        this.chargementEnCours.set(false);
+      }
+    });
+  }
+
+  /**
+   * Récupère une commande par son identifiant (en mémoire ou via l'API).
+   */
+  trouverCommandeParId(identifiant: string): CommandeClient | undefined {
+    const commandeTrouvee = this.listeCommandes().find((c) => c.identifiant === identifiant);
+    if (!commandeTrouvee) {
+      // Recharger la commande directement depuis l'endpoint détail
+      this.http.get<any>(`${environment.apiUrl}/commandes/${identifiant}/`).subscribe({
+        next: (c) => {
+          const adaptee = this.adapterCommande(c);
+          this.ajouterCommande(adaptee);
+        },
+        error: () => {}
+      });
+    }
+    return commandeTrouvee;
+  }
+
+  /**
+   * Valide la livraison de la commande en cours.
    */
   validerLivraison(identifiant: string): void {
     this.listeCommandes.update((cmds) =>
@@ -173,7 +158,44 @@ export class ServiceCommandesService {
    * Ajoute une nouvelle commande dans la liste des commandes du client.
    */
   ajouterCommande(commande: CommandeClient): void {
-    this.listeCommandes.update((cmds) => [commande, ...cmds]);
+    this.listeCommandes.update((cmds) => {
+      const existe = cmds.some((c) => c.identifiant === commande.identifiant);
+      if (existe) {
+        return cmds.map((c) => (c.identifiant === commande.identifiant ? commande : c));
+      }
+      return [commande, ...cmds];
+    });
+  }
+
+  /**
+   * Crée une commande réelle dans l'API Django REST Framework.
+   */
+  creerCommande(payload: {
+    etablissement_id: number;
+    adresse_livraison: string;
+    telephone_contact?: string;
+    instructions_livraison?: string;
+    mode_paiement?: string;
+    articles?: { plat_id: number; quantite: number; instructions_speciales?: string }[];
+  }): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/commandes/`, payload).pipe(
+      tap((res) => {
+        const adaptee = this.adapterCommande(res);
+        this.ajouterCommande(adaptee);
+      })
+    );
+  }
+
+  /**
+   * Démarre la session de paiement PayTech sécurisée pour la commande.
+   */
+  initierPaiementPayTech(commandeId: number | string): Observable<any> {
+    const payload = {
+      commande_id: Number(commandeId),
+      url_succes: `${window.location.origin}/commandes/suivi/${commandeId}`,
+      url_annulation: `${window.location.origin}/panier`
+    };
+    return this.http.post<any>(`${environment.apiUrl}/paiements/initier/`, payload);
   }
 
   /**

@@ -43,17 +43,29 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
     serviceLivreur = TestBed.inject(ServiceLivreurService);
   });
 
+  function simulerUtilisateur(role: RoleUtilisateur): void {
+    serviceAuth.utilisateurConnecte.set({
+      id: `usr-${role.toLowerCase()}`,
+      prenom: 'Test',
+      nom: 'User',
+      courriel: `${role.toLowerCase()}@test.ayyou.sn`,
+      role,
+      actif: true,
+      dateInscription: new Date().toISOString()
+    });
+  }
+
   describe('A. Rôles et isolation', () => {
-    it('devrait détecter correctement le rôle Gérant', async () => {
-      await firstValueFrom(serviceAuth.connecterAvecRolePredefini('RESTAURANT'));
+    it('devrait détecter correctement le rôle Gérant', () => {
+      simulerUtilisateur('RESTAURANT');
       expect(serviceAuth.estGerant()).toBe(true);
       expect(serviceAuth.estClient()).toBe(false);
       expect(serviceAuth.estLivreur()).toBe(false);
       expect(serviceAuth.estAdministrateur()).toBe(false);
     });
 
-    it('devrait détecter correctement le rôle Client', async () => {
-      await firstValueFrom(serviceAuth.connecterAvecRolePredefini('CLIENT'));
+    it('devrait détecter correctement le rôle Client', () => {
+      simulerUtilisateur('CLIENT');
       expect(serviceAuth.estClient()).toBe(true);
       expect(serviceAuth.estGerant()).toBe(false);
       expect(serviceAuth.estAdministrateur()).toBe(false);
@@ -198,8 +210,8 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
   });
 
   describe('F. Contrôle des accès par AuthGuards (Lot 2)', () => {
-    it('doit bloquer l accès superadmin aux non-administrateurs', async () => {
-      await firstValueFrom(serviceAuth.connecterAvecRolePredefini('CLIENT'));
+    it('doit bloquer l accès superadmin aux non-administrateurs', () => {
+      simulerUtilisateur('CLIENT');
       const routeMock: any = {};
       const stateMock: any = { url: '/administration/tableau-de-bord' };
 
@@ -207,8 +219,8 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       expect(res).not.toBe(true);
     });
 
-    it('doit autoriser l accès superadmin à un administrateur', async () => {
-      await firstValueFrom(serviceAuth.connecterAvecRolePredefini('ADMINISTRATEUR'));
+    it('doit autoriser l accès superadmin à un administrateur', () => {
+      simulerUtilisateur('ADMINISTRATEUR');
       const routeMock: any = {};
       const stateMock: any = { url: '/administration/tableau-de-bord' };
 
@@ -216,8 +228,8 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       expect(res).toBe(true);
     });
 
-    it('doit autoriser l accès gérant à un restaurant', async () => {
-      await firstValueFrom(serviceAuth.connecterAvecRolePredefini('RESTAURANT'));
+    it('doit autoriser l accès gérant à un restaurant', () => {
+      simulerUtilisateur('RESTAURANT');
       const routeMock: any = {};
       const stateMock: any = { url: '/gerant/commandes' };
 

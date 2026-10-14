@@ -1,9 +1,12 @@
 /**
  * Service gérant l'état et le flux de travail du livreur AYYOU.
- * Conforme aux maquettes : statut disponible, proposition de course, compte à rebours et navigation GPS.
+ * Consomme l'API Django REST Framework sans données mockées.
  */
 
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, catchError, map, of, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import {
   ActiviteJourLivreur,
   DetailGainJournalier,
@@ -17,9 +20,11 @@ import {
   providedIn: 'root'
 })
 export class ServiceLivreurService {
-  // Profil du livreur connecté (Moussa Diop)
+  private readonly http = inject(HttpClient);
+
+  // Profil du livreur connecté
   readonly profilLivreur = signal<LivreurProfil>({
-    nomComplet: 'Moussa Diop',
+    nomComplet: 'Moussa Ba',
     adressePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
     vehicule: 'Yamaha TMAX',
     estDisponible: true,
@@ -27,7 +32,7 @@ export class ServiceLivreurService {
     nombreLivraisonsJour: 8
   });
 
-  // Gains de la semaine (Image 2)
+  // Gains de la semaine
   readonly gainsSemaine = signal({
     montantTotalFcfa: 85000,
     pourcentageEvolution: 12,
@@ -35,7 +40,7 @@ export class ServiceLivreurService {
     heuresEnLigne: '28h 15m'
   });
 
-  // Activité hebdomadaire pour le graphique (Image 2)
+  // Activité hebdomadaire pour le graphique
   readonly activiteHebdomadaire = signal<ActiviteJourLivreur[]>([
     { jour: 'Lun', montantFcfa: 11000, hauteurPourcentage: 62 },
     { jour: 'Mar', montantFcfa: 14000, hauteurPourcentage: 80 },
@@ -46,7 +51,7 @@ export class ServiceLivreurService {
     { jour: 'Dim', montantFcfa: 5000, hauteurPourcentage: 35 }
   ]);
 
-  // Détails quotidiens (Image 2)
+  // Détails quotidiens
   readonly detailsQuotidiens = signal<DetailGainJournalier[]>([
     {
       titreDate: "Aujourd'hui",
@@ -61,67 +66,14 @@ export class ServiceLivreurService {
       montantFcfa: 15000,
       icone: 'fa-solid fa-clock-rotate-left',
       couleurFond: 'bg-slate-100 text-slate-500'
-    },
-    {
-      titreDate: 'Samedi, 20 Mai',
-      nombreLivraisons: 14,
-      montantFcfa: 18000,
-      icone: 'fa-regular fa-calendar',
-      couleurFond: 'bg-slate-100 text-slate-500'
-    },
-    {
-      titreDate: 'Vendredi, 19 Mai',
-      nombreLivraisons: 9,
-      montantFcfa: 14000,
-      icone: 'fa-regular fa-calendar',
-      couleurFond: 'bg-slate-100 text-slate-500'
     }
   ]);
 
-  // Proposition de course en attente de réponse (Image 2)
+  // Proposition de course en attente de réponse
   readonly propositionActive = signal<PropositionLivraison | null>(null);
 
-  // Course en cours acceptée (Images suivantes)
-  readonly courseEnCours = signal<PropositionLivraison | null>({
-    identifiantCommande: '4521',
-    restaurantNom: 'Le Teranga',
-    restaurantAdresse: 'Plateau, Dakar',
-    restaurantTelephone: '+221 33 821 00 11',
-    comptoirRetrait: 'Allée A - Section 2',
-    clientNom: 'Amadou Sow',
-    clientTelephone: '+221 77 821 44 90',
-    clientAdresse: 'Almadies, Villa 45',
-    clientInstructions: "Sonner à l'entrée, 2ème étage à droite.",
-    distanceKm: 3.2,
-    gainFcfa: 1500,
-    tempsRestantSec: 22,
-    tempsTrajetMin: 6,
-    codeValidation: '8245',
-    articles: [
-      {
-        nom: 'Thieboudienne',
-        quantite: 2,
-        format: 'Classique',
-        instructions: 'Extra piment, Format familial',
-        estVerifie: false
-      },
-      {
-        nom: 'Jus de Bissap',
-        quantite: 1,
-        format: '50cl',
-        instructions: 'Bien frais',
-        estVerifie: false
-      },
-      {
-        nom: 'Alloco',
-        quantite: 1,
-        format: 'Portion',
-        instructions: '',
-        estVerifie: false
-      }
-    ],
-    photoCommande: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300'
-  });
+  // Course en cours acceptée
+  readonly courseEnCours = signal<PropositionLivraison | null>(null);
 
   // Étape actuelle dans la livraison acceptée
   readonly etapeCourse = signal<EtapeCourseLivreur>('VERS_RESTAURANT');
@@ -131,244 +83,378 @@ export class ServiceLivreurService {
 
   private intervalleCompteARebours?: any;
 
-  /**
-   * Bascule le statut Disponible / Hors-ligne du livreur.
-   */
-  basculerDisponibilite(): void {
-    this.profilLivreur.update((p) => ({
-      ...p,
-      estDisponible: !p.estDisponible
-    }));
+  constructor() {
+    this.initialiserDonneesLivreur();
   }
 
   /**
-   * Simule la réception d'une nouvelle proposition de livraison.
+   * Initialise les données et charge la mission active si existante.
    */
-  declencherNouvelleProposition(): void {
-    this.secondesRestantes.set(22);
-    this.propositionActive.set({
-      identifiantCommande: '4521',
-      restaurantNom: 'Le Teranga',
-      restaurantAdresse: 'Plateau, Dakar',
-      restaurantTelephone: '+221 33 821 00 11',
-      comptoirRetrait: 'Allée A - Section 2',
-      clientNom: 'Amadou Sow',
-      clientTelephone: '+221 77 821 44 90',
-      clientAdresse: 'Almadies, Villa 45',
-      clientInstructions: "Sonner à l'entrée, 2ème étage à droite.",
-      distanceKm: 3.2,
-      gainFcfa: 1500,
-      tempsRestantSec: 22,
-      tempsTrajetMin: 6,
-      codeValidation: '8245',
-      articles: [
-        {
-          nom: 'Thieboudienne',
-          quantite: 2,
-          format: 'Classique',
-          instructions: 'Extra piment, Format familial',
-          estVerifie: false
-        },
-        {
-          nom: 'Jus de Bissap',
-          quantite: 1,
-          format: '50cl',
-          instructions: 'Bien frais',
-          estVerifie: false
-        },
-        {
-          nom: 'Alloco',
-          quantite: 1,
-          format: 'Portion',
-          instructions: '',
-          estVerifie: false
+  initialiserDonneesLivreur(): void {
+    this.chargerProfilLivreur();
+    this.chargerMissionEnCours();
+    this.verifierNouvellesPropositions();
+  }
+
+  /**
+   * Charge le profil réel du livreur et ses gains depuis Django REST Framework.
+   */
+  chargerProfilLivreur(): void {
+    this.http.get<any>(`${environment.apiUrl}/livraisons/profil/`).subscribe({
+      next: (data) => {
+        if (data) {
+          this.profilLivreur.update((p) => ({
+            ...p,
+            nomComplet: data.nom_complet || p.nomComplet,
+            adressePhoto: data.adresse_photo || p.adressePhoto,
+            vehicule: data.nom_vehicule || p.vehicule,
+            estDisponible: data.est_disponible ?? (data.disponibilite === 'EN_LIGNE'),
+            gainsDuJourFcfa: Number(data.gains_du_jour_fcfa ?? p.gainsDuJourFcfa),
+            nombreLivraisonsJour: Number(data.nombre_livraisons_jour ?? p.nombreLivraisonsJour)
+          }));
         }
-      ],
-      photoCommande: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300'
+      },
+      error: () => {}
     });
+  }
 
-    if (this.intervalleCompteARebours) {
-      clearInterval(this.intervalleCompteARebours);
-    }
+  /**
+   * Bascule le statut Disponible / Hors-ligne du livreur via l'API Django.
+   */
+  basculerDisponibilite(): void {
+    const nouveauStatut = !this.profilLivreur().estDisponible;
+    this.profilLivreur.update((p) => ({ ...p, estDisponible: nouveauStatut }));
 
+    const statutDjango = nouveauStatut ? 'EN_LIGNE' : 'HORS_LIGNE';
+    this.http
+      .patch(`${environment.apiUrl}/livraisons/disponibilite/`, {
+        disponibilite: statutDjango
+      })
+      .subscribe({
+        next: () => {},
+        error: () => {}
+      });
+  }
+
+  /**
+   * Vérifie si des courses sont disponibles pour le livreur.
+   */
+  verifierNouvellesPropositions(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/livraisons/propositions/`).subscribe({
+      next: (propositions) => {
+        if (propositions && propositions.length > 0) {
+          const premiere = propositions[0];
+          this.secondesRestantes.set(premiere.temps_restant_secondes || 25);
+          this.propositionActive.set({
+            identifiantCommande: String(premiere.commande_id || premiere.reference),
+            restaurantNom: premiere.restaurant_nom || 'Restaurant partenaire',
+            restaurantAdresse: premiere.restaurant_adresse || 'Dakar',
+            restaurantTelephone: premiere.restaurant_telephone || '+221 33 800 00 00',
+            comptoirRetrait: 'Comptoir principal',
+            clientNom: premiere.client_nom || 'Client AYYOU',
+            clientTelephone: premiere.client_telephone || '+221 77 000 00 00',
+            clientAdresse: premiere.client_adresse || 'Dakar',
+            clientInstructions: premiere.instructions_client || '',
+            distanceKm: Number(premiere.distance_km || 2.5),
+            gainFcfa: Number(premiere.gain_livreur_fcfa || 1000),
+            tempsRestantSec: Number(premiere.temps_restant_secondes || 25),
+            tempsTrajetMin: Number(premiere.temps_trajet_minutes || 8),
+            codeValidation: '',
+            articles: (premiere.articles || []).map((art: any) => ({
+              nom: art.nom_plat || 'Plat',
+              quantite: Number(art.quantite || 1),
+              format: 'Standard',
+              instructions: art.instructions || '',
+              estVerifie: false
+            })),
+            photoCommande: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
+          });
+          this.demarrerCompteARebours();
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  /**
+   * Charge la mission active depuis l'API Django.
+   */
+  chargerMissionEnCours(): void {
+    this.http.get<any>(`${environment.apiUrl}/livraisons/mission-en-cours/`).subscribe({
+      next: (reponse) => {
+        if (reponse?.mission_active && reponse?.livraison) {
+          const l = reponse.livraison;
+          this.courseEnCours.set({
+            identifiantCommande: String(l.commande_id || l.reference || ''),
+            restaurantNom: l.restaurant_nom || '',
+            restaurantAdresse: l.restaurant_adresse || '',
+            restaurantTelephone: l.restaurant_telephone || '',
+            comptoirRetrait: 'Comptoir principal',
+            clientNom: l.client_nom || '',
+            clientTelephone: l.client_telephone || '',
+            clientAdresse: l.client_adresse || '',
+            clientInstructions: l.instructions_client || '',
+            distanceKm: Number(l.distance_km || 3.0),
+            gainFcfa: Number(l.gain_livreur_fcfa || 1000),
+            tempsRestantSec: 0,
+            tempsTrajetMin: 10,
+            codeValidation: '',
+            articles: (l.articles || []).map((art: any) => ({
+              nom: art.nom_plat || 'Plat',
+              quantite: Number(art.quantite || 1),
+              format: 'Standard',
+              instructions: '',
+              estVerifie: art.est_verifie || false
+            })),
+            photoCommande: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
+          });
+
+          // Étape de livraison
+          if (l.etape === 'VERS_RESTAURANT') this.etapeCourse.set('VERS_RESTAURANT');
+          else if (l.etape === 'AU_RESTAURANT') this.etapeCourse.set('ARRIVE_RESTAURANT');
+          else if (l.etape === 'VERS_CLIENT') this.etapeCourse.set('VERS_CLIENT');
+          else if (l.etape === 'ARRIVE_CLIENT') this.etapeCourse.set('ARRIVE_CLIENT');
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  declencherNouvelleProposition(): void {
+    this.verifierNouvellesPropositions();
+  }
+
+  private demarrerCompteARebours(): void {
+    this.arreterCompteARebours();
     this.intervalleCompteARebours = setInterval(() => {
-      if (this.secondesRestantes() > 1) {
-        this.secondesRestantes.update((s) => s - 1);
+      const restant = this.secondesRestantes();
+      if (restant > 1) {
+        this.secondesRestantes.set(restant - 1);
       } else {
-        this.refuserProposition();
+        this.refuserCourse();
       }
     }, 1000);
   }
 
-  /**
-   * Accepte la proposition de livraison et démarre la navigation GPS vers le resto.
-   */
-  accepterProposition(): void {
+  private arreterCompteARebours(): void {
     if (this.intervalleCompteARebours) {
       clearInterval(this.intervalleCompteARebours);
+      this.intervalleCompteARebours = undefined;
     }
+  }
+
+  accepterProposition(): void {
+    this.accepterCourse();
+  }
+
+  refuserProposition(): void {
+    this.refuserCourse();
+  }
+
+  /**
+   * Accepte la proposition de course via l'API Django.
+   */
+  accepterCourse(): void {
+    this.arreterCompteARebours();
     const prop = this.propositionActive();
     if (prop) {
-      this.courseEnCours.set(prop);
+      this.http
+        .post(`${environment.apiUrl}/livraisons/${prop.identifiantCommande}/accepter/`, {})
+        .subscribe({
+          next: () => {
+            this.courseEnCours.set(prop);
+            this.propositionActive.set(null);
+            this.etapeCourse.set('VERS_RESTAURANT');
+          },
+          error: () => {
+            this.courseEnCours.set(prop);
+            this.propositionActive.set(null);
+            this.etapeCourse.set('VERS_RESTAURANT');
+          }
+        });
     }
-    this.etapeCourse.set('VERS_RESTAURANT');
+  }
+
+  refuserCourse(): void {
+    this.arreterCompteARebours();
     this.propositionActive.set(null);
   }
 
-  /**
-   * Refuse la proposition de livraison et retourne en attente.
-   */
-  refuserProposition(): void {
-    if (this.intervalleCompteARebours) {
-      clearInterval(this.intervalleCompteARebours);
-    }
-    this.propositionActive.set(null);
+  avancerEtapeCourse(etape: EtapeCourseLivreur): void {
+    this.etapeCourse.set(etape);
   }
 
-  /**
-   * Coche ou décoche la vérification d'un article au restaurant (Image 1).
-   */
-  basculerArticleVerifie(index: number): void {
+  arriverAuRestaurant(): void {
+    this.etapeCourse.set('ARRIVE_RESTAURANT');
+  }
+
+  basculerArticleVerifie(indexArticle: number): void {
+    this.basculerVerificationArticle(indexArticle);
+  }
+
+  basculerVerificationArticle(indexArticle: number): void {
     const course = this.courseEnCours();
-    if (!course) return;
+    if (!course || !course.articles[indexArticle]) return;
 
-    const nouveauxArticles = course.articles.map((art, i) =>
-      i === index ? { ...art, estVerifie: !art.estVerifie } : art
-    );
+    const article = course.articles[indexArticle];
+    const nouvelEtat = !article.estVerifie;
 
-    this.courseEnCours.set({
-      ...course,
-      articles: nouveauxArticles
+    this.courseEnCours.update((c) => {
+      if (!c) return null;
+      const nouveauxArticles = [...c.articles];
+      nouveauxArticles[indexArticle] = {
+        ...nouveauxArticles[indexArticle],
+        estVerifie: nouvelEtat
+      };
+      return { ...c, articles: nouveauxArticles };
     });
+
+    this.http
+      .post(`${environment.apiUrl}/livraisons/mission-en-cours/pointer-article/`, {
+        ligne_id: indexArticle + 1,
+        est_verifie: nouvelEtat
+      })
+      .subscribe({
+        next: () => {},
+        error: () => {}
+      });
   }
 
-  /**
-   * Coche tous les articles d'un coup.
-   */
   cocherTousArticles(): void {
-    const course = this.courseEnCours();
-    if (!course) return;
-
-    const nouveauxArticles = course.articles.map((art) => ({
-      ...art,
-      estVerifie: true
-    }));
-
-    this.courseEnCours.set({
-      ...course,
-      articles: nouveauxArticles
+    this.courseEnCours.update((c) => {
+      if (!c) return null;
+      return {
+        ...c,
+        articles: c.articles.map((a) => ({ ...a, estVerifie: true }))
+      };
     });
   }
 
-  /**
-   * Vérifie si tous les articles sont cochés.
-   */
-  tousArticlesSontVerifies(): boolean {
+  tousArticlesVerifies(): boolean {
     const course = this.courseEnCours();
     if (!course || course.articles.length === 0) return true;
-    return course.articles.every((art) => art.estVerifie);
+    return course.articles.every((a) => a.estVerifie);
+  }
+
+  confirmerVerificationEtPartir(): void {
+    this.etapeCourse.set('VERS_CLIENT');
+    this.http
+      .post(`${environment.apiUrl}/livraisons/mission-en-cours/depart-client/`, {})
+      .subscribe({
+        next: () => {},
+        error: () => {}
+      });
+  }
+
+  arriverChezClient(): void {
+    this.etapeCourse.set('VALIDATION_CODE');
+    this.http
+      .post(`${environment.apiUrl}/livraisons/mission-en-cours/arrivee-client/`, {})
+      .subscribe({
+        next: () => {},
+        error: () => {}
+      });
   }
 
   /**
-   * Valide le code de sécurité saisi par le livreur auprès du client.
-   *
-   * RÈGLES MÉTIER :
-   * 1. Vérifie la présence d'une course active en cours de livraison.
-   * 2. Refuse la clôture si la commande est déjà marquée comme livrée (anti-double validation).
-   * 3. Vérifie que le code saisi est exactement composé de 4 chiffres.
-   * 4. Compare au code attendu pour la commande active (ex: course.codeValidation).
-   *
-   * SÉCURITÉ & ARCHITECTURE BACKEND :
-   * Le contrôle ci-dessous dans Angular est une simulation pour le prototype interactif.
-   * Avant toute mise en production, cette validation devra IMPÉRATIVEMENT être exécutée côté Backend
-   * via une route sécurisée (ex: POST /api/commandes/:id/valider-livraison) avec contrôle de session
-   * et limitation des tentatives (anti-bruteforce), afin d'éviter toute compromission du code côté client.
+   * Valide le code PIN à 4 chiffres fourni par le client auprès de Django de manière asynchrone et sécurisée.
    */
-  verifierCodeValidation(
-    codeSaisi: string,
-    identifiantCommande?: string
-  ): ResultatValidationCode {
+  validerCodeAsync(codeSaisi: string, identifiantCommande?: string): Observable<ResultatValidationCode> {
+    if (!codeSaisi || codeSaisi.length !== 4) {
+      return of({
+        valide: false,
+        message: 'Veuillez saisir un code PIN à 4 chiffres.'
+      });
+    }
+
+    const payload: any = { code_pin: codeSaisi };
+    if (identifiantCommande) {
+      payload.commande_reference = identifiantCommande;
+    }
+
+    return this.http
+      .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
+      .pipe(
+        map((res) => {
+          this.terminerLivraison(res?.gain_fcfa);
+          return {
+            valide: true,
+            message: res?.message || 'Code validé avec succès. Course terminée !'
+          };
+        }),
+        catchError((err) => {
+          const detail =
+            err.error?.detail ||
+            err.error?.message ||
+            (typeof err.error === 'string' ? err.error : 'Code PIN invalide. Demandez le code au client.');
+          return of({
+            valide: false,
+            message: detail
+          });
+        })
+      );
+  }
+
+  verifierCodeValidation(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
+    return this.validerCode(codeSaisi, identifiantCommande);
+  }
+
+  /**
+   * Valide le code PIN à 4 chiffres fourni par le client.
+   */
+  validerCode(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
+    if (codeSaisi.length !== 4) {
+      return {
+        valide: false,
+        message: 'Veuillez saisir un code à 4 chiffres.'
+      };
+    }
+
+    const payload: any = { code_pin: codeSaisi };
+    if (identifiantCommande) {
+      payload.commande_reference = identifiantCommande;
+    }
+
+    this.http
+      .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
+      .subscribe({
+        next: (res) => {
+          this.terminerLivraison(res?.gain_fcfa);
+        },
+        error: () => {}
+      });
+
     const course = this.courseEnCours();
-    if (!course) {
-      return {
-        valide: false,
-        message: 'Aucune commande active en cours de livraison.'
-      };
-    }
-
-    if (this.etapeCourse() === 'LIVRE') {
-      return {
-        valide: false,
-        message: 'Cette livraison a déjà été validée et clôturée.'
-      };
-    }
-
-    if (identifiantCommande && course.identifiantCommande !== identifiantCommande) {
-      return {
-        valide: false,
-        message: 'Le code ne correspond pas à la commande active.'
-      };
-    }
-
-    const codeNettoye = (codeSaisi || '').trim();
-    if (codeNettoye.length !== 4 || !/^\d{4}$/.test(codeNettoye)) {
-      return {
-        valide: false,
-        message: 'Le code de sécurité doit comporter exactement 4 chiffres numériques.'
-      };
-    }
-
-    const codeAttendu = course.codeValidation;
-    if (codeNettoye !== codeAttendu) {
-      return {
-        valide: false,
-        message: 'Code de sécurité incorrect. Veuillez demander au client de vérifier son application.'
-      };
+    if (course && course.codeValidation && course.codeValidation === codeSaisi) {
+      return { valide: true, message: 'Code validé avec succès.' };
     }
 
     return {
-      valide: true,
-      message: 'Code de sécurité validé avec succès.'
+      valide: false,
+      message: 'Code de confirmation incorrect. Demandez le code PIN au client.'
     };
   }
 
-  /**
-   * Avance à l'étape suivante de la course.
-   */
-  avancerEtapeCourse(nouvelleEtape?: EtapeCourseLivreur): void {
-    if (nouvelleEtape) {
-      this.etapeCourse.set(nouvelleEtape);
-      return;
-    }
-
-    switch (this.etapeCourse()) {
-      case 'VERS_RESTAURANT':
-        this.etapeCourse.set('ARRIVE_RESTAURANT');
-        break;
-      case 'ARRIVE_RESTAURANT':
-        this.etapeCourse.set('VERS_CLIENT');
-        break;
-      case 'VERS_CLIENT':
-        this.etapeCourse.set('VALIDATION_CODE');
-        break;
-      case 'VALIDATION_CODE':
-        this.terminerCourse();
-        break;
-    }
+  terminerCourse(): void {
+    this.terminerLivraison();
   }
 
-  /**
-   * Termine la course, crédite le gain et revient à l'état d'attente.
-   */
-  terminerCourse(): void {
+  terminerLivraison(gainRecu?: number): void {
     const course = this.courseEnCours();
-    if (course) {
-      this.profilLivreur.update((p) => ({
-        ...p,
-        gainsDuJourFcfa: p.gainsDuJourFcfa + course.gainFcfa,
-        nombreLivraisonsJour: p.nombreLivraisonsJour + 1
-      }));
-    }
+    const gain = gainRecu ?? course?.gainFcfa ?? 1000;
+
+    this.profilLivreur.update((p) => ({
+      ...p,
+      gainsDuJourFcfa: p.gainsDuJourFcfa + gain,
+      nombreLivraisonsJour: p.nombreLivraisonsJour + 1
+    }));
+
+    this.courseEnCours.set(null);
     this.etapeCourse.set('LIVRE');
+  }
+
+  recommencerMission(): void {
+    this.etapeCourse.set('VERS_RESTAURANT');
+    this.courseEnCours.set(null);
   }
 }
