@@ -34,13 +34,20 @@ export class CatalogueComponent {
         resto.specialite.toLowerCase().includes(recherche) ||
         resto.quartierVille.toLowerCase().includes(recherche);
 
-      return correspondRecherche;
+      const correspondCategorie =
+        !cat ||
+        resto.specialite.toLowerCase().includes(cat.toLowerCase()) ||
+        (resto.plats && resto.plats.some((p) => (p.categorie || '').toLowerCase().includes(cat.toLowerCase())));
+
+      return correspondRecherche && correspondCategorie;
     });
   });
 
-  // Plats populaires à la carte à explorer
+  // Plats réels disponibles à la carte
   readonly platsPopulaires = computed<Plat[]>(() => {
-    return this.serviceCatalogue.restaurants().flatMap((r) => r.plats ?? []).slice(0, 6);
+    const depuisRestos = this.serviceCatalogue.restaurants().flatMap((r) => r.plats ?? []);
+    if (depuisRestos.length > 0) return depuisRestos.slice(0, 12);
+    return this.serviceCatalogue.plats().slice(0, 12);
   });
 
   /**

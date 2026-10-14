@@ -15,12 +15,18 @@
     <div class="overflow-y-auto px-5 pt-2 pb-6 space-y-5">
       
       <!-- Image du plat avec bouton de fermeture 'X' en haut à droite -->
-      <div class="relative w-full h-56 sm:h-64 rounded-3xl overflow-hidden shadow-sm bg-slate-100">
-        <img
-          [src]="plat.adresseImage"
-          [alt]="plat.nom"
-          class="w-full h-full object-cover select-none"
-        />
+      <div class="relative w-full h-56 sm:h-64 rounded-3xl overflow-hidden shadow-sm bg-slate-100 flex items-center justify-center">
+        @if (plat.adresseImage) {
+          <img
+            [src]="plat.adresseImage"
+            [alt]="plat.nom"
+            class="w-full h-full object-cover select-none"
+          />
+        } @else {
+          <div class="w-full h-full flex items-center justify-center bg-rose-50 text-[#E51824]">
+            <i class="fa-solid fa-bowl-food text-5xl"></i>
+          </div>
+        }
 
         <!-- Bouton Fermer 'X' -->
         <button

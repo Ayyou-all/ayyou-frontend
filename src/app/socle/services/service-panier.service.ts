@@ -3,14 +3,17 @@
  * Permet de gérer les commandes séparées par établissement conformément aux maquettes.
  */
 
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { MethodePaiement, PanierRestaurant } from '../modeles/panier.modele';
 import { Plat } from '../modeles/plat.modele';
+import { ServiceCatalogueService } from './service-catalogue.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ServicePanierService {
+  private readonly serviceCatalogue = inject(ServiceCatalogueService, { optional: true });
+
   // Liste réactive des paniers par restaurant (démarre vide sans données mockées)
   readonly listePaniersRestaurants = signal<PanierRestaurant[]>([]);
 
@@ -52,17 +55,18 @@ export class ServicePanierService {
     let panierResto = paniers.find((p) => p.identifiantRestaurant === plat.identifiantRestaurant);
 
     if (!panierResto) {
-      // Création du panier pour ce nouveau restaurant
+      // Création du panier pour ce restaurant avec ses vraies informations
+      const resto = this.serviceCatalogue?.trouverRestaurant(plat.identifiantRestaurant);
       panierResto = {
         identifiantRestaurant: plat.identifiantRestaurant,
-        nomRestaurant: plat.nomRestaurant,
-        adresseLogoRestaurant: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-        delaiLivraison: '25-35 min',
+        nomRestaurant: resto?.nom || plat.nomRestaurant || 'Restaurant',
+        adresseLogoRestaurant: resto?.adresseLogo || '',
+        delaiLivraison: resto?.delaiLivraisonMinutes ? `${resto.delaiLivraisonMinutes} min` : '20-30 min',
         adresseLivraison: 'Plateau, Avenue Hassan II',
         methodePaiement: 'WAVE',
         lignes: [],
         sousTotalFcfa: 0,
-        fraisLivraisonFcfa: 1000,
+        fraisLivraisonFcfa: resto?.fraisLivraisonFcfa ?? 1000,
         totalFcfa: 0
       };
       paniers.unshift(panierResto);

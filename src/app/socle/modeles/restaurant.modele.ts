@@ -27,5 +27,12 @@ export interface Restaurant {
   nombreAvis: number;
   adresseLogo: string;
   adresseCouverture: string;
+  delaiLivraisonMinutes?: number;
+  fraisLivraisonFcfa?: number;
+  estAbonne?: boolean;
+  estAime?: boolean;
+  nombreAbonnes?: number;
+  nombreLikes?: number;
+  nombreLikesVideos?: number;
   plats?: Plat[];
 }

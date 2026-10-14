@@ -111,15 +111,71 @@ export class ServiceRestaurantCommandesService {
     this.notificationsNonLues().length
   );
 
+  private intervallePolling: any = null;
+  private idsCommandesConnues = new Set<string>();
+
   constructor() {
-    this.chargerCommandesRestaurant();
+    this.demarrerEcouteTempsReel(3500);
+  }
+
+  /**
+   * Démarre l'écoute temps réel des commandes restaurant via polling automatique.
+   */
+  demarrerEcouteTempsReel(intervalleMs: number = 3500): void {
+    this.chargerCommandesRestaurant(true);
+    if (!this.intervallePolling) {
+      this.intervallePolling = setInterval(() => {
+        this.chargerCommandesRestaurant(false);
+      }, intervalleMs);
+    }
+  }
+
+  /**
+   * Arrête l'écoute temps réel.
+   */
+  arreterEcouteTempsReel(): void {
+    if (this.intervallePolling) {
+      clearInterval(this.intervallePolling);
+      this.intervallePolling = null;
+    }
+  }
+
+  /**
+   * Émet un carillon sonore pour avertir le gérant d'une nouvelle commande.
+   */
+  jouerSonNouvelleCommande(texte?: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      }
+      if ('speechSynthesis' in window && texte) {
+        const u = new SpeechSynthesisUtterance(texte);
+        u.lang = 'fr-FR';
+        window.speechSynthesis.speak(u);
+      }
+    } catch {}
   }
 
   /**
    * Charge les commandes réelles de l'établissement depuis l'API Django.
    */
-  chargerCommandesRestaurant(): void {
-    this.chargementEnCours.set(true);
+  chargerCommandesRestaurant(afficherChargement: boolean = false): void {
+    if (afficherChargement) {
+      this.chargementEnCours.set(true);
+    }
     this.messageErreur.set(null);
 
     this.http.get<any>(`${environment.apiUrl}/commandes/restaurant/`).subscribe({
@@ -127,6 +183,7 @@ export class ServiceRestaurantCommandesService {
         const kanban: CommandeKanban[] = [];
         const historique: LigneHistoriqueGerant[] = [];
         const liste: any[] = Array.isArray(commandes) ? commandes : (commandes?.results || []);
+        const nouvellesArrivees: CommandeKanban[] = [];
 
         liste.forEach((c) => {
           const numeroAffiche = c.reference || `#${c.id}`;
@@ -141,7 +198,7 @@ export class ServiceRestaurantCommandesService {
           const heureStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
           if (c.statut === 'CREEE_EN_ATTENTE') {
-            kanban.push({
+            const itemKanban: CommandeKanban = {
               idInterne: c.id,
               numero: numeroAffiche,
               clientNom,
@@ -151,7 +208,13 @@ export class ServiceRestaurantCommandesService {
               statut: 'NOUVELLES',
               articles,
               remarqueClient: c.instructions_livraison || undefined
-            });
+            };
+            kanban.push(itemKanban);
+
+            // Détection temps réel : si nouvelle commande non vue auparavant
+            if (this.idsCommandesConnues.size > 0 && !this.idsCommandesConnues.has(numeroAffiche)) {
+              nouvellesArrivees.push(itemKanban);
+            }
           } else if (c.statut === 'EN_PREPARATION') {
             kanban.push({
               idInterne: c.id,
@@ -195,12 +258,36 @@ export class ServiceRestaurantCommandesService {
           }
         });
 
+        // Alerte sonore et visuelle pour les nouvelles commandes
+        if (nouvellesArrivees.length > 0) {
+          nouvellesArrivees.forEach((cmd) => {
+            this.ajouterNotification({
+              id: `notif-${Date.now()}-${cmd.numero}`,
+              titre: `Nouvelle commande reçue !`,
+              message: `${cmd.numero} • ${cmd.totalMontant} (${cmd.articles.length} plat(s))`,
+              texteVocal: `Nouvelle commande reçue. Numéro ${cmd.numero}.`,
+              heure: 'À l\'instant',
+              lue: false,
+              type: 'COMMANDE_NOUVELLE',
+              numeroCommande: cmd.numero
+            });
+            this.jouerSonNouvelleCommande(`Nouvelle commande ${cmd.numero}`);
+          });
+        }
+
+        // Mémorisation des identifiants connus
+        this.idsCommandesConnues = new Set(liste.map((c) => c.reference || `#${c.id}`));
+
         this.commandesKanban.set(kanban);
         this.historiqueCommandes.set(historique);
-        this.chargementEnCours.set(false);
+        if (afficherChargement) {
+          this.chargementEnCours.set(false);
+        }
       },
       error: () => {
-        this.chargementEnCours.set(false);
+        if (afficherChargement) {
+          this.chargementEnCours.set(false);
+        }
       }
     });
   }

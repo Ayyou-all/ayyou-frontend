@@ -34,12 +34,16 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
       @if (serviceAuthentification.estAuthentifie()) {
         <!-- Carte d'identité du profil -->
         <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs flex items-center gap-4">
-          <div class="w-16 h-16 rounded-full overflow-hidden bg-slate-100 border-2 border-red-100 shrink-0">
-            <img
-              [src]="serviceAuthentification.utilisateurConnecte()?.adressePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'"
-              alt="Avatar"
-              class="w-full h-full object-cover"
-            />
+          <div class="w-16 h-16 rounded-full overflow-hidden bg-rose-50 border-2 border-red-100 shrink-0 flex items-center justify-center text-[#E51824] font-black text-xl">
+            @if (serviceAuthentification.utilisateurConnecte()?.adressePhoto) {
+              <img
+                [src]="serviceAuthentification.utilisateurConnecte()?.adressePhoto"
+                alt="Avatar"
+                class="w-full h-full object-cover"
+              />
+            } @else {
+              <span>{{ (serviceAuthentification.utilisateurConnecte()?.prenom?.[0] || 'U') + (serviceAuthentification.utilisateurConnecte()?.nom?.[0] || '') }}</span>
+            }
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">

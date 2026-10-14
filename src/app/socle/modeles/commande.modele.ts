@@ -47,4 +47,11 @@ export interface CommandeClient {
   articles: ArticleCommande[];
   estEnCours: boolean;
   sourceVideoId?: string; // Attribution commerciale pour le studio vidéo
+  statutBrut?: string;
+  statutLibelle?: string;
+  adresseLivraison?: string;
+  latitudeLivraison?: number;
+  longitudeLivraison?: number;
+  restaurantLatitude?: number;
+  restaurantLongitude?: number;
 }

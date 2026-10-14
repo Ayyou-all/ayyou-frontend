@@ -45,7 +45,7 @@ export class ServiceCommandesService {
   /**
    * Adapte un objet Commande Django vers l'interface CommandeClient Angular.
    */
-  private adapterCommande(c: any): CommandeClient {
+  adapterCommande(c: any): CommandeClient {
     // Normalisation du statut
     let statut: StatutCommande = 'EN_LIVRAISON';
     if (c.statut === 'LIVREE') statut = 'LIVRE';
@@ -69,21 +69,21 @@ export class ServiceCommandesService {
     return {
       identifiant: String(c.identifiant || c.reference || c.id || ''),
       nomRestaurant: c.nom_restaurant || c.nomRestaurant || c.etablissement?.nom || 'Restaurant partenaire',
-      adresseImageRestaurant: c.adresse_image_restaurant || c.adresseImageRestaurant || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+      adresseImageRestaurant: c.adresse_image_restaurant || c.adresseImageRestaurant || c.etablissement?.logo || '',
       dateHeureTexte: c.date_heure_texte || c.dateHeureTexte || 'Aujourd\'hui',
       statut,
       delaiOuRemarque: c.delai_ou_remarque || c.delaiOuRemarque || '20-30 min',
       montantTotalFcfa: Number(c.montant_total_fcfa || c.total_fcfa || c.montantTotalFcfa || 0),
       codeLivraison: codePin,
       etapeSuivi,
-      heureArriveeEstimee: c.heure_arrivee_estimee || c.heureArriveeEstimee || '13:45',
+      heureArriveeEstimee: c.heure_arrivee_estimee || c.heureArriveeEstimee || '',
       messageProximite: c.messageProximite || (statut === 'EN_LIVRAISON' ? 'LE LIVREUR EST EN ROUTE' : undefined),
       estEnCours: c.est_en_cours ?? (statut !== 'LIVRE' && statut !== 'REFUSE'),
       livreur: c.livreur ? {
-        nom: c.livreur.nom || 'Moussa Ba',
+        nom: c.livreur.nom || 'Livreur',
         vehicule: c.livreur.vehicule || 'Moto',
-        adressePhoto: c.livreur.adressePhoto || c.livreur.adresse_photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-        numeroTelephone: c.livreur.numeroTelephone || c.livreur.telephone || '+221 77 456 78 90',
+        adressePhoto: c.livreur.adressePhoto || c.livreur.adresse_photo || '',
+        numeroTelephone: c.livreur.numeroTelephone || c.livreur.telephone || '',
         latitude: Number(c.livreur.latitude || 14.6928),
         longitude: Number(c.livreur.longitude || -17.4467)
       } : undefined,
@@ -91,7 +91,14 @@ export class ServiceCommandesService {
         nomPlat: art.nom_plat || art.nomPlat || 'Plat',
         quantite: Number(art.quantite || 1),
         prixTotalFcfa: Number(art.total_ligne_fcfa || art.prixTotalFcfa || (art.prix_unitaire_fcfa * art.quantite) || 0)
-      }))
+      })),
+      statutBrut: c.statut || '',
+      statutLibelle: c.statut_libelle || (statut === 'PREPARATION' ? 'En préparation' : statut === 'LIVRE' ? 'Livrée' : statut === 'REFUSE' ? 'Refusée' : 'En livraison'),
+      adresseLivraison: c.adresse_livraison || '',
+      latitudeLivraison: c.latitude_livraison ? Number(c.latitude_livraison) : undefined,
+      longitudeLivraison: c.longitude_livraison ? Number(c.longitude_livraison) : undefined,
+      restaurantLatitude: c.restaurant_latitude ? Number(c.restaurant_latitude) : undefined,
+      restaurantLongitude: c.restaurant_longitude ? Number(c.restaurant_longitude) : undefined
     };
   }
 
@@ -176,6 +183,9 @@ export class ServiceCommandesService {
     telephone_contact?: string;
     instructions_livraison?: string;
     mode_paiement?: string;
+    latitude_livraison?: number | null;
+    longitude_livraison?: number | null;
+    source_video_id?: string;
     articles?: { plat_id: number; quantite: number; instructions_speciales?: string }[];
   }): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/commandes/`, payload).pipe(
@@ -196,6 +206,33 @@ export class ServiceCommandesService {
       url_annulation: `${window.location.origin}/panier`
     };
     return this.http.post<any>(`${environment.apiUrl}/paiements/initier/`, payload);
+  }
+
+  /**
+   * Vérifie le paiement auprès de PayTech et recharge la commande.
+   */
+  verifierPaiementPayTech(commandeId: number | string): Observable<any> {
+    const numId = Number(commandeId);
+    if (!numId) return of(null);
+    return this.http.post<any>(`${environment.apiUrl}/paiements/verifier/`, { commande_id: numId }).pipe(
+      tap(() => {
+        this.rechargerCommande(String(commandeId));
+      }),
+      catchError(() => of(null))
+    );
+  }
+
+  /**
+   * Recharge une commande spécifique depuis Django.
+   */
+  rechargerCommande(identifiant: string): void {
+    this.http.get<any>(`${environment.apiUrl}/commandes/${identifiant}/`).subscribe({
+      next: (c) => {
+        const adaptee = this.adapterCommande(c);
+        this.ajouterCommande(adaptee);
+      },
+      error: () => {}
+    });
   }
 
   /**

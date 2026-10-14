@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { MethodePaiement, PanierRestaurant } from '../../../socle/modeles/panier.modele';
+import { LignePanier, MethodePaiement, PanierRestaurant } from '../../../socle/modeles/panier.modele';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
 import { ServiceCommandesService } from '../../../socle/services/service-commandes.service';
@@ -15,7 +15,7 @@ import { ServicePanierService } from '../../../socle/services/service-panier.ser
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './detail-panier.component.html'
 })
-export class DetailPanierComponent {
+export class DetailPanierComponent implements OnInit {
   readonly route = inject(ActivatedRoute);
   readonly routeur = inject(Router);
   readonly servicePanier = inject(ServicePanierService);
@@ -28,14 +28,76 @@ export class DetailPanierComponent {
   readonly traitementPaiementEnCours = signal<boolean>(false);
   readonly messageErreurPaiement = signal<string | null>(null);
 
+  // Position GPS réelle du client (aucun mock)
+  readonly latitudeClient = signal<number | null>(null);
+  readonly longitudeClient = signal<number | null>(null);
+  readonly localisationEnCours = signal<boolean>(false);
+  readonly erreurLocalisation = signal<string | null>(null);
+
   // Modal de modification de l'adresse de livraison
   readonly modalModifierAdresse = signal<boolean>(false);
-  readonly adresseSaisie = signal<string>('Plateau, Avenue Hassan II');
+  readonly adresseSaisie = signal<string>('Position en attente de détection...');
 
   // Modal de confirmation de commande réussie
   readonly commandeReussie = signal<boolean>(false);
   readonly numeroCommandeSimulee = signal<string>('');
   readonly commandeCreeeId = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.detecterPositionReelle();
+  }
+
+  /**
+   * Récupère la position GPS réelle du client via le navigateur.
+   */
+  detecterPositionReelle(): void {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      this.erreurLocalisation.set('La géolocalisation n\'est pas supportée par votre navigateur.');
+      return;
+    }
+
+    this.localisationEnCours.set(true);
+    this.erreurLocalisation.set(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        this.latitudeClient.set(lat);
+        this.longitudeClient.set(lng);
+
+        // Géocodage inverse réel via OpenStreetMap
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+          .then((r) => r.json())
+          .then((data) => {
+            const nomRue = data.address?.road || data.address?.pedestrian || '';
+            const quartier = data.address?.suburb || data.address?.neighbourhood || data.address?.city_district || '';
+            const ville = data.address?.city || data.address?.town || data.address?.state || 'Dakar';
+            const texte = [nomRue, quartier, ville].filter(Boolean).join(', ') || `GPS : ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+            this.adresseSaisie.set(texte);
+            const p = this.panier();
+            if (p) p.adresseLivraison = texte;
+            this.localisationEnCours.set(false);
+          })
+          .catch(() => {
+            const texte = `GPS : ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            this.adresseSaisie.set(texte);
+            const p = this.panier();
+            if (p) p.adresseLivraison = texte;
+            this.localisationEnCours.set(false);
+          });
+      },
+      (err) => {
+        this.localisationEnCours.set(false);
+        this.erreurLocalisation.set('Accès GPS refusé ou indisponible. Vous pouvez saisir votre adresse manuellement.');
+        if (this.adresseSaisie() === 'Position en attente de détection...') {
+          this.adresseSaisie.set('Dakar, Sénégal');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
 
   // Détection des articles en rupture de stock
   readonly aDesArticlesIndisponibles = computed(() => {
@@ -50,31 +112,52 @@ export class DetailPanierComponent {
 
   // Identifiant du restaurant sélectionné dans l'URL
   readonly identifiantRestaurant = computed(() => {
-    return this.route.snapshot.paramMap.get('idRestaurant') || 'resto-chez-fatou';
+    return this.route.snapshot.paramMap.get('idRestaurant') || '';
   });
 
   // Panier actif pour ce restaurant
   readonly panier = computed<PanierRestaurant>(() => {
     const id = this.identifiantRestaurant();
-    const trouve = this.servicePanier.trouverPanierRestaurant(id);
-    if (trouve) {
-      return trouve;
-    }
-    // Fallback vers le premier panier disponible
-    return (
-      this.servicePanier.listePaniersRestaurants()[0] ?? {
-        identifiantRestaurant: 'resto-chez-fatou',
-        nomRestaurant: 'Chez Fatou',
-        adresseLogoRestaurant: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-        delaiLivraison: '25-35 min',
-        adresseLivraison: 'Plateau, Avenue Hassan II',
-        methodePaiement: 'WAVE',
-        lignes: [],
-        sousTotalFcfa: 0,
-        fraisLivraisonFcfa: 1000,
-        totalFcfa: 0
+    if (id) {
+      const trouve = this.servicePanier.trouverPanierRestaurant(id);
+      if (trouve) {
+        return trouve;
       }
-    );
+      const resto = this.serviceCatalogue.trouverRestaurant(id);
+      if (resto) {
+        return {
+          identifiantRestaurant: resto.identifiant,
+          nomRestaurant: resto.nom,
+          adresseLogoRestaurant: resto.adresseLogo,
+          delaiLivraison: `${resto.delaiLivraisonMinutes || 30} min`,
+          adresseLivraison: this.adresseSaisie(),
+          methodePaiement: 'WAVE',
+          lignes: [] as LignePanier[],
+          sousTotalFcfa: 0,
+          fraisLivraisonFcfa: resto.fraisLivraisonFcfa ?? 1000,
+          totalFcfa: 0
+        };
+      }
+    }
+    // Fallback vers le premier panier actif s'il existe
+    const premierPanier = this.servicePanier.listePaniersRestaurants()[0];
+    if (premierPanier) {
+      return premierPanier;
+    }
+    // Sinon premier restaurant réel du catalogue
+    const premierResto = this.serviceCatalogue.restaurants()[0];
+    return {
+      identifiantRestaurant: premierResto?.identifiant || '',
+      nomRestaurant: premierResto?.nom || 'Restaurant',
+      adresseLogoRestaurant: premierResto?.adresseLogo || '',
+      delaiLivraison: premierResto ? `${premierResto.delaiLivraisonMinutes || 30} min` : '25-35 min',
+      adresseLivraison: this.adresseSaisie(),
+      methodePaiement: 'WAVE',
+      lignes: [] as LignePanier[],
+      sousTotalFcfa: 0,
+      fraisLivraisonFcfa: premierResto?.fraisLivraisonFcfa ?? 1000,
+      totalFcfa: 0
+    };
   });
 
   // Note saisie pour le restaurant
@@ -184,6 +267,8 @@ export class DetailPanierComponent {
     const payload = {
       etablissement_id: restoIdNum,
       adresse_livraison: p.adresseLivraison || this.adresseSaisie() || 'Dakar, Sénégal',
+      latitude_livraison: this.latitudeClient(),
+      longitude_livraison: this.longitudeClient(),
       instructions_livraison: this.noteAuRestaurant() || '',
       mode_paiement: p.methodePaiement || 'WAVE',
       articles: p.lignes.map((l) => ({
@@ -206,16 +291,20 @@ export class DetailPanierComponent {
           next: (tentative: any) => {
             this.servicePanier.supprimerPanier(this.identifiantRestaurant());
             if (tentative && tentative.url_redirection) {
-              // Redirection vers le guichet de paiement PayTech sécurisé
+              // Redirection réelle vers le guichet de paiement PayTech (Wave / Orange Money)
               window.location.href = tentative.url_redirection;
               return;
             }
+            this.traitementPaiementEnCours.set(false);
             this.commandeReussie.set(true);
           },
-          error: () => {
-            // En cas d'indisponibilité du webhook PayTech, la commande existe et peut être suivie
-            this.servicePanier.supprimerPanier(this.identifiantRestaurant());
-            this.commandeReussie.set(true);
+          error: (errPayTech: any) => {
+            this.traitementPaiementEnCours.set(false);
+            const msg =
+              errPayTech?.error?.message ||
+              errPayTech?.error?.detail ||
+              'Échec de l\'initialisation du paiement PayTech. Veuillez vérifier votre connexion.';
+            this.messageErreurPaiement.set(msg);
           }
         });
       },

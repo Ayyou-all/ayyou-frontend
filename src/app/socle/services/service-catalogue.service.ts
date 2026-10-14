@@ -20,6 +20,7 @@ export class ServiceCatalogueService {
   // État réactif du catalogue alimenté par l'API réelle
   readonly categories = signal<CategorieRestaurant[]>([]);
   readonly restaurants = signal<Restaurant[]>([]);
+  readonly plats = signal<Plat[]>([]);
   readonly publicationsFil = signal<PublicationFil[]>([]);
 
   // États de chargement et d'erreur
@@ -43,15 +44,24 @@ export class ServiceCatalogueService {
     forkJoin({
       categories: this.chargerCategories(),
       restaurants: this.chargerRestaurants(),
+      plats: this.chargerPlats(),
       publications: this.chargerPublicationsFil()
     }).subscribe({
       next: (donnees) => {
+        const platsGlobal = donnees.plats;
+        const restosComplets = donnees.restaurants.map((r) => {
+          if (r.plats && r.plats.length > 0) return r;
+          const platsDuResto = platsGlobal.filter((p) => p.identifiantRestaurant === r.identifiant);
+          return { ...r, plats: platsDuResto };
+        });
+
         this.categories.set(donnees.categories);
-        this.restaurants.set(donnees.restaurants);
+        this.restaurants.set(restosComplets);
+        this.plats.set(platsGlobal);
         this.publicationsFil.set(donnees.publications);
         this.chargementEnCours.set(false);
       },
-      error: (erreur) => {
+      error: () => {
         this.chargementEnCours.set(false);
         this.messageErreur.set('Impossible de charger le catalogue. Veuillez vérifier votre connexion au serveur.');
       }
@@ -63,15 +73,16 @@ export class ServiceCatalogueService {
    */
   chargerCategories(): Observable<CategorieRestaurant[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/categories/`).pipe(
-      map((reponse) =>
-        reponse.map((cat) => ({
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((cat: any) => ({
           identifiant: String(cat.id || cat.slug || cat.identifiant),
           nom: cat.nom,
           icone: cat.icone || 'fa-solid fa-utensils',
           couleurFond: cat.couleur_fond || cat.couleurFond || 'bg-rose-50',
           couleurTexte: cat.couleur_texte || cat.couleurTexte || 'text-[#E51824]'
-        }))
-      ),
+        }));
+      }),
       catchError(() => of([]))
     );
   }
@@ -81,24 +92,23 @@ export class ServiceCatalogueService {
    */
   chargerRestaurants(): Observable<Restaurant[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/etablissements/`).pipe(
-      map((reponse) =>
-        reponse.map((resto) => ({
-          identifiant: String(resto.id),
-          nom: resto.nom,
-          nomUtilisateur: resto.nom_utilisateur ? `@${resto.nom_utilisateur}` : `@resto_${resto.id}`,
-          description: resto.description || '',
-          specialite: resto.specialite || 'Cuisine sénégalaise',
-          adresse: resto.adresse || '',
-          quartierVille: resto.quartier_ville || resto.quartierVille || 'Dakar',
-          heureFermeture: resto.heure_fermeture ? String(resto.heure_fermeture).slice(0, 5) : '23:30',
-          estOuvert: resto.est_ouvert ?? true,
-          noteMoyenne: resto.note_moyenne ? Number(resto.note_moyenne) : 4.8,
-          nombreAvis: resto.nombre_avis ? Number(resto.nombre_avis) : 150,
-          adresseLogo: resto.logo || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-          adresseCouverture: resto.couverture || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200',
-          plats: (resto.plats || []).map((p: any) => this.adapterPlat(p, resto))
-        }))
-      ),
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((resto: any) => this.adapterRestaurant(resto));
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Récupère tous les plats réels actifs depuis Django.
+   */
+  chargerPlats(): Observable<Plat[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/plats/`).pipe(
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((p: any) => this.adapterPlat(p));
+      }),
       catchError(() => of([]))
     );
   }
@@ -108,58 +118,105 @@ export class ServiceCatalogueService {
    */
   chargerPublicationsFil(): Observable<PublicationFil[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/`).pipe(
-      map((reponse) =>
-        reponse.map((pub) => ({
-          identifiant: String(pub.identifiant || pub.id),
-          identifiantRestaurant: String(pub.identifiantRestaurant || pub.etablissement?.id || ''),
-          nomRestaurant: pub.nomRestaurant || pub.etablissement?.nom || '',
-          nomUtilisateurRestaurant: pub.nomUtilisateurRestaurant || `@${pub.etablissement?.nom_utilisateur || 'teranga'}`,
-          adresseLogoRestaurant: pub.adresseLogoRestaurant || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-          estAbonne: pub.estAbonne ?? false,
-          plat: this.adapterPlat(pub.plat, pub.etablissement),
-          descriptionAccroche: pub.descriptionAccroche || pub.description || pub.titre || '',
-          adresseMedia: pub.adresseMedia || pub.fichier_media || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200',
-          adresseVideo: pub.adresseVideo || pub.fichier_media || 'https://assets.mixkit.co/videos/preview/mixkit-chef-plating-a-dish-with-care-42797-large.mp4',
-          typeMedia: pub.typeMedia || pub.type_media || 'VIDEO',
-          nombreJeaime: String(pub.nombreJeaime ?? pub.nombre_jaime ?? '120'),
-          estAime: pub.estAime ?? false,
-          nombrePartages: Number(pub.nombrePartages ?? pub.nombre_partages ?? 0)
-        }))
-      ),
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((pub: any) => this.adapterPublication(pub));
+      }),
       catchError(() => of([]))
     );
   }
 
   /**
-   * Adapte l'objet Plat Django vers le modèle Plat frontend.
+   * Récupère les vidéos publiées par un restaurant spécifique.
    */
-  private adapterPlat(p: any, resto?: any): Plat {
+  chargerVideosRestaurant(idRestaurant: string | number): Observable<PublicationFil[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/?etablissement=${idRestaurant}`).pipe(
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((pub: any) => this.adapterPublication(pub));
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  adapterPublication(pub: any): PublicationFil {
+    return {
+      identifiant: String(pub.identifiant || pub.id),
+      identifiantRestaurant: String(pub.identifiantRestaurant || pub.etablissement?.id || pub.etablissement_id || ''),
+      nomRestaurant: pub.nomRestaurant || pub.etablissement?.nom || '',
+      nomUtilisateurRestaurant: pub.nomUtilisateurRestaurant || (pub.etablissement?.nom_utilisateur ? `@${pub.etablissement.nom_utilisateur}` : ''),
+      adresseLogoRestaurant: pub.adresseLogoRestaurant || pub.etablissement?.adresse_logo || pub.etablissement?.logo || '',
+      estAbonne: pub.estAbonne ?? pub.est_abonne ?? false,
+      plat: this.adapterPlat(pub.plat, pub.etablissement),
+      descriptionAccroche: pub.descriptionAccroche || pub.description || pub.titre || '',
+      adresseMedia: pub.adresseMedia || pub.image_miniature || pub.fichier_media || '',
+      adresseVideo: pub.adresseVideo || (pub.type_media === 'VIDEO' ? pub.fichier_media : '') || '',
+      typeMedia: pub.typeMedia || pub.type_media || 'VIDEO',
+      nombreJeaime: String(pub.nombreJeaime ?? pub.nombre_jaime ?? '0'),
+      estAime: pub.estAime ?? pub.est_aime ?? false,
+      nombrePartages: Number(pub.nombrePartages ?? pub.nombre_partages ?? 0)
+    };
+  }
+
+  /**
+   * Adapte l'objet Etablissement Django vers le modèle Restaurant frontend.
+   */
+  adapterRestaurant(resto: any): Restaurant {
+    return {
+      identifiant: String(resto.id),
+      nom: resto.nom,
+      nomUtilisateur: resto.nom_utilisateur ? `@${resto.nom_utilisateur}` : `@resto_${resto.id}`,
+      description: resto.description || '',
+      specialite: resto.specialite || 'Restauration',
+      adresse: resto.adresse || '',
+      quartierVille: resto.quartier_ville || resto.quartierVille || 'Dakar',
+      heureFermeture: resto.heure_fermeture ? String(resto.heure_fermeture).slice(0, 5) : '23:30',
+      estOuvert: resto.est_ouvert ?? true,
+      noteMoyenne: resto.note_moyenne ? Number(resto.note_moyenne) : 4.8,
+      nombreAvis: resto.nombre_avis ? Number(resto.nombre_avis) : 0,
+      adresseLogo: resto.adresse_logo || resto.logo || '',
+      adresseCouverture: resto.adresse_couverture || resto.couverture || '',
+      delaiLivraisonMinutes: resto.delai_livraison_estime_minutes || resto.delaiLivraisonMinutes || 30,
+      fraisLivraisonFcfa: Number(resto.frais_livraison_base_fcfa || resto.fraisLivraisonFcfa || 1000),
+      estAbonne: Boolean(resto.est_abonne),
+      estAime: Boolean(resto.est_aime),
+      nombreAbonnes: Number(resto.nombre_abonnes || 0),
+      nombreLikes: Number(resto.nombre_likes || 0),
+      nombreLikesVideos: Number(resto.nombre_likes_videos || resto.nombreLikesVideos || 0),
+      plats: (resto.plats || []).map((p: any) => this.adapterPlat(p, resto))
+    };
+  }
+
+  /**
+   * Adapte l'objet Plat Django vers le modèle Plat frontend sans mocks.
+   */
+  adapterPlat(p: any, resto?: any): Plat {
     if (!p) {
       return {
-        identifiant: 'plat-defaut',
+        identifiant: '',
         identifiantRestaurant: resto ? String(resto.id) : '',
         nomRestaurant: resto ? resto.nom : '',
-        nom: 'Plat sénégalais',
-        description: 'Plat authentique préparé avec passion',
-        prixFcfa: 3000,
-        adresseImage: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+        nom: '',
+        description: '',
+        prixFcfa: 0,
+        adresseImage: '',
         categorie: 'Plats',
         statut: 'DISPONIBLE'
       };
     }
     return {
       identifiant: String(p.id || p.identifiant || ''),
-      identifiantRestaurant: String(p.etablissement?.id || resto?.id || p.identifiantRestaurant || ''),
-      nomRestaurant: p.etablissement?.nom || resto?.nom || p.nomRestaurant || '',
+      identifiantRestaurant: String(p.identifiant_etablissement || p.etablissement?.id || resto?.id || p.identifiantRestaurant || ''),
+      nomRestaurant: p.nom_etablissement || p.etablissement?.nom || resto?.nom || p.nomRestaurant || '',
       nom: p.nom || '',
       description: p.description || '',
       prixFcfa: Number(p.prix_fcfa || p.prixFcfa || p.prix || 0),
-      adresseImage: p.image || p.adresseImage || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+      adresseImage: p.adresse_image || p.adresseImage || p.image || '',
       categorie: p.categorie?.nom || p.categorie || 'Plats',
       statut: (p.est_disponible ?? (p.statut === 'DISPONIBLE')) ? 'DISPONIBLE' : 'INDISPONIBLE',
       tempsPreparationMinutes: p.temps_preparation_minutes || p.tempsPreparationMinutes || 25,
       noteMoyenne: p.note_moyenne || p.noteMoyenne || 4.8,
-      nombreCommandes: p.nombre_commandes || p.nombreCommandes || 40
+      nombreCommandes: p.nombre_commandes || p.nombreCommandes || 0
     };
   }
 
@@ -184,6 +241,10 @@ export class ServiceCatalogueService {
     return this.restaurants().find((r) => r.identifiant === identifiant);
   }
 
+  trouverRestaurant(identifiant: string): Restaurant | undefined {
+    return this.trouverRestaurantParId(identifiant);
+  }
+
   /**
    * Bascule l'état d'abonnement à un restaurant via l'API Django.
    */
@@ -193,23 +254,57 @@ export class ServiceCatalogueService {
       return;
     }
 
-    this.http
-      .post<any>(`${environment.apiUrl}/abonnements/etablissements/${pub.identifiantRestaurant}/basculer/`, {})
-      .subscribe({
-        next: (reponse) => {
-          const estAbonne = reponse?.est_abonne ?? !pub.estAbonne;
-          this.publicationsFil.update((pubs) =>
-            pubs.map((p) =>
-              p.identifiantRestaurant === pub.identifiantRestaurant
-                ? { ...p, estAbonne }
-                : p
-            )
-          );
-        },
-        error: () => {
-          // Si hors-ligne ou non connecté, l'action est rejetée par le backend
-        }
-      });
+    this.basculerAbonnementRestaurant(pub.identifiantRestaurant).subscribe({
+      next: (reponse) => {
+        const estAbonne = reponse?.estAbonne ?? !pub.estAbonne;
+        this.publicationsFil.update((pubs) =>
+          pubs.map((p) =>
+            p.identifiantRestaurant === pub.identifiantRestaurant
+              ? { ...p, estAbonne }
+              : p
+          )
+        );
+      },
+      error: () => {}
+    });
+  }
+
+  /**
+   * Bascule l'abonnement à un établissement partenaire.
+   */
+  basculerAbonnementRestaurant(idRestaurant: string | number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/abonnements/${idRestaurant}/basculer/`, {}).pipe(
+      tap((reponse) => {
+        const estAbonne = reponse?.estAbonne ?? true;
+        const nombreAbonnes = reponse?.nombreAbonnes;
+        this.restaurants.update((restos) =>
+          restos.map((r) =>
+            r.identifiant === String(idRestaurant)
+              ? { ...r, estAbonne, ...(nombreAbonnes !== undefined ? { nombreAbonnes } : {}) }
+              : r
+          )
+        );
+      })
+    );
+  }
+
+  /**
+   * Bascule la mention "J'aime" d'un établissement partenaire.
+   */
+  basculerLikeRestaurant(idRestaurant: string | number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/abonnements/${idRestaurant}/aimer/`, {}).pipe(
+      tap((reponse) => {
+        const estAime = reponse?.estAime ?? true;
+        const nombreLikes = reponse?.nombreLikes;
+        this.restaurants.update((restos) =>
+          restos.map((r) =>
+            r.identifiant === String(idRestaurant)
+              ? { ...r, estAime, ...(nombreLikes !== undefined ? { nombreLikes } : {}) }
+              : r
+          )
+        );
+      })
+    );
   }
 
   /**

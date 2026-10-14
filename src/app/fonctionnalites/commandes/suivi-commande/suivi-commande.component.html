@@ -41,70 +41,89 @@
       <!-- ======================================================================= -->
       <div class="lg:col-span-7 space-y-5">
 
-        <!-- CARTE DE STATUT : STEPPER 4 ÉTAPES + HEURE ESTIMÉE + PASTILLE VERTE -->
+        <!-- CARTE DE STATUT : STEPPER 4 ÉTAPES RÉELLES DE LA BASE + HEURE ESTIMÉE -->
         <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-xs space-y-6 text-center">
           
-          <!-- Stepper horizontal à 4 étapes reliées par une ligne rouge -->
+          <!-- Stepper horizontal à 4 étapes réelles de la base de données -->
           <div class="relative flex items-center justify-between px-3 sm:px-6 select-none">
-            <!-- Ligne de connexion rouge d'arrière-plan -->
+            <!-- Ligne de connexion d'arrière-plan avec largeur réelle -->
             <div class="absolute left-8 right-8 top-4.5 h-0.5 bg-slate-100 -translate-y-1/2">
-              <div class="h-full bg-[#E51824] transition-all duration-500" style="width: 75%;"></div>
+              <div
+                class="h-full bg-[#E51824] transition-all duration-700"
+                [style.width.%]="pourcentageProgression()"
+              ></div>
             </div>
 
-            <!-- Étape 1 : Acceptée (rouge avec check blanc) -->
+            <!-- Étape 1 : Reçue / Payée -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
-              <div class="w-9 h-9 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-md shadow-red-500/20">
+              <div
+                [class]="etape1Active() ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20' : 'bg-slate-100 text-slate-400'"
+                class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+              >
                 <i class="fa-solid fa-check text-xs font-bold"></i>
               </div>
-              <span class="text-[11px] font-extrabold text-[#E51824]">Acceptée</span>
+              <span class="text-[11px] font-extrabold" [class]="etape1Active() ? 'text-[#E51824]' : 'text-slate-400'">Reçue</span>
             </div>
 
-            <!-- Étape 2 : Préparation (rouge avec couverts blancs) -->
+            <!-- Étape 2 : Préparation cuisine -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
-              <div class="w-9 h-9 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-md shadow-red-500/20">
+              <div
+                [class]="etape2Active() ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20' : 'bg-slate-100 text-slate-400'"
+                class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+              >
                 <i class="fa-solid fa-utensils text-xs"></i>
               </div>
-              <span class="text-[11px] font-extrabold text-[#E51824]">Préparation</span>
+              <span class="text-[11px] font-extrabold" [class]="etape2Active() ? 'text-[#E51824]' : 'text-slate-400'">Cuisine</span>
             </div>
 
-            <!-- Étape 3 : En route (rouge avec moto blanche, actif avec halo) -->
+            <!-- Étape 3 : En route avec coursier -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
-              <div class="w-9 h-9 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-lg shadow-red-500/40 ring-4 ring-rose-100 animate-pulse">
+              <div
+                [class]="etape3Active() ? 'bg-[#E51824] text-white shadow-lg shadow-red-500/40 ring-4 ring-rose-100 animate-pulse' : 'bg-slate-100 text-slate-400'"
+                class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+              >
                 <i class="fa-solid fa-motorcycle text-xs"></i>
               </div>
-              <span class="text-[11px] font-extrabold text-[#E51824]">En route</span>
+              <span class="text-[11px] font-extrabold" [class]="etape3Active() ? 'text-[#E51824]' : 'text-slate-400'">En route</span>
             </div>
 
-            <!-- Étape 4 : Livrée (gris clair avec maison blanche) -->
+            <!-- Étape 4 : Livrée -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
-              <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+              <div
+                [class]="etape4Active() ? 'bg-[#E51824] text-white shadow-md' : 'bg-slate-100 text-slate-400'"
+                class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+              >
                 <i class="fa-solid fa-house text-xs"></i>
               </div>
-              <span class="text-[11px] font-semibold text-slate-400">Livrée</span>
+              <span class="text-[11px] font-semibold" [class]="etape4Active() ? 'text-[#E51824]' : 'text-slate-400'">Livrée</span>
             </div>
           </div>
 
-          <!-- Heure d'arrivée estimée -->
+          <!-- Statut officiel réel de la base de données -->
           <div class="space-y-1">
             <div class="text-xs sm:text-sm font-medium text-slate-400">
-              Arrivée estimée à
+              Statut de votre commande
             </div>
-            <div class="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight font-['Outfit']">
-              {{ commande().heureArriveeEstimee }}
+            <div class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-['Outfit']">
+              {{ commande().statutLibelle || 'Commande reçue' }}
             </div>
+            @if (commande().delaiOuRemarque) {
+              <p class="text-xs text-slate-500 font-medium">
+                {{ commande().delaiOuRemarque }}
+              </p>
+            }
           </div>
 
-          <!-- Pastille verte : LE LIVREUR EST PROCHE -->
+          <!-- Pastille statut en direct -->
           <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#e8faf0] text-[#16a34a] text-xs font-black tracking-wider uppercase shadow-2xs">
             <span class="w-2 h-2 rounded-full bg-[#16a34a] animate-ping"></span>
-            <span>{{ commande().messageProximite || 'LE LIVREUR EST PROCHE' }}</span>
+            <span>{{ commande().statutLibelle || 'SUIVI EN DIRECT' }}</span>
           </div>
 
         </div>
 
         <!-- ===================================================================== -->
         <!-- CARTE GPS RÉELLE DE DAKAR : OPENSTREETMAP / CARTO AVEC SUIVI EN DIRECT -->
-        <!-- Coordonnées réelles : Le Teranga (Plateau) -> Moussa -> Vous (Médina)   -->
         <!-- ===================================================================== -->
         <div class="relative w-full h-80 sm:h-96 rounded-[32px] overflow-hidden border border-slate-200/80 shadow-md select-none group">
           
@@ -131,22 +150,9 @@
               type="button"
               (click)="recentrerSurLivreur()"
               class="w-10 h-10 rounded-2xl bg-white/95 hover:bg-white text-[#E51824] shadow-md flex items-center justify-center transition-transform active:scale-95 cursor-pointer border border-slate-100"
-              title="Recentrer sur le livreur Moussa"
+              title="Recentrer sur le livreur"
             >
               <i class="fa-solid fa-crosshairs text-sm"></i>
-            </button>
-          </div>
-
-          <!-- Bouton interactif pour simuler l'arrivée de la livraison -->
-          <div class="absolute bottom-3.5 right-3.5 z-20">
-            <button
-              type="button"
-              (click)="confirmerLivraison()"
-              class="px-4 py-2.5 rounded-2xl bg-white/95 hover:bg-white text-slate-800 text-xs font-black shadow-lg backdrop-blur-md flex items-center gap-2 border border-slate-200 transition-transform active:scale-95 cursor-pointer"
-              title="Tester la livraison de la commande"
-            >
-              <i class="fa-solid fa-circle-check text-emerald-500"></i>
-              <span>Simuler arrivée du livreur</span>
             </button>
           </div>
         </div>
@@ -182,42 +188,61 @@
 
         </div>
 
-        <!-- CARTE DU LIVREUR : MOUSSA DIOP + TMAX + BOUTON D'APPEL -->
-        <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-4">
-          
-          <div class="flex items-center gap-3.5 min-w-0">
-            <!-- Photo du livreur Moussa Diop -->
-            <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-900 border border-slate-100 shadow-xs shrink-0">
-              <img
-                [src]="commande().livreur?.adressePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'"
-                alt="Livreur Moussa Diop"
-                class="w-full h-full object-cover"
-              />
+        <!-- CARTE DU LIVREUR OU ASSIGNATION EN COURS (100% DONNÉES RÉELLES DB) -->
+        @if (commande().livreur) {
+          <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <!-- Photo du livreur -->
+              <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-900 border border-slate-100 shadow-xs shrink-0 flex items-center justify-center">
+                @if (commande().livreur?.adressePhoto) {
+                  <img
+                    [src]="commande().livreur?.adressePhoto"
+                    [alt]="commande().livreur?.nom || 'Livreur'"
+                    class="w-full h-full object-cover"
+                  />
+                } @else {
+                  <i class="fa-solid fa-motorcycle text-white text-xl"></i>
+                }
+              </div>
+
+              <!-- Nom et Véhicule réels -->
+              <div class="min-w-0">
+                <h4 class="text-base font-extrabold text-slate-900 truncate font-['Outfit']">
+                  {{ commande().livreur?.nom }}
+                </h4>
+                <p class="text-xs text-slate-400 font-medium truncate">
+                  {{ commande().livreur?.vehicule || 'Livreur partenaire' }}
+                </p>
+              </div>
             </div>
 
-            <!-- Nom et Véhicule -->
+            <!-- Bouton d'appel si téléphone disponible -->
+            @if (commande().livreur?.numeroTelephone) {
+              <button
+                type="button"
+                (click)="appelerLivreur()"
+                class="w-12 h-12 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-red-500/25 transition-all cursor-pointer shrink-0"
+                [title]="'Appeler ' + (commande().livreur?.nom || 'le coursier')"
+              >
+                <i class="fa-solid fa-phone text-base"></i>
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 border border-amber-100/80 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-clock-rotate-left text-lg animate-pulse"></i>
+            </div>
             <div class="min-w-0">
-              <h4 class="text-base font-extrabold text-slate-900 truncate font-['Outfit']">
-                {{ commande().livreur?.nom || 'Moussa Diop' }}
+              <h4 class="text-sm font-extrabold text-slate-900 font-['Outfit']">
+                Attribution du livreur en cours
               </h4>
-              <p class="text-xs text-slate-400 font-medium">
-                {{ commande().livreur?.vehicule || 'Yamaha TMAX' }}
+              <p class="text-xs text-slate-400 font-medium mt-0.5 leading-relaxed">
+                Votre commande est prise en charge. Un livreur sera assigné dès qu'elle sera prête.
               </p>
             </div>
           </div>
-
-          <!-- Gros bouton d'appel rond rouge vif (conforme maquette 1) -->
-          <button
-            type="button"
-            (click)="appelerLivreur()"
-            class="w-12 h-12 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-red-500/25 transition-all cursor-pointer shrink-0"
-            aria-label="Appeler Moussa"
-            title="Appeler le livreur"
-          >
-            <i class="fa-solid fa-phone text-base"></i>
-          </button>
-
-        </div>
+        }
 
         <!-- CARTE ACCORDÉON : DÉTAILS DE LA COMMANDE (CONFORME À L'IMAGE 1) -->
         <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
@@ -272,6 +297,18 @@
                 </div>
               }
 
+              @if (commande().adresseLivraison) {
+                <div class="pt-3 border-t border-slate-100 flex items-start gap-2.5 text-xs text-slate-600">
+                  <div class="w-6 h-6 rounded-md bg-rose-50 text-[#E51824] flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-location-dot text-xs"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <span class="font-bold text-slate-900 block">Adresse de livraison</span>
+                    <span class="text-slate-500">{{ commande().adresseLivraison }}</span>
+                  </div>
+                </div>
+              }
+
               <!-- Ligne de total en rouge (conforme à l'Image 1) -->
               <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-base font-extrabold">
                 <span class="text-slate-900">Total</span>
@@ -293,9 +330,9 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODALE 1 : APPEL DU LIVREUR (SIMULATION NUMÉRO SÉNÉGALAIS)                -->
+<!-- MODALE 1 : APPEL DU LIVREUR (INFORMATIONS RÉELLES BASE DE DONNÉES)        -->
 <!-- ========================================================================= -->
-@if (modalAppelLivreur()) {
+@if (modalAppelLivreur() && commande().livreur) {
   <div
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animation-apparition"
     (click)="fermerAppel()"
@@ -310,15 +347,15 @@
 
       <div class="space-y-1">
         <h3 class="text-lg font-black text-slate-900 font-['Outfit']">
-          Appeler Moussa Diop
+          Appeler {{ commande().livreur?.nom }}
         </h3>
         <p class="text-xs text-slate-500">
-          Votre livreur est en route sur son scooter Yamaha TMAX.
+          Votre coursier assigné ({{ commande().livreur?.vehicule || 'Moto' }}).
         </p>
       </div>
 
       <div class="bg-slate-50 rounded-2xl p-3.5 text-base font-extrabold text-slate-800 tracking-wider">
-        {{ commande().livreur?.numeroTelephone || '+221 77 821 44 90' }}
+        {{ commande().livreur?.numeroTelephone }}
       </div>
 
       <div class="flex gap-2 pt-1">
@@ -330,7 +367,7 @@
           Annuler
         </button>
         <a
-          [href]="'tel:' + (commande().livreur?.numeroTelephone || '+221778214490')"
+          [href]="'tel:' + commande().livreur?.numeroTelephone"
           class="flex-1 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <i class="fa-solid fa-phone text-xs"></i>

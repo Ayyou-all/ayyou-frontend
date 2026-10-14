@@ -1,214 +1,556 @@
 <div class="relative w-full pb-24">
 
-  <!-- Notification d'ajout au panier -->
-  @if (notificationPanier()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white text-xs sm:text-sm font-bold flex items-center gap-2 animation-apparition">
-      <i class="fa-solid fa-circle-check text-emerald-400"></i>
-      <span>{{ notificationPanier() }}</span>
+  @if (restaurant(); as resto) {
+    <!-- ========================================================================= -->
+    <!-- 1. EN-TÊTE AVEC IMAGE DU RESTAURANT (CONFORME À LA MAQUETTE 3)            -->
+    <!-- ========================================================================= -->
+    <div class="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden bg-slate-900">
+      @if (resto.adresseCouverture) {
+        <img
+          [src]="resto.adresseCouverture"
+          [alt]="resto.nom"
+          class="w-full h-full object-cover select-none brightness-95"
+        />
+      } @else if (resto.adresseLogo) {
+        <img
+          [src]="resto.adresseLogo"
+          [alt]="resto.nom"
+          class="w-full h-full object-cover select-none brightness-95"
+        />
+      } @else {
+        <div class="w-full h-full flex items-center justify-center bg-slate-900 text-white/40">
+          <i class="fa-solid fa-utensils text-5xl"></i>
+        </div>
+      }
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none"></div>
+
+      <!-- Bouton Retour à gauche -->
+      <div class="absolute top-4 left-4 z-20">
+        <button
+          type="button"
+          (click)="retourner()"
+          class="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-slate-800 hover:bg-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-md"
+          aria-label="Retour"
+        >
+          <i class="fa-solid fa-arrow-left text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Bouton Partager à droite -->
+      <div class="absolute top-4 right-4 z-20">
+        <button
+          type="button"
+          (click)="partager()"
+          class="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-slate-800 hover:bg-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-md"
+          aria-label="Partager"
+        >
+          <i class="fa-solid fa-share-nodes text-sm"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Conteneur principal centré -->
+    <div class="w-full max-w-3xl mx-auto px-4 sm:px-6 relative z-30">
+      
+      <!-- ========================================================================= -->
+      <!-- 2. CARTE FLOTTANTE DU RESTAURANT (CONFORME À LA MAQUETTE 3)              -->
+      <!-- ========================================================================= -->
+      <div class="-mt-14 sm:-mt-16 bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            @if (resto.adresseLogo) {
+              <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0 shadow-2xs">
+                <img [src]="resto.adresseLogo" [alt]="resto.nom" class="w-full h-full object-cover" />
+              </div>
+            }
+            <div>
+              <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+                {{ resto.nom }}
+              </h1>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                {{ resto.specialite }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Compteurs de style TikTok et bouton d'action S'abonner (remplace l'ancien bloc à cet emplacement exact) -->
+          <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+            <!-- Compteur Abonnés TikTok -->
+            <div class="flex flex-col items-center justify-center text-center px-1">
+              <span class="text-base sm:text-lg font-black text-slate-900 font-['Outfit'] leading-tight">
+                {{ (nombreAbonnes() || 0) | number }}
+              </span>
+              <span class="text-[11px] text-slate-400 font-semibold">Abonnés</span>
+            </div>
+
+            <!-- Séparateur vertical -->
+            <div class="h-6 w-px bg-slate-200"></div>
+
+            <!-- Compteur J'aime sur ses vidéos style TikTok -->
+            <button
+              type="button"
+              (click)="basculerLikeRestaurant()"
+              class="flex flex-col items-center justify-center text-center px-1 group cursor-pointer transition-transform active:scale-95"
+              title="Total des J'aime sur ses vidéos (cliquez pour aimer ce restaurant)"
+            >
+              <div class="flex items-center gap-1 leading-tight">
+                <i [class]="estAime() ? 'fa-solid fa-heart text-[#E51824]' : 'fa-regular fa-heart text-slate-400 group-hover:text-[#E51824]'" class="text-xs transition-colors"></i>
+                <span class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
+                  {{ (nombreLikesVideos() || 0) | number }}
+                </span>
+              </div>
+              <span class="text-[11px] text-slate-400 font-semibold group-hover:text-slate-600">J'aime</span>
+            </button>
+
+            <!-- Bouton S'abonner / Abonné -->
+            <button
+              type="button"
+              (click)="basculerAbonnement()"
+              [class]="estAbonne()
+                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
+                : 'bg-[#E51824] text-white hover:bg-red-700 shadow-sm shadow-red-500/20'"
+              class="px-3.5 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 border transition-all cursor-pointer ml-1"
+              title="S'abonner aux publications de ce restaurant"
+            >
+              <i [class]="estAbonne() ? 'fa-solid fa-check text-xs text-emerald-600' : 'fa-solid fa-plus text-xs'"></i>
+              <span>{{ estAbonne() ? 'Abonné' : "S'abonner" }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Métriques : Horaires & Statut | Lieux -->
+        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+          <!-- Colonne 1 : Horaires & Statut -->
+          <div class="space-y-0.5">
+            <div class="text-xs text-slate-400 font-medium">
+              Ferme à {{ resto.heureFermeture }}
+            </div>
+            <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+              <i class="fa-regular fa-clock text-red-600 text-sm"></i>
+              <span>{{ resto.estOuvert ? 'Ouvert' : 'Fermé' }}</span>
+            </div>
+          </div>
+
+          <!-- Colonne 2 : Lieux -->
+          <div class="space-y-0.5 border-l border-slate-100 pl-4">
+            <div class="text-xs text-slate-400 font-medium">
+              Lieu
+            </div>
+            <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+              <i class="fa-solid fa-location-dot text-red-600 text-xs"></i>
+              <span class="truncate">{{ resto.quartierVille }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 3. ONGLETS DE CONTENU : MENU & VIDEOS (CONFORME À LA MAQUETTE 3)          -->
+      <!-- ========================================================================= -->
+      <div class="flex items-center gap-8 border-b border-slate-200 mt-8 mb-6 select-none">
+        <button
+          type="button"
+          (click)="ongletActif.set('MENU')"
+          [class]="ongletActif() === 'MENU'
+            ? 'text-[#E51824] font-extrabold border-b-2 border-[#E51824]'
+            : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
+          class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
+        >
+          Menu
+        </button>
+
+        <button
+          type="button"
+          (click)="ongletActif.set('VIDEOS')"
+          [class]="ongletActif() === 'VIDEOS'
+            ? 'text-[#E51824] font-extrabold border-b-2 border-[#E51824]'
+            : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
+          class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
+        >
+          Vidéos
+        </button>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- 4. LISTE DES PLATS DU MENU (CONFORME À LA MAQUETTE 3)                     -->
+      <!-- ========================================================================= -->
+      @if (ongletActif() === 'MENU') {
+        <div class="space-y-4">
+          @for (plat of listePlats(); track plat.identifiant) {
+            <div
+              (click)="serviceCatalogue.ouvrirDetailPlat(plat)"
+              class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 transition-all flex items-center justify-between gap-4 cursor-pointer group hover:border-slate-200 shadow-2xs hover:shadow-md"
+            >
+              <!-- Informations du plat à gauche -->
+              <div class="flex-1 space-y-2 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-base sm:text-lg font-extrabold text-slate-900 group-hover:text-[#E51824] transition-colors leading-snug">
+                    {{ plat.nom }}
+                  </h3>
+
+                  <!-- Badge indisponible si applicable -->
+                  @if (plat.statut === 'INDISPONIBLE') {
+                    <span class="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      INDISPONIBLE
+                    </span>
+                  }
+                </div>
+
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed line-clamp-2">
+                  {{ plat.description }}
+                </p>
+
+                <!-- Prix et bouton '+' -->
+                <div class="flex items-center gap-4 pt-1">
+                  <span
+                    [class]="plat.statut === 'INDISPONIBLE' ? 'text-slate-400' : 'text-slate-900'"
+                    class="text-base sm:text-lg font-extrabold font-['Outfit']"
+                  >
+                    {{ plat.prixFcfa | number }} FCFA
+                  </span>
+
+                  <!-- Bouton '+' rouge (ou grisé si indisponible) -->
+                  <button
+                    type="button"
+                    (click)="$event.stopPropagation(); ajouterAuPanier(plat)"
+                    [disabled]="plat.statut === 'INDISPONIBLE'"
+                    [class]="plat.statut === 'INDISPONIBLE'
+                      ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                      : 'bg-[#E51824] hover:bg-red-700 active:scale-90 text-white cursor-pointer'"
+                    class="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm"
+                    [title]="plat.statut === 'INDISPONIBLE' ? 'Plat indisponible' : 'Ajouter au panier'"
+                  >
+                    <i class="fa-solid fa-plus text-xs"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Image carrée du plat à droite -->
+              <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-100 shrink-0 group-hover:scale-105 transition-transform duration-300">
+                @if (plat.adresseImage) {
+                  <img
+                    [src]="plat.adresseImage"
+                    [alt]="plat.nom"
+                    class="w-full h-full object-cover select-none"
+                  />
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center bg-rose-50 text-[#E51824]">
+                    <i class="fa-solid fa-bowl-food text-2xl"></i>
+                  </div>
+                }
+              </div>
+
+            </div>
+          } @empty {
+            <div class="py-12 text-center text-slate-400 space-y-2">
+              <i class="fa-solid fa-utensils text-3xl text-slate-300"></i>
+              <div class="text-sm font-bold text-slate-700">Aucun plat disponible pour le moment</div>
+              <div class="text-xs">Ce restaurant n'a pas encore ajouté de plat à sa carte.</div>
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Onglet Vidéos réelles publiées par le restaurant -->
+        @if (chargementVideosEnCours()) {
+          <div class="py-16 text-center text-slate-400 space-y-3">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#E51824]"></i>
+            <p class="text-xs font-bold">Chargement des vidéos de {{ resto.nom }}...</p>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            @for (video of videosRestaurant(); track video.identifiant; let idx = $index) {
+              <div
+                (click)="ouvrirLecteurTikTok(idx)"
+                class="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl hover:border-red-200 transition-all group flex flex-col cursor-pointer"
+              >
+                <!-- Lecteur Vidéo ou Miniature format vertical -->
+                <div class="relative aspect-[9/13] bg-slate-950 overflow-hidden">
+                  @if (video.adresseVideo) {
+                    <video
+                      [src]="video.adresseVideo"
+                      [poster]="video.adresseMedia"
+                      playsinline
+                      muted
+                      preload="metadata"
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    ></video>
+                  } @else {
+                    <img
+                      [src]="video.adresseMedia"
+                      [alt]="video.plat.nom"
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  }
+
+                  <!-- Icône centrale Play style TikTok -->
+                  <div class="absolute inset-0 flex items-center justify-center z-10 bg-black/20 group-hover:bg-black/10 transition-colors">
+                    <div class="w-12 h-12 rounded-full bg-black/60 border border-white/30 text-white flex items-center justify-center text-lg shadow-xl group-hover:scale-110 transition-transform">
+                      <i class="fa-solid fa-play ml-0.5"></i>
+                    </div>
+                  </div>
+
+                  <!-- Bouton J'aime flottant sur la vidéo -->
+                  <button
+                    type="button"
+                    (click)="basculerLikeVideo(video, $event)"
+                    class="absolute top-3 right-3 z-20 px-2.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5 hover:bg-black/80 transition-all cursor-pointer border border-white/20"
+                    title="Aimer cette vidéo"
+                  >
+                    <i [class]="video.estAime ? 'fa-solid fa-heart text-[#E51824]' : 'fa-regular fa-heart'"></i>
+                    <span>{{ video.nombreJeaime }}</span>
+                  </button>
+
+                  <!-- Badge plat associé -->
+                  @if (video.plat && video.plat.nom) {
+                    <div
+                      (click)="serviceCatalogue.ouvrirDetailPlat(video.plat); $event.stopPropagation()"
+                      class="absolute bottom-3 left-3 right-3 z-20 p-2.5 rounded-2xl bg-black/75 backdrop-blur-md text-white border border-white/15 cursor-pointer hover:bg-black/90 transition-all"
+                    >
+                      <div class="text-xs font-extrabold truncate">{{ video.plat.nom }}</div>
+                      <div class="text-xs font-bold text-amber-400 font-['Outfit']">{{ video.plat.prixFcfa | number }} FCFA</div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Description sous la vidéo (carte sans bouton commander) -->
+                <div class="p-4 space-y-1">
+                  <p class="text-xs text-slate-700 font-medium line-clamp-2 leading-relaxed">
+                    {{ video.descriptionAccroche || ('Vidéo culinaire de ' + resto.nom) }}
+                  </p>
+                </div>
+              </div>
+            } @empty {
+              <div class="col-span-full py-16 text-center text-slate-400 space-y-3">
+                <div class="w-16 h-16 rounded-full bg-red-50 text-[#E51824] flex items-center justify-center mx-auto text-2xl">
+                  <i class="fa-solid fa-clapperboard"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-800">Aucune vidéo publiée pour le moment</h3>
+                <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                  {{ resto.nom }} n'a pas encore partagé de vidéo culinaire. Revenez bientôt !
+                </p>
+              </div>
+            }
+          </div>
+        }
+      }
+
+    </div>
+  } @else {
+    <!-- État de chargement ou restaurant introuvable -->
+    <div class="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center space-y-3">
+      <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-2xl">
+        <i class="fa-solid fa-store"></i>
+      </div>
+      <div class="text-base font-bold text-slate-800">Restaurant en cours de chargement ou introuvable</div>
+      <button
+        type="button"
+        (click)="retourner()"
+        class="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-black cursor-pointer"
+      >
+        Retour au catalogue
+      </button>
     </div>
   }
 
   <!-- ========================================================================= -->
-  <!-- 1. EN-TÊTE AVEC IMAGE DU RESTAURANT (CONFORME À LA MAQUETTE 3)            -->
+  <!-- 5. LECTEUR VIDÉO IMMERSIF (100% IDENTIQUE AU DESIGN DU FIL VIDÉO ACCUEIL) -->
   <!-- ========================================================================= -->
-  <div class="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden bg-slate-900">
-    <img
-      [src]="restaurant().adresseCouverture"
-      [alt]="restaurant().nom"
-      class="w-full h-full object-cover select-none brightness-95"
-    />
-    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none"></div>
+  @if (lecteurTikTokOuvert() && videoCourante(); as pub) {
+    <div
+      (wheel)="gererMolette($event)"
+      (touchstart)="gererDebutToucher($event)"
+      (touchend)="gererFinToucher($event)"
+      class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-950 select-none animation-apparition"
+    >
+      <!-- Cadre central 9:16 identique au fil vidéo -->
+      <div id="lecteur-modal-tiktok" class="relative w-full h-full md:max-h-[calc(100vh-84px)] md:aspect-[9/16] md:max-w-[410px] md:rounded-[32px] overflow-hidden shadow-2xl bg-black md:border-2 md:border-slate-800 flex items-center justify-center">
 
-    <!-- Bouton Retour à gauche -->
-    <div class="absolute top-4 left-4 z-20">
-      <button
-        type="button"
-        (click)="retourner()"
-        class="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-slate-800 hover:bg-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-        aria-label="Retour"
-      >
-        <i class="fa-solid fa-arrow-left text-sm"></i>
-      </button>
-    </div>
+        <!-- Vidéo en arrière-plan avec boucle automatique -->
+        @if (pub.adresseVideo) {
+          <video
+            #elementVideo
+            [src]="pub.adresseVideo"
+            [poster]="pub.adresseMedia"
+            autoplay
+            loop
+            [muted]="estEnSourdine()"
+            playsinline
+            (click)="basculerLecture()"
+            class="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          ></video>
+        } @else {
+          <!-- Image de repli de haute qualité si la vidéo n'est pas spécifiée -->
+          <img
+            [src]="pub.adresseMedia"
+            [alt]="pub.plat.nom"
+            (click)="basculerLecture()"
+            class="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          />
+        }
 
-    <!-- Bouton Partager à droite -->
-    <div class="absolute top-4 right-4 z-20">
-      <button
-        type="button"
-        (click)="partager()"
-        class="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-slate-800 hover:bg-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-        aria-label="Partager"
-      >
-        <i class="fa-solid fa-share-nodes text-sm"></i>
-      </button>
-    </div>
-  </div>
+        <!-- Superposition de dégradé sombre (discret pour maximiser la visibilité de la vidéo) -->
+        <div class="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/85 pointer-events-none"></div>
 
-  <!-- Conteneur principal centré -->
-  <div class="w-full max-w-3xl mx-auto px-4 sm:px-6 relative z-30">
-    
-    <!-- ========================================================================= -->
-    <!-- 2. CARTE FLOTTANTE DU RESTAURANT (CONFORME À LA MAQUETTE 3)              -->
-    <!-- ========================================================================= -->
-    <div class="-mt-14 sm:-mt-16 bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-4">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
-            {{ restaurant().nom }}
-          </h1>
-          <p class="text-xs sm:text-sm text-slate-500 mt-1">
-            {{ restaurant().specialite }}
-          </p>
+        <!-- Indicateur de pause si la vidéo est arrêtée -->
+        @if (!estEnLecture()) {
+          <div
+            (click)="basculerLecture()"
+            class="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-[2px] cursor-pointer animation-apparition"
+          >
+            <div class="w-16 h-16 rounded-full bg-black/60 border border-white/20 text-white flex items-center justify-center text-2xl shadow-xl">
+              <i class="fa-solid fa-play ml-1"></i>
+            </div>
+          </div>
+        }
+
+        <!-- En-tête supérieur : Simple icône de retour à gauche, Contrôle du son à droite -->
+        <div class="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
+          <!-- Simple icône de retour -->
+          <button
+            type="button"
+            (click)="fermerLecteurTikTok()"
+            class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/60 flex items-center justify-center shadow-lg transition-all cursor-pointer"
+            aria-label="Retour"
+            title="Retour aux détails du restaurant"
+          >
+            <i class="fa-solid fa-arrow-left text-sm"></i>
+          </button>
+
+          <!-- Bouton Son (Muet / Actif) -->
+          <button
+            type="button"
+            (click)="basculerSon()"
+            class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-white hover:bg-black/60 flex items-center justify-center text-xs shadow-md transition-all cursor-pointer"
+            [title]="estEnSourdine() ? 'Activer le son' : 'Couper le son'"
+          >
+            <i [class]="estEnSourdine() ? 'fa-solid fa-volume-xmark text-slate-300' : 'fa-solid fa-volume-high text-white'"></i>
+          </button>
         </div>
 
-        <!-- Bouton S'abonner (accessible au visiteur avec incitation à la connexion) -->
+        <!-- Actions latérales à droite (Profil restaurant, J'aime, Partager) -->
+        <div class="absolute right-3.5 bottom-24 sm:bottom-28 z-30 flex flex-col items-center gap-5">
+          <!-- Avatar du restaurant + bouton '+' d'abonnement -->
+          <div class="relative cursor-pointer group" (click)="fermerLecteurTikTok()">
+            <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-xl bg-white">
+              <img [src]="pub.adresseLogoRestaurant || restaurant()?.adresseLogo" alt="Restaurant" class="w-full h-full object-cover" />
+            </div>
+            <button
+              type="button"
+              (click)="basculerAbonnement(); $event.stopPropagation()"
+              [class]="estAbonne() ? 'bg-emerald-600' : 'bg-[#E51824]'"
+              class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4.5 h-4.5 rounded-full text-white flex items-center justify-center text-[9px] shadow-md border-2 border-white transition-colors cursor-pointer"
+              [title]="estAbonne() ? 'Abonné' : 'Suivre'"
+            >
+              <i [class]="estAbonne() ? 'fa-solid fa-check' : 'fa-solid fa-plus'"></i>
+            </button>
+          </div>
+
+          <!-- Bouton J'aime avec compteur -->
+          <button
+            type="button"
+            (click)="basculerLikeVideo(pub, $event)"
+            class="flex flex-col items-center gap-1 text-white hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+          >
+            <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg">
+              <i
+                [class]="pub.estAime ? 'fa-solid fa-heart text-red-500 scale-110' : 'fa-solid fa-heart text-white'"
+                class="text-lg drop-shadow transition-all"
+              ></i>
+            </div>
+            <span class="text-[11px] font-bold drop-shadow-md">{{ pub.nombreJeaime }}</span>
+          </button>
+
+          <!-- Bouton Partager -->
+          <button
+            type="button"
+            (click)="partager()"
+            class="flex flex-col items-center gap-1 text-white hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+          >
+            <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg">
+              <i class="fa-solid fa-share text-base drop-shadow"></i>
+            </div>
+            <span class="text-[11px] font-bold drop-shadow-md">Partager</span>
+          </button>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- BAS DU LECTEUR : INFORMATIONS COMPACTES DU PLAT (ESPACE VIDÉO MAXIMISÉ)    -->
+        <!-- ========================================================================= -->
+        <div class="absolute left-4 right-18 bottom-5 z-30 space-y-1.5 text-left pointer-events-auto">
+          <!-- Handle du restaurant cliquable -->
+          <div>
+            <button
+              type="button"
+              (click)="fermerLecteurTikTok()"
+              class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-white hover:underline drop-shadow-md cursor-pointer"
+            >
+              <span>{{ pub.nomUtilisateurRestaurant || ('@' + (restaurant()?.nom || 'restaurant')) }}</span>
+            </button>
+          </div>
+
+          <!-- Nom du plat -->
+          <div class="text-left text-sm sm:text-base font-bold text-white leading-tight font-['Outfit'] drop-shadow-md line-clamp-1">
+            {{ pub.plat.nom }}
+          </div>
+
+          <!-- Prix en FCFA (Rouge vif caractéristique de la maquette) -->
+          <div class="text-base sm:text-lg font-black text-[#E51824] tracking-tight drop-shadow-md inline-block">
+            {{ pub.plat.prixFcfa | number }} FCFA
+          </div>
+
+          <!-- Description courte / Accroche -->
+          <p class="text-[11px] sm:text-xs text-neutral-200 leading-tight drop-shadow line-clamp-1 max-w-xs">
+            {{ pub.descriptionAccroche }}
+          </p>
+
+          <!-- Bouton Commander rouge compact -->
+          <div class="pt-1.5">
+            <button
+              type="button"
+              (click)="ajouterAuPanier(pub.plat)"
+              class="w-full py-2.5 sm:py-3 px-5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/40 transition-all cursor-pointer"
+            >
+              <span>Commander</span>
+              <i class="fa-solid fa-cart-shopping text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Indicateur d'étape du fil (barre verticale fine de progression) -->
+        <div class="absolute right-1 top-1/3 bottom-1/3 w-1 rounded-full bg-white/20 flex flex-col justify-between overflow-hidden">
+          <div
+            class="w-full bg-[#E51824] transition-all duration-300 rounded-full"
+            [style.height]="((indexVideoCourante() + 1) / videosRestaurant().length * 100) + '%'"
+          ></div>
+        </div>
+
+      </div>
+
+      <!-- COMMANDES DE DÉFILEMENT LATÉRALES SUR BUREAU (SWIPE VERTICAL ASSISTÉ)     -->
+      <div class="hidden md:flex flex-col gap-3 absolute right-8 lg:right-16 top-1/2 -translate-y-1/2 z-40">
+        <!-- Vidéo précédente (haut) -->
         <button
           type="button"
-          (click)="basculerAbonnement()"
-          [class]="estAbonne()
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-            : 'bg-[#E51824] text-white hover:bg-red-700'"
-          class="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition-all cursor-pointer"
+          (click)="videoPrecedente()"
+          class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl cursor-pointer group"
+          title="Vidéo précédente (Swipe vers le bas ou Flèche Haut)"
         >
-          <i [class]="estAbonne() ? 'fa-solid fa-check text-xs' : 'fa-solid fa-plus text-xs'"></i>
-          <span>{{ estAbonne() ? 'Abonné' : "S'abonner" }}</span>
+          <i class="fa-solid fa-arrow-up text-sm group-hover:-translate-y-0.5 transition-transform"></i>
+        </button>
+
+        <!-- Vidéo suivante (bas) -->
+        <button
+          type="button"
+          (click)="videoSuivante()"
+          class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl cursor-pointer group"
+          title="Vidéo suivante (Swipe vers le haut ou Flèche Bas / Molette)"
+        >
+          <i class="fa-solid fa-arrow-down text-sm group-hover:translate-y-0.5 transition-transform"></i>
         </button>
       </div>
 
-      <!-- Métriques : Ferme à 23h30 / Ouvert | Lieux : Keur Massar -->
-      <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-        <!-- Colonne 1 : Horaires & Statut -->
-        <div class="space-y-0.5">
-          <div class="text-xs text-slate-400 font-medium">
-            Ferme a {{ restaurant().heureFermeture }}
-          </div>
-          <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
-            <i class="fa-regular fa-clock text-red-600 text-sm"></i>
-            <span>{{ restaurant().estOuvert ? 'Ouvert' : 'Fermé' }}</span>
-          </div>
-        </div>
-
-        <!-- Colonne 2 : Lieux -->
-        <div class="space-y-0.5 border-l border-slate-100 pl-4">
-          <div class="text-xs text-slate-400 font-medium">
-            Lieux
-          </div>
-          <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
-            <i class="fa-solid fa-flag text-red-600 text-xs"></i>
-            <span class="truncate">{{ restaurant().quartierVille }}</span>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <!-- ========================================================================= -->
-    <!-- 3. ONGLETS DE CONTENU : MENU & VIDEOS (CONFORME À LA MAQUETTE 3)          -->
-    <!-- ========================================================================= -->
-    <div class="flex items-center gap-8 border-b border-slate-200 mt-8 mb-6 select-none">
-      <button
-        type="button"
-        (click)="ongletActif.set('MENU')"
-        [class]="ongletActif() === 'MENU'
-          ? 'text-[#E51824] font-extrabold border-b-2 border-[#E51824]'
-          : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
-        class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
-      >
-        Menu
-      </button>
-
-      <button
-        type="button"
-        (click)="ongletActif.set('VIDEOS')"
-        [class]="ongletActif() === 'VIDEOS'
-          ? 'text-[#E51824] font-extrabold border-b-2 border-[#E51824]'
-          : 'text-slate-400 font-bold hover:text-slate-600 border-b-2 border-transparent'"
-        class="pb-3 text-sm sm:text-base transition-colors cursor-pointer"
-      >
-        Videos
-      </button>
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- 4. LISTE DES PLATS DU MENU (CONFORME À LA MAQUETTE 3)                     -->
-    <!-- ========================================================================= -->
-    @if (ongletActif() === 'MENU') {
-      <div class="space-y-4">
-        @for (plat of listePlats(); track plat.identifiant) {
-          <div
-            (click)="serviceCatalogue.ouvrirDetailPlat(plat)"
-            class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 transition-all flex items-center justify-between gap-4 cursor-pointer group"
-          >
-            
-            <!-- Informations du plat à gauche -->
-            <div class="flex-1 space-y-2 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 group-hover:text-[#E51824] transition-colors leading-snug">
-                  {{ plat.nom }}
-                </h3>
-
-                <!-- Badge indisponible si applicable (ex: Mafe au Bœuf) -->
-                @if (plat.statut === 'INDISPONIBLE') {
-                  <span class="text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                    INDISPONIBLE
-                  </span>
-                }
-              </div>
-
-              <p class="text-xs sm:text-sm text-slate-500 leading-relaxed line-clamp-2">
-                {{ plat.description }}
-              </p>
-
-              <!-- Prix et bouton '+' -->
-              <div class="flex items-center gap-4 pt-1">
-                <span
-                  [class]="plat.statut === 'INDISPONIBLE' ? 'text-slate-400' : 'text-slate-900'"
-                  class="text-base sm:text-lg font-extrabold font-['Outfit']"
-                >
-                  {{ plat.prixFcfa | number }} FCFA
-                </span>
-
-                <!-- Bouton '+' rouge (ou grisé si indisponible) -->
-                <button
-                  type="button"
-                  (click)="$event.stopPropagation(); ajouterAuPanier(plat)"
-                  [disabled]="plat.statut === 'INDISPONIBLE'"
-                  [class]="plat.statut === 'INDISPONIBLE'
-                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                    : 'bg-[#E51824] hover:bg-red-700 active:scale-90 text-white cursor-pointer'"
-                  class="w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                  [title]="plat.statut === 'INDISPONIBLE' ? 'Plat indisponible' : 'Ajouter au panier'"
-                >
-                  <i class="fa-solid fa-plus text-xs"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Image carrée du plat à droite -->
-            <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-100 shrink-0 group-hover:scale-105 transition-transform duration-300">
-              <img
-                [src]="plat.adresseImage"
-                [alt]="plat.nom"
-                class="w-full h-full object-cover select-none"
-              />
-            </div>
-
-          </div>
-        }
-      </div>
-    } @else {
-      <!-- Onglet Vidéos (extraits gourmands du restaurant) -->
-      <div class="py-12 text-center space-y-3">
-        <div class="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto text-2xl">
-          <i class="fa-solid fa-clapperboard"></i>
-        </div>
-        <h3 class="text-base font-bold text-slate-800">Vidéos et coulisses</h3>
-        <p class="text-xs text-slate-500 max-w-sm mx-auto">
-          Découvrez la préparation des recettes traditionnelles en vidéo par les chefs de {{ restaurant().nom }}.
-        </p>
-      </div>
-    }
-
-  </div>
+  }
 
   <!-- ========================================================================= -->
   <!-- 5. BOUTON FLOTTANT STICKY 'VOIR LE PANIER' (CONFORME À LA MAQUETTE 3)     -->
@@ -217,9 +559,9 @@
     <div class="fixed bottom-20 md:bottom-8 left-4 right-4 max-w-xl mx-auto z-40 animation-glissement-haut">
       <a
         routerLink="/panier"
-        class="w-full py-4 px-5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white flex items-center justify-between border border-red-600 transition-all cursor-pointer group"
+        class="w-full py-4 px-5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white flex items-center justify-between border border-red-600 transition-all cursor-pointer group shadow-xl"
       >
-        <!-- Badge compteur à gauche (ex: 3) -->
+        <!-- Badge compteur à gauche -->
         <div class="flex items-center gap-2">
           <div class="w-6 h-6 rounded-md bg-white/20 text-white font-extrabold text-xs flex items-center justify-center">
             {{ servicePanier.nombreTotalArticles() }}
@@ -227,7 +569,7 @@
           <span class="font-extrabold text-sm sm:text-base">Voir le panier</span>
         </div>
 
-        <!-- Montant total à droite (ex: 7 500 FCFA) -->
+        <!-- Montant total à droite -->
         <div class="font-extrabold text-sm sm:text-base">
           {{ servicePanier.totalFcfa() | number }} FCFA
         </div>
