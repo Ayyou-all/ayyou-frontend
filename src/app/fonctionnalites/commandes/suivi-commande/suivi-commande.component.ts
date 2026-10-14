@@ -93,6 +93,14 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
 
   readonly chargementPaiement = signal<boolean>(false);
   readonly erreurPaiement = signal<string | null>(null);
+  readonly alertePaiementSucces = signal<boolean>(false);
+
+  /**
+   * Ferme manuellement la bannière festive de confirmation de paiement.
+   */
+  fermerAlerteSucces(): void {
+    this.alertePaiementSucces.set(false);
+  }
 
   readonly etape1Active = computed<boolean>(() => {
     const s = this.commande().statutBrut || '';
@@ -107,6 +115,32 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
     return ['COURSE_ASSIGNEE', 'EN_VERIFICATION', 'EN_LIVRAISON', 'ARRIVE_CLIENT', 'LIVREE'].includes(s);
   });
   readonly etape4Active = computed<boolean>(() => this.commande().statutBrut === 'LIVREE');
+
+  /**
+   * Émet une mélodie festive pour confirmer le succès du paiement.
+   */
+  jouerSonConfirmation(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime + idx * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + idx * 0.1 + 0.35);
+          osc.start(ctx.currentTime + idx * 0.1);
+          osc.stop(ctx.currentTime + idx * 0.1 + 0.35);
+        });
+      }
+    } catch {}
+  }
 
   /**
    * Permet au client de finaliser son paiement PayTech (Wave / Orange Money)
@@ -142,11 +176,27 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
 
   ngOnInit(): void {
     const id = this.identifiantCommande();
+    const paramPaiement = this.route.snapshot.queryParamMap.get('paiement');
+
+    if (paramPaiement === 'succes') {
+      this.alertePaiementSucces.set(true);
+      this.jouerSonConfirmation();
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.history?.replaceState) {
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }, 2500);
+    }
+
     if (id) {
       // Recharger immédiatement la commande depuis le backend
       this.serviceCommandes.rechargerCommande(id);
       // Vérifier le statut PayTech en direct si retour de paiement
-      this.serviceCommandes.verifierPaiementPayTech(id).subscribe();
+      this.serviceCommandes.verifierPaiementPayTech(id).subscribe({
+        next: () => {
+          this.serviceCommandes.rechargerCommande(id);
+        }
+      });
 
       // Écoute temps réel : actualisation de la commande depuis la base toutes les 4 secondes
       this.intervallePolling = setInterval(() => {

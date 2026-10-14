@@ -204,7 +204,7 @@ export class ServiceCommandesService {
   initierPaiementPayTech(commandeId: number | string): Observable<any> {
     const payload = {
       commande_id: Number(commandeId),
-      url_succes: `${window.location.origin}/commandes/suivi/${commandeId}`,
+      url_succes: `${window.location.origin}/commandes/suivi/${commandeId}?paiement=succes`,
       url_annulation: `${window.location.origin}/commandes/suivi/${commandeId}?paiement=en_attente`
     };
     return this.http.post<any>(`${environment.apiUrl}/paiements/initier/`, payload);
