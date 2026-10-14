@@ -4,6 +4,7 @@
  */
 
 export type StatutCommande =
+  | 'EN_ATTENTE_PAIEMENT'
   | 'EN_LIVRAISON'
   | 'PREPARATION'
   | 'LIVRE'
@@ -33,6 +34,7 @@ export interface LivreurCommande {
 
 export interface CommandeClient {
   identifiant: string; // Ex: "ORD-99238"
+  idNumerique?: number;
   nomRestaurant: string;
   adresseImageRestaurant: string;
   dateHeureTexte: string; // Ex: "Aujourd'hui, 13:45"

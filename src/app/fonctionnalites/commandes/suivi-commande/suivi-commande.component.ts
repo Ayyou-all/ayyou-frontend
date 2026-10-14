@@ -78,6 +78,7 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   // Progression dynamique calculée depuis le statut réel en base de données
   readonly pourcentageProgression = computed<number>(() => {
     const s = this.commande().statutBrut || '';
+    if (s === 'EN_ATTENTE_PAIEMENT') return 0;
     if (s === 'CREEE_EN_ATTENTE') return 25;
     if (s === 'EN_PREPARATION' || s === 'PRETE_POUR_RETRAIT') return 50;
     if (['COURSE_ASSIGNEE', 'EN_VERIFICATION', 'EN_LIVRAISON', 'ARRIVE_CLIENT'].includes(s)) return 75;
@@ -85,7 +86,18 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
     return 25;
   });
 
-  readonly etape1Active = computed<boolean>(() => true);
+  readonly estEnAttentePaiement = computed<boolean>(() => {
+    const s = this.commande().statutBrut || this.commande().statut;
+    return s === 'EN_ATTENTE_PAIEMENT';
+  });
+
+  readonly chargementPaiement = signal<boolean>(false);
+  readonly erreurPaiement = signal<string | null>(null);
+
+  readonly etape1Active = computed<boolean>(() => {
+    const s = this.commande().statutBrut || '';
+    return s !== 'EN_ATTENTE_PAIEMENT';
+  });
   readonly etape2Active = computed<boolean>(() => {
     const s = this.commande().statutBrut || '';
     return ['EN_PREPARATION', 'PRETE_POUR_RETRAIT', 'COURSE_ASSIGNEE', 'EN_VERIFICATION', 'EN_LIVRAISON', 'ARRIVE_CLIENT', 'LIVREE'].includes(s);
@@ -95,6 +107,38 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
     return ['COURSE_ASSIGNEE', 'EN_VERIFICATION', 'EN_LIVRAISON', 'ARRIVE_CLIENT', 'LIVREE'].includes(s);
   });
   readonly etape4Active = computed<boolean>(() => this.commande().statutBrut === 'LIVREE');
+
+  /**
+   * Permet au client de finaliser son paiement PayTech (Wave / Orange Money)
+   * s'il a quitté ou annulé le guichet de paiement précédemment.
+   */
+  reprendrePaiement(): void {
+    const cmd = this.commande();
+    const id = cmd.idNumerique || cmd.identifiant || this.identifiantCommande();
+    if (!id) return;
+
+    this.chargementPaiement.set(true);
+    this.erreurPaiement.set(null);
+
+    this.serviceCommandes.initierPaiementPayTech(id).subscribe({
+      next: (tentative: any) => {
+        this.chargementPaiement.set(false);
+        if (tentative && tentative.url_redirection) {
+          window.location.href = tentative.url_redirection;
+        } else {
+          this.erreurPaiement.set('Impossible de générer le lien de paiement PayTech. Veuillez réessayer.');
+        }
+      },
+      error: (err: any) => {
+        this.chargementPaiement.set(false);
+        const msg =
+          err?.error?.message ||
+          err?.error?.detail ||
+          'Échec de la connexion avec le service PayTech (Wave / Orange Money).';
+        this.erreurPaiement.set(msg);
+      }
+    });
+  }
 
   ngOnInit(): void {
     const id = this.identifiantCommande();

@@ -48,7 +48,8 @@ export class ServiceCommandesService {
   adapterCommande(c: any): CommandeClient {
     // Normalisation du statut
     let statut: StatutCommande = 'EN_LIVRAISON';
-    if (c.statut === 'LIVREE') statut = 'LIVRE';
+    if (c.statut === 'EN_ATTENTE_PAIEMENT') statut = 'EN_ATTENTE_PAIEMENT';
+    else if (c.statut === 'LIVREE') statut = 'LIVRE';
     else if (c.statut === 'EN_PREPARATION') statut = 'PREPARATION';
     else if (c.statut === 'PRETE_POUR_RETRAIT') statut = 'PRET';
     else if (c.statut === 'REFUSEE_ANNULEE') statut = 'REFUSE';
@@ -68,11 +69,12 @@ export class ServiceCommandesService {
 
     return {
       identifiant: String(c.identifiant || c.reference || c.id || ''),
+      idNumerique: c.id ? Number(c.id) : undefined,
       nomRestaurant: c.nom_restaurant || c.nomRestaurant || c.etablissement?.nom || 'Restaurant partenaire',
       adresseImageRestaurant: c.adresse_image_restaurant || c.adresseImageRestaurant || c.etablissement?.logo || '',
       dateHeureTexte: c.date_heure_texte || c.dateHeureTexte || 'Aujourd\'hui',
       statut,
-      delaiOuRemarque: c.delai_ou_remarque || c.delaiOuRemarque || '20-30 min',
+      delaiOuRemarque: c.statut === 'EN_ATTENTE_PAIEMENT' ? 'Paiement en attente' : (c.delai_ou_remarque || c.delaiOuRemarque || '20-30 min'),
       montantTotalFcfa: Number(c.montant_total_fcfa || c.total_fcfa || c.montantTotalFcfa || 0),
       codeLivraison: codePin,
       etapeSuivi,
@@ -93,7 +95,7 @@ export class ServiceCommandesService {
         prixTotalFcfa: Number(art.total_ligne_fcfa || art.prixTotalFcfa || (art.prix_unitaire_fcfa * art.quantite) || 0)
       })),
       statutBrut: c.statut || '',
-      statutLibelle: c.statut_libelle || (statut === 'PREPARATION' ? 'En préparation' : statut === 'LIVRE' ? 'Livrée' : statut === 'REFUSE' ? 'Refusée' : 'En livraison'),
+      statutLibelle: c.statut === 'EN_ATTENTE_PAIEMENT' ? 'Paiement en attente' : (c.statut_libelle || (statut === 'PREPARATION' ? 'En préparation' : statut === 'LIVRE' ? 'Livrée' : statut === 'REFUSE' ? 'Refusée' : 'En livraison')),
       adresseLivraison: c.adresse_livraison || '',
       latitudeLivraison: c.latitude_livraison ? Number(c.latitude_livraison) : undefined,
       longitudeLivraison: c.longitude_livraison ? Number(c.longitude_livraison) : undefined,
@@ -203,7 +205,7 @@ export class ServiceCommandesService {
     const payload = {
       commande_id: Number(commandeId),
       url_succes: `${window.location.origin}/commandes/suivi/${commandeId}`,
-      url_annulation: `${window.location.origin}/panier`
+      url_annulation: `${window.location.origin}/commandes/suivi/${commandeId}?paiement=en_attente`
     };
     return this.http.post<any>(`${environment.apiUrl}/paiements/initier/`, payload);
   }
