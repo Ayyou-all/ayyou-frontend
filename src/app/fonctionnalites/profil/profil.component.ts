@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceAuthentification } from '../../socle/services/service-authentification.service';
+import { ServiceLivreurService } from '../../socle/services/service-livreur.service';
 
 @Component({
   selector: 'app-profil',
@@ -64,6 +65,120 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
             <div class="text-xs text-slate-500">{{ serviceAuthentification.utilisateurConnecte()?.telephone }}</div>
           </div>
         </div>
+
+        <!-- =================================================================== -->
+        <!-- SECTIONS PROFIL LIVREUR (DONNÉES RÉELLES DE LA BASE)                 -->
+        <!-- =================================================================== -->
+        @if (serviceAuthentification.estLivreur()) {
+          <!-- Statut du compte & disponibilité -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Statut du compte</span>
+              @if (profilLivreur().statutValidation === 'ACTIF') {
+                <span class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-200">
+                  <i class="fa-solid fa-circle-check text-[10px]"></i> Validé
+                </span>
+              } @else {
+                <span class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-black border border-amber-200">
+                  <i class="fa-solid fa-clock text-[10px]"></i> {{ profilLivreur().statutValidation || 'En attente' }}
+                </span>
+              }
+            </div>
+            <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Disponibilité</span>
+              <span
+                [class]="profilLivreur().estDisponible ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black border"
+              >
+                <span [class]="profilLivreur().estDisponible ? 'bg-emerald-500' : 'bg-slate-400'" class="w-2 h-2 rounded-full"></span>
+                {{ profilLivreur().estDisponible ? 'En ligne' : 'Hors ligne' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Activité du jour & de la semaine -->
+          <div class="bg-gradient-to-br from-[#E51824] to-[#b3121c] rounded-3xl p-5 text-white shadow-lg shadow-red-500/20">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-black uppercase tracking-wider text-white/90">Mon activité</h3>
+              <i class="fa-solid fa-chart-line text-white/70"></i>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mt-4">
+              <div>
+                <span class="block text-[10px] font-bold text-white/70 uppercase">Gains du jour</span>
+                <span class="text-lg font-black font-['Outfit']">{{ profilLivreur().gainsDuJourFcfa | number }}</span>
+                <span class="text-[10px] font-bold text-white/80"> FCFA</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold text-white/70 uppercase">Courses jour</span>
+                <span class="text-lg font-black font-['Outfit']">{{ profilLivreur().nombreLivraisonsJour }}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold text-white/70 uppercase">Semaine</span>
+                <span class="text-lg font-black font-['Outfit']">{{ serviceLivreur.gainsSemaine().montantTotalFcfa | number }}</span>
+                <span class="text-[10px] font-bold text-white/80"> FCFA</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Informations personnelles -->
+          <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-id-card text-[#E51824]"></i> Informations personnelles
+            </h3>
+            <div class="divide-y divide-slate-100 text-sm">
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">Prénom & Nom</span>
+                <span class="font-bold text-slate-900 text-right">{{ profilLivreur().prenom || serviceAuthentification.utilisateurConnecte()?.prenom }} {{ profilLivreur().nom || serviceAuthentification.utilisateurConnecte()?.nom }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">Téléphone</span>
+                <span class="font-bold text-slate-900">{{ profilLivreur().telephone || serviceAuthentification.utilisateurConnecte()?.telephone || '—' }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">E-mail</span>
+                <span class="font-bold text-slate-900 truncate max-w-[60%]">{{ profilLivreur().courriel || serviceAuthentification.utilisateurConnecte()?.courriel }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">Adresse</span>
+                <span class="font-bold text-slate-900 text-right max-w-[60%]">{{ profilLivreur().adresse || 'Non renseignée' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Véhicule & zone de livraison -->
+          <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-motorcycle text-[#E51824]"></i> Véhicule & zone de livraison
+            </h3>
+            <div class="divide-y divide-slate-100 text-sm">
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">Type de véhicule</span>
+                <span class="font-bold text-slate-900">{{ libelleVehicule(profilLivreur().typeVehicule) }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">Modèle</span>
+                <span class="font-bold text-slate-900">{{ profilLivreur().nomVehicule || 'Non renseigné' }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">Immatriculation</span>
+                <span class="font-mono font-bold text-slate-900 px-2 py-0.5 rounded-lg bg-slate-100">{{ profilLivreur().immatriculation || '—' }}</span>
+              </div>
+              <div class="flex items-center justify-between py-2.5">
+                <span class="text-slate-500">Zone principale</span>
+                <span class="font-bold text-slate-900 text-right max-w-[60%]">{{ profilLivreur().zonePrincipale || 'Non renseignée' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bouton modifier -->
+          <a
+            routerLink="/livreur/profil"
+            class="w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+          >
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Modifier mes informations</span>
+          </a>
+        }
 
         <!-- Menu des options et accès pro sécurisé selon le rôle -->
         <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs space-y-2">
@@ -216,11 +331,19 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
 })
 export class ProfilComponent implements OnInit {
   readonly serviceAuthentification = inject(ServiceAuthentification);
+  readonly serviceLivreur = inject(ServiceLivreurService);
   readonly routeur = inject(Router);
+  readonly profilLivreur = this.serviceLivreur.profilLivreur;
+
+  libelleVehicule(type?: string): string {
+    const libelles: Record<string, string> = { MOTO: 'Moto', SCOOTER: 'Scooter', VELO: 'Vélo', VOITURE: 'Voiture' };
+    return type ? libelles[type.toUpperCase()] || type : 'Non renseigné';
+  }
 
   ngOnInit(): void {
     if (this.serviceAuthentification.estLivreur()) {
-      this.routeur.navigate(['/livreur/profil'], { replaceUrl: true });
+      // Chargement des informations réelles du livreur depuis l'API Django
+      this.serviceLivreur.chargerProfilLivreur();
       return;
     }
     if (this.serviceAuthentification.estGerant()) {
