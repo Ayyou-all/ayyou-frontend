@@ -12,7 +12,8 @@ import {
   gardeGerant,
   gardeLivreur
 } from '../gardes/authentification.guard';
-import { TableauDeBordComponent } from '../../fonctionnalites/administration/tableau-de-bord/tableau-de-bord.component';
+import { CarteIndicateurSuperadmin, TableauDeBordComponent } from '../../fonctionnalites/administration/tableau-de-bord/tableau-de-bord.component';
+import { RoleUtilisateur } from '../modeles/utilisateur.modele';
 
 describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () => {
   let serviceAuth: ServiceAuthentification;
@@ -45,13 +46,14 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
 
   function simulerUtilisateur(role: RoleUtilisateur): void {
     serviceAuth.utilisateurConnecte.set({
-      id: `usr-${role.toLowerCase()}`,
+      identifiant: `usr-${role.toLowerCase()}`,
       prenom: 'Test',
       nom: 'User',
       courriel: `${role.toLowerCase()}@test.ayyou.sn`,
+      telephone: '+221770000000',
       role,
-      actif: true,
-      dateInscription: new Date().toISOString()
+      estActif: true,
+      dateCreation: new Date().toISOString()
     });
   }
 
@@ -73,6 +75,30 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
   });
 
   describe('B. Cycle de vie des commandes — Remise au livreur', () => {
+    beforeEach(() => {
+      serviceRestaurant.commandesKanban.set([
+        {
+          numero: '#1240',
+          clientNom: 'Amadou Diallo',
+          totalMontant: '12 500 FCFA',
+          totalValeurNumerique: 12500,
+          typeLivraison: 'LIVRAISON',
+          statut: 'PRETES',
+          articles: [{ nom: 'Thieboudienne Penda Mbaye', quantite: 2 }]
+        },
+        {
+          numero: '#1239',
+          clientNom: 'Fatou Sow',
+          totalMontant: '6 000 FCFA',
+          totalValeurNumerique: 6000,
+          typeLivraison: 'A_EMPORTER',
+          statut: 'PRETES',
+          articles: [{ nom: 'Yassa Poulet', quantite: 1 }]
+        }
+      ]);
+      serviceRestaurant.historiqueCommandes.set([]);
+    });
+
     it('ne doit PAS marquer une commande de livraison comme LIVRÉE lors de la remise au livreur', () => {
       // #1240 est une commande de type LIVRAISON
       const cmdAvant = serviceRestaurant.commandesKanban().find((c) => c.numero === '#1240');
@@ -109,6 +135,26 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
   });
 
   describe('C. Validation du code PIN de sécurité', () => {
+    beforeEach(() => {
+      serviceLivreur.courseEnCours.set({
+        identifiantCommande: '1240',
+        restaurantNom: 'Le Teranga',
+        restaurantAdresse: 'Plateau',
+        restaurantTelephone: '+221 33 800 00 00',
+        comptoirRetrait: 'Guichet 1',
+        clientNom: 'Client Test',
+        clientTelephone: '+221 77 000 00 00',
+        clientAdresse: 'Almadies',
+        clientInstructions: 'Appeler à l entrée',
+        distanceKm: 3.2,
+        gainFcfa: 1500,
+        tempsRestantSec: 300,
+        tempsTrajetMin: 12,
+        codeValidation: '8245',
+        articles: []
+      });
+      serviceLivreur.etapeCourse.set('VALIDATION_CODE');
+    });
     it('doit refuser un code incomplet ou de mauvaise longueur', () => {
       const res = serviceLivreur.verifierCodeValidation('12');
       expect(res.valide).toBe(false);
@@ -146,7 +192,7 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
   describe('D. Harmonisation de la devise dans l administration', () => {
     it('doit afficher le chiffre d affaires du superadmin en FCFA et non en Euros', () => {
       const comp = TestBed.runInInjectionContext(() => new TableauDeBordComponent());
-      const carteCA = comp.listeIndicateurs.find((i) => i.titre === "Chiffre d'affaires");
+      const carteCA = comp.listeIndicateurs().find((i: CarteIndicateurSuperadmin) => i.titre === "Chiffre d'affaires");
       expect(carteCA).toBeDefined();
       expect(carteCA?.valeur).toContain('FCFA');
       expect(carteCA?.valeur).not.toContain('€');

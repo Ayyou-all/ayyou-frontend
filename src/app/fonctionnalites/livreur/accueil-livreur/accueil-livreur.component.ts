@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
 import { PropositionLivraisonComponent } from '../proposition-livraison/proposition-livraison.component';
@@ -14,12 +14,22 @@ export class AccueilLivreurComponent {
   readonly serviceLivreur = inject(ServiceLivreurService);
   readonly routeur = inject(Router);
 
+  // Message d'erreur éventuel retourné par l'API
+  readonly messageErreur = signal<string | null>(null);
+
   /**
-   * Accepte la proposition de livraison et bascule vers la navigation GPS.
+   * Accepte la proposition de livraison et bascule vers la navigation GPS seulement en cas de confirmation backend.
    */
   accepterLivraison(): void {
-    this.serviceLivreur.accepterProposition();
-    this.routeur.navigate(['/livreur/navigation']);
+    this.messageErreur.set(null);
+    this.serviceLivreur.accepterProposition(
+      () => {
+        this.routeur.navigate(['/livreur/navigation']);
+      },
+      (erreur) => {
+        this.messageErreur.set(erreur || 'Impossible d\'accepter la course. Veuillez réessayer.');
+      }
+    );
   }
 
   /**

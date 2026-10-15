@@ -6,7 +6,6 @@ import { LignePanier, MethodePaiement, PanierRestaurant } from '../../../socle/m
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
 import { ServiceCommandesService } from '../../../socle/services/service-commandes.service';
-import { ServiceOrchestrateurCommandesService } from '../../../socle/services/service-orchestrateur-commandes.service';
 import { ServicePanierService } from '../../../socle/services/service-panier.service';
 
 @Component({
@@ -22,7 +21,6 @@ export class DetailPanierComponent implements OnInit {
   readonly serviceCatalogue = inject(ServiceCatalogueService);
   readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly serviceCommandes = inject(ServiceCommandesService);
-  readonly serviceOrchestrateur = inject(ServiceOrchestrateurCommandesService);
 
   // Traitement en cours et erreurs de paiement
   readonly traitementPaiementEnCours = signal<boolean>(false);
@@ -263,7 +261,33 @@ export class DetailPanierComponent implements OnInit {
     // Enregistrement de la note éventuelle
     this.servicePanier.definirNoteRestaurant(this.identifiantRestaurant(), this.noteAuRestaurant());
 
-    const restoIdNum = Number(this.identifiantRestaurant()) || Number(p.identifiantRestaurant) || Number(p.lignes[0]?.plat?.identifiantRestaurant) || 4;
+    const rawRestoId = this.identifiantRestaurant() || p.identifiantRestaurant || p.lignes[0]?.plat?.identifiantRestaurant;
+    const restoIdNum = rawRestoId ? parseInt(String(rawRestoId).replace(/\D/g, ''), 10) : NaN;
+
+    if (!restoIdNum || isNaN(restoIdNum)) {
+      this.traitementPaiementEnCours.set(false);
+      this.messageErreurPaiement.set('Impossible de déterminer le restaurant associé à ce panier.');
+      return;
+    }
+
+    const articlesValides = p.lignes
+      .filter((l) => l.plat)
+      .map((l) => {
+        const rawId = String(l.plat.identifiant || '').replace(/\D/g, '');
+        const platId = rawId ? parseInt(rawId, 10) : NaN;
+        return {
+          plat_id: platId,
+          quantite: Math.max(1, l.quantite || 1),
+          instructions_speciales: l.instructionsSpeciales || ''
+        };
+      });
+
+    if (articlesValides.length === 0 || articlesValides.some((a) => !a.plat_id || isNaN(a.plat_id))) {
+      this.traitementPaiementEnCours.set(false);
+      this.messageErreurPaiement.set('Certains articles du panier ont un identifiant invalide. Veuillez rafraîchir le panier.');
+      return;
+    }
+
     const lat = this.latitudeClient();
     const lng = this.longitudeClient();
 
@@ -274,16 +298,7 @@ export class DetailPanierComponent implements OnInit {
       longitude_livraison: lng !== null && !isNaN(lng) ? Number(lng.toFixed(6)) : null,
       instructions_livraison: this.noteAuRestaurant() || '',
       mode_paiement: p.methodePaiement || 'WAVE',
-      articles: p.lignes
-        .filter((l) => l.plat)
-        .map((l) => {
-          const rawId = String(l.plat.identifiant || '').replace(/\D/g, '');
-          return {
-            plat_id: rawId ? parseInt(rawId, 10) : 7,
-            quantite: Math.max(1, l.quantite || 1),
-            instructions_speciales: l.instructionsSpeciales || ''
-          };
-        })
+      articles: articlesValides
     };
 
     this.serviceCommandes.creerCommande(payload).subscribe({
