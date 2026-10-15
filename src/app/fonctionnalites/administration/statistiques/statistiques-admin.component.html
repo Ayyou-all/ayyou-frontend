@@ -16,9 +16,15 @@
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Rapports et Statistiques
       </h1>
-      <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">
-        Analyse approfondie de l'activité commerciale et des performances de la plateforme.
-      </p>
+      <div class="flex flex-wrap items-center gap-2 mt-1">
+        <p class="text-xs sm:text-sm text-slate-400 font-medium">
+          Analyse approfondie de l'activité commerciale et des performances de la plateforme.
+        </p>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black border border-emerald-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>{{ derniereMiseAJour() }}</span>
+        </span>
+      </div>
     </div>
 
     <!-- Actions à droite : Sélecteur de période & Bouton Exporter -->
@@ -30,10 +36,10 @@
           (ngModelChange)="periodeSelectionnee.set($event)"
           class="bg-transparent text-slate-700 font-bold focus:outline-none cursor-pointer appearance-none pr-5 text-xs sm:text-sm"
         >
-          <option value="1 Oct 2023 - 31 Oct 2023">1 Oct 2023 - 31 Oct 2023</option>
-          <option value="1 Sep 2023 - 30 Sep 2023">1 Sep 2023 - 30 Sep 2023</option>
-          <option value="1 Nov 2023 - 30 Nov 2023">1 Nov 2023 - 30 Nov 2023</option>
-          <option value="Année 2023 Complète">Année 2023 Complète</option>
+          <option value="30 derniers jours">30 derniers jours</option>
+          <option value="7 derniers jours">7 derniers jours</option>
+          <option value="Aujourd'hui">Aujourd'hui</option>
+          <option value="Ce mois-ci">Ce mois-ci</option>
         </select>
         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 absolute right-3 pointer-events-none"></i>
       </div>
@@ -167,15 +173,11 @@
       <div class="relative w-full pt-4">
         <div class="flex gap-4">
           
-          <!-- Axe Y des valeurs (3000, 2500, 2000, 1500, 1000, 500, 0) -->
+          <!-- Axe Y dynamique des valeurs -->
           <div class="flex flex-col justify-between text-[11px] font-semibold text-slate-400 select-none pb-8 text-right h-56 w-9 shrink-0">
-            <span>3000</span>
-            <span>2500</span>
-            <span>2000</span>
-            <span>1500</span>
-            <span>1000</span>
-            <span>500</span>
-            <span>0</span>
+            @for (val of graduationsAxeY(); track $index) {
+              <span>{{ val }}</span>
+            }
           </div>
 
           <!-- Zone du canevas SVG -->
@@ -255,7 +257,7 @@
               </div>
             }
 
-            <!-- Axe horizontal X (Dates du mois : 01 Oct à 31 Oct) -->
+            <!-- Axe horizontal X (Dates du mois) -->
             <div class="h-6 flex items-center justify-between text-[11px] font-semibold text-slate-400 pt-2 select-none">
               @for (point of pointsCourbeRevenus(); track point.date) {
                 <span>{{ point.date }}</span>
@@ -276,56 +278,25 @@
         Commandes par Catégorie
       </h3>
 
-      <!-- Donut Chart SVG -->
+      <!-- Donut Chart SVG Dynamique -->
       <div class="flex items-center justify-center py-2">
         <div class="relative w-48 h-48">
           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
             <!-- Cercle de fond -->
             <circle cx="50" cy="50" r="38" stroke="#f1f5f9" stroke-width="15" fill="none" />
             
-            <!-- Segment 1: Fast Food 45% (Rouge #E51824) -->
-            <circle
-              cx="50" cy="50" r="38"
-              stroke="#E51824"
-              stroke-width="15"
-              stroke-dasharray="107 238"
-              stroke-dashoffset="0"
-              fill="none"
-              class="transition-all hover:opacity-90"
-            />
-
-            <!-- Segment 2: Sénégalais 30% (Noir #1e293b) -->
-            <circle
-              cx="50" cy="50" r="38"
-              stroke="#1e293b"
-              stroke-width="15"
-              stroke-dasharray="71 238"
-              stroke-dashoffset="-107"
-              fill="none"
-              class="transition-all hover:opacity-90"
-            />
-
-            <!-- Segment 3: Desserts 15% (Bleu ardoise #475569) -->
-            <circle
-              cx="50" cy="50" r="38"
-              stroke="#475569"
-              stroke-width="15"
-              stroke-dasharray="36 238"
-              stroke-dashoffset="-178"
-              fill="none"
-              class="transition-all hover:opacity-90"
-            />
-
-            <!-- Segment 4: Boissons 10% (Gris clair #cbd5e1) -->
-            <circle
-              cx="50" cy="50" r="38"
-              stroke="#cbd5e1"
-              stroke-width="15"
-              stroke-dasharray="24 238"
-              stroke-dashoffset="-214"
-              fill="none"
-              class="transition-all hover:opacity-90"
-            />
+            <!-- Segments dynamiques par catégorie -->
+            @for (cat of categories(); track cat.nom) {
+              <circle
+                cx="50" cy="50" r="38"
+                [attr.stroke]="cat.couleur"
+                stroke-width="15"
+                [attr.stroke-dasharray]="cat.dasharray"
+                [attr.stroke-dashoffset]="cat.dashoffset"
+                fill="none"
+                class="transition-all hover:opacity-90"
+              />
+            }
           </svg>
 
           <!-- Centre vide du donut -->
@@ -336,24 +307,14 @@
         </div>
       </div>
 
-      <!-- Légende carrée en dessous (Image 2) -->
+      <!-- Légende carrée dynamique en dessous -->
       <div class="grid grid-cols-2 gap-2 text-xs font-bold pt-2 border-t border-slate-100">
-        <div class="flex items-center gap-2 text-slate-700">
-          <span class="w-3 h-3 rounded-sm bg-[#E51824]"></span>
-          <span>Fast Food</span>
-        </div>
-        <div class="flex items-center gap-2 text-slate-700">
-          <span class="w-3 h-3 rounded-sm bg-[#1e293b]"></span>
-          <span>Sénégalais</span>
-        </div>
-        <div class="flex items-center gap-2 text-slate-700">
-          <span class="w-3 h-3 rounded-sm bg-[#475569]"></span>
-          <span>Desserts</span>
-        </div>
-        <div class="flex items-center gap-2 text-slate-700">
-          <span class="w-3 h-3 rounded-sm bg-[#cbd5e1]"></span>
-          <span>Boissons</span>
-        </div>
+        @for (cat of categories(); track cat.nom) {
+          <div class="flex items-center gap-2 text-slate-700 min-w-0">
+            <span class="w-3 h-3 rounded-sm shrink-0" [style.backgroundColor]="cat.couleur"></span>
+            <span class="truncate">{{ cat.nom }} ({{ cat.pourcentage }}%)</span>
+          </div>
+        }
       </div>
 
     </div>

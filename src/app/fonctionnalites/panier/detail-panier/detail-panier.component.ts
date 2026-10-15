@@ -40,7 +40,7 @@ export class DetailPanierComponent implements OnInit {
 
   // Modal de confirmation de commande réussie
   readonly commandeReussie = signal<boolean>(false);
-  readonly numeroCommandeSimulee = signal<string>('');
+  readonly referenceCommandeCreee = signal<string>('');
   readonly commandeCreeeId = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -292,7 +292,7 @@ export class DetailPanierComponent implements OnInit {
         const refCommande = commandeCreee.reference || commandeCreee.identifiant || String(commandeCreee.id);
         const commandeId = commandeCreee.id || refCommande;
         this.commandeCreeeId.set(String(commandeId));
-        this.numeroCommandeSimulee.set(refCommande);
+        this.referenceCommandeCreee.set(refCommande);
 
         // Initialisation du paiement PayTech (Wave / Orange Money)
         this.serviceCommandes.initierPaiementPayTech(commandeCreee.id).subscribe({

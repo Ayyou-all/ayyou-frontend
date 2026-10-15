@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
@@ -19,6 +19,15 @@ export interface RestaurantPerformanceTop {
   pourcentageBarre: number; // largeur % relative
 }
 
+export interface CategorieStatistique {
+  nom: string;
+  total: number;
+  pourcentage: number;
+  dasharray: string;
+  dashoffset: string;
+  couleur: string;
+}
+
 @Component({
   selector: 'app-statistiques-admin',
   standalone: true,
@@ -27,6 +36,10 @@ export interface RestaurantPerformanceTop {
 })
 export class StatistiquesAdminComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
+
+  // Horodatage de synchronisation temps réel
+  readonly derniereMiseAJour = signal<string>('En direct');
 
   // Période sélectionnée
   readonly periodeSelectionnee = signal<string>('30 derniers jours');
@@ -54,6 +67,34 @@ export class StatistiquesAdminComponent implements OnInit {
 
   // Performance des Meilleurs Restaurants (Top 5 bar chart)
   readonly topRestaurants = signal<RestaurantPerformanceTop[]>([]);
+
+  // Répartition réelle par catégorie (Donut chart)
+  readonly categories = signal<CategorieStatistique[]>([
+    { nom: 'Plats locaux', total: 0, pourcentage: 100, dasharray: '238 238', dashoffset: '0', couleur: '#E51824' }
+  ]);
+
+  // Graduation dynamique de l'axe Y en fonction du pic de commandes réel
+  readonly maxAxeY = computed(() => {
+    const pts = this.pointsCourbeRevenus();
+    if (pts.length === 0) return 3000;
+    const maxVal = Math.max(...pts.map((p) => p.valeurMilliers), 0);
+    if (maxVal === 0) return 600;
+    return Math.ceil(maxVal / 500) * 500;
+  });
+
+  readonly graduationsAxeY = computed(() => {
+    const max = this.maxAxeY();
+    const pas = Math.max(Math.round(max / 6), 1);
+    return [
+      max,
+      Math.round(max - pas),
+      Math.round(max - 2 * pas),
+      Math.round(max - 3 * pas),
+      Math.round(max - 4 * pas),
+      Math.round(max - 5 * pas),
+      0
+    ];
+  });
 
   // Génération dynamique du tracé de la ligne SVG
   readonly cheminLigneSvg = computed(() => {
@@ -84,10 +125,21 @@ export class StatistiquesAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.chargerStatistiques();
+
+    // Actualisation temps réel toutes les 15 secondes
+    const intervalle = setInterval(() => {
+      this.chargerStatistiques(true);
+    }, 15000);
+
+    this.destroyRef.onDestroy(() => {
+      clearInterval(intervalle);
+    });
   }
 
-  chargerStatistiques(): void {
-    this.chargementEnCours.set(true);
+  chargerStatistiques(silencieux: boolean = false): void {
+    if (!silencieux) {
+      this.chargementEnCours.set(true);
+    }
     this.http.get<any>(`${environment.apiUrl}/administration/statistiques/`).subscribe({
       next: (stats) => {
         const volumeFcfa = stats.volumeAffairesFcfa ?? stats.volume_affaires_fcfa ?? 0;
@@ -105,14 +157,20 @@ export class StatistiquesAdminComponent implements OnInit {
           tauxCroissance: { valeur: '98.5%', evolution: 'Optimal' }
         });
 
+        // Horodatage de synchronisation
+        const maintenant = new Date();
+        this.derniereMiseAJour.set(
+          `Mis à jour à ${maintenant.getHours().toString().padStart(2, '0')}:${maintenant.getMinutes().toString().padStart(2, '0')}:${maintenant.getSeconds().toString().padStart(2, '0')}`
+        );
+
         // Points de la courbe hebdomadaire
         if (stats.commandesParJour && Array.isArray(stats.commandesParJour)) {
           const points: PointEvolutionRevenu[] = stats.commandesParJour.map((pt: any) => ({
             date: pt.date || 'Jour',
-            valeurMilliers: pt.total * 5,
-            label: `${pt.total} commande(s)`,
-            xPourcentage: pt.x || 35,
-            yPourcentage: pt.y || 180
+            valeurMilliers: (pt.valeur || pt.total || 0) * 100,
+            label: `${pt.valeur || pt.total || 0} commande(s)`,
+            xPourcentage: pt.xPourcentage || pt.x || 35,
+            yPourcentage: pt.yPourcentage || pt.y || 180
           }));
           this.pointsCourbeRevenus.set(points);
         }
@@ -126,6 +184,11 @@ export class StatistiquesAdminComponent implements OnInit {
               pourcentageBarre: Math.max(r.pourcentageBarre || 10, 10)
             }))
           );
+        }
+
+        // Répartition réelle des catégories
+        if (stats.commandesParCategorie && Array.isArray(stats.commandesParCategorie) && stats.commandesParCategorie.length > 0) {
+          this.categories.set(stats.commandesParCategorie);
         }
 
         this.chargementEnCours.set(false);

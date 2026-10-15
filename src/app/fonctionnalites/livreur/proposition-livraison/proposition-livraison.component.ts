@@ -43,16 +43,21 @@ export class PropositionLivraisonComponent implements AfterViewInit, OnDestroy {
     const conteneur = document.getElementById('carte-apercu-proposition');
     if (!conteneur) return;
 
-    const depart = this.serviceCarteDakar.restaurantTeranga; // Plateau
-    const arrivee = this.serviceCarteDakar.clientMedina;     // Médina
-    const trajet = this.serviceCarteDakar.trajetPlateauMedina;
+    const depart: [number, number] = (this.proposition.restaurantLatitude && this.proposition.restaurantLongitude)
+      ? [this.proposition.restaurantLatitude, this.proposition.restaurantLongitude]
+      : this.serviceCarteDakar.restaurantTeranga;
+    const arrivee: [number, number] = (this.proposition.clientLatitude && this.proposition.clientLongitude)
+      ? [this.proposition.clientLatitude, this.proposition.clientLongitude]
+      : this.serviceCarteDakar.clientMedina;
+    const miTrajet: [number, number] = [(depart[0] + arrivee[0]) / 2, (depart[1] + arrivee[1]) / 2];
+    const trajet: [number, number][] = [depart, miTrajet, arrivee];
 
     this.carteLeaflet = L.map('carte-apercu-proposition', {
       zoomControl: false,
       attributionControl: false,
       dragging: false,
       scrollWheelZoom: false
-    }).setView([14.6780, -17.4410], 13);
+    }).setView(miTrajet, 13);
 
     // Couche sombre CartoDB Dark Matter
     this.serviceCarteDakar.creerCoucheTuilesSombre().addTo(this.carteLeaflet);
@@ -81,6 +86,10 @@ export class PropositionLivraisonComponent implements AfterViewInit, OnDestroy {
       weight: 2,
       fillOpacity: 1
     }).addTo(this.carteLeaflet);
+
+    if (this.carteLeaflet) {
+      this.carteLeaflet.fitBounds([depart, arrivee], { padding: [25, 25] });
+    }
   }
 }
 

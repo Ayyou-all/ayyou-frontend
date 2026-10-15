@@ -22,13 +22,13 @@
           RÉCUPÉRATION
         </span>
         <h1 class="text-base sm:text-lg font-black text-slate-900 leading-tight font-['Outfit']">
-          {{ serviceLivreur.courseEnCours()?.restaurantNom || 'Le Teranga' }}
+          {{ serviceLivreur.courseEnCours()?.restaurantNom || 'Restaurant Partenaire' }}
         </h1>
       </div>
 
       <!-- Bouton Appel restaurant rond -->
       <a
-        [href]="'tel:' + (serviceLivreur.courseEnCours()?.restaurantTelephone || '+221338210011')"
+        [href]="serviceLivreur.courseEnCours()?.restaurantTelephone ? ('tel:' + serviceLivreur.courseEnCours()?.restaurantTelephone) : 'javascript:void(0)'"
         class="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
         title="Appeler le restaurant"
       >
@@ -43,16 +43,16 @@
   <!-- ========================================================================= -->
   <main class="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-    <!-- CARTE COMMANDE #4521 + STATUT PRÊTE + COMPTOIR (IMAGE 1) -->
+    <!-- CARTE COMMANDE + STATUT PRÊTE + COMPTOIR -->
     <div class="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm space-y-4">
       
       <div class="flex items-start justify-between gap-3">
         <div class="space-y-1">
           <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
-            Commande #{{ serviceLivreur.courseEnCours()?.identifiantCommande || '4521' }}
+            Commande #{{ serviceLivreur.courseEnCours()?.identifiantCommande || '...' }}
           </h2>
           <p class="text-xs sm:text-sm font-semibold text-slate-400">
-            Client: {{ serviceLivreur.courseEnCours()?.clientNom || 'Amadou Sow' }}
+            Client: {{ serviceLivreur.courseEnCours()?.clientNom || 'Client AYYOU' }}
           </p>
         </div>
 
@@ -63,7 +63,7 @@
         </div>
       </div>
 
-      <!-- Encart Comptoir de retrait (Allée A - Section 2) -->
+      <!-- Encart Comptoir de retrait -->
       <div class="bg-[#f8fafc] rounded-2xl p-4 border border-slate-100/90 flex items-center gap-3.5">
         <div class="w-12 h-12 rounded-2xl bg-[#fee2e2] text-[#E51824] flex items-center justify-center shrink-0">
           <i class="fa-solid fa-utensils text-base"></i>
@@ -73,7 +73,7 @@
             Comptoir de retrait
           </span>
           <span class="text-sm sm:text-base font-extrabold text-slate-900 font-['Outfit']">
-            {{ serviceLivreur.courseEnCours()?.comptoirRetrait || 'Allée A – Section 2' }}
+            {{ serviceLivreur.courseEnCours()?.comptoirRetrait || 'Comptoir de retrait AYYOU' }}
           </span>
         </div>
       </div>

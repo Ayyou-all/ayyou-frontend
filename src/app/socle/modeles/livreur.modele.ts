@@ -36,6 +36,10 @@ export interface PropositionLivraison {
   codeValidation: string; // Ex: "8245"
   articles: ArticleVerification[];
   photoCommande?: string;
+  restaurantLatitude?: number;
+  restaurantLongitude?: number;
+  clientLatitude?: number;
+  clientLongitude?: number;
 }
 
 export interface LivreurProfil {

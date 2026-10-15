@@ -311,6 +311,10 @@ export class ServiceLivreurService {
               premiere.tempsTrajetMin ?? premiere.temps_trajet_minutes ?? 10
             ),
             codeValidation: '',
+            restaurantLatitude: Number(premiere.restaurantLatitude ?? premiere.restaurant_latitude ?? 14.6710),
+            restaurantLongitude: Number(premiere.restaurantLongitude ?? premiere.restaurant_longitude ?? -17.4320),
+            clientLatitude: Number(premiere.clientLatitude ?? premiere.client_latitude ?? 14.6850),
+            clientLongitude: Number(premiere.clientLongitude ?? premiere.client_longitude ?? -17.4520),
             articles: (premiere.articles || []).map((art: any) => ({
               nom: art.nom ?? art.nom_plat ?? 'Article',
               quantite: Number(art.quantite || 1),
@@ -340,7 +344,7 @@ export class ServiceLivreurService {
         if (reponse?.mission_active && reponse?.livraison) {
           const l = reponse.livraison;
           this.courseEnCours.set({
-            identifiantCommande: String(l.commande_id || l.reference || l.id || ''),
+            identifiantCommande: String(l.commande_id || l.commande_reference || l.reference || l.id || ''),
             restaurantNom: l.restaurant_nom || '',
             restaurantAdresse: l.restaurant_adresse || '',
             restaurantTelephone: l.restaurant_telephone || '',
@@ -348,12 +352,16 @@ export class ServiceLivreurService {
             clientNom: l.client_nom || '',
             clientTelephone: l.client_telephone || '',
             clientAdresse: l.client_adresse || '',
-            clientInstructions: l.instructions_client || '',
-            distanceKm: Number(l.distance_km || 3.0),
+            clientInstructions: l.instructions_client || l.client_instructions || '',
+            distanceKm: Number(l.distance_km || 2.5),
             gainFcfa: Number(l.gain_livreur_fcfa || 1000),
             tempsRestantSec: 0,
             tempsTrajetMin: 10,
             codeValidation: '',
+            restaurantLatitude: Number(l.restaurant_latitude || 14.6710),
+            restaurantLongitude: Number(l.restaurant_longitude || -17.4320),
+            clientLatitude: Number(l.client_latitude || 14.6850),
+            clientLongitude: Number(l.client_longitude || -17.4520),
             articles: (l.articles || []).map((art: any) => ({
               nom: art.nom_plat || art.nom || 'Article',
               quantite: Number(art.quantite || 1),

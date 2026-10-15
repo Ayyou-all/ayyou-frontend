@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
@@ -50,6 +50,7 @@ export interface CommandeAdministration {
 })
 export class CommandesAdminComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Onglet sélectionné
   readonly ongletActif = signal<OngletStatutCommande>('TOUS');
@@ -82,6 +83,9 @@ export class CommandesAdminComponent implements OnInit {
   // Liste des commandes réelles
   readonly listeCommandes = signal<CommandeAdministration[]>([]);
 
+  // Liste des coursiers disponibles
+  readonly livreurs = signal<any[]>([]);
+
   // Cartes KPI dynamiques calculées depuis les données réelles
   readonly statsKpi = computed(() => {
     const list = this.listeCommandes();
@@ -100,10 +104,31 @@ export class CommandesAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.chargerCommandes();
+    this.chargerLivreurs();
+
+    const intervalle = setInterval(() => {
+      this.chargerCommandes(true);
+    }, 10000);
+
+    this.destroyRef.onDestroy(() => {
+      clearInterval(intervalle);
+    });
   }
 
-  chargerCommandes(): void {
-    this.chargementEnCours.set(true);
+  chargerLivreurs(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/administration/livreurs/`).subscribe({
+      next: (donnees) => {
+        const items = Array.isArray(donnees) ? donnees : ((donnees as any)?.results || []);
+        this.livreurs.set(items);
+      },
+      error: () => {}
+    });
+  }
+
+  chargerCommandes(silencieux: boolean = false): void {
+    if (!silencieux) {
+      this.chargementEnCours.set(true);
+    }
     this.http.get<any>(`${environment.apiUrl}/administration/commandes/`).subscribe({
       next: (donnees) => {
         const items = Array.isArray(donnees) ? donnees : (donnees?.results || []);
@@ -198,7 +223,12 @@ export class CommandesAdminComponent implements OnInit {
     const cmd = this.commandeEnDetail();
     if (!cmd) return;
 
-    const coursier = nom || 'Moussa Diouf';
+    let coursier = nom;
+    if (!coursier) {
+      const premier = this.livreurs()[0];
+      coursier = premier?.nomComplet || premier?.nom || 'Coursier Partenaire';
+    }
+
     this.notificationSucces.set(`Coursier ${coursier} assigné à la commande ${cmd.identifiantCommande}.`);
     this.fermerDetailCommande();
     setTimeout(() => this.notificationSucces.set(null), 3000);

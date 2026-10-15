@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 
@@ -90,21 +90,42 @@ export class TableauDeBordComponent {
     }
   ]);
 
-  // Données de la courbe des commandes (7 jours de la semaine) - Alimentées par l'API réelle
-  readonly pointsGraphiqueSemaine = signal<PointDonneeGraphique[]>([
-    { jour: 'Lun', valeur: 0, xPourcentage: 35, yPourcentage: 220 },
-    { jour: 'Mar', valeur: 0, xPourcentage: 135, yPourcentage: 220 },
-    { jour: 'Mer', valeur: 0, xPourcentage: 235, yPourcentage: 220 },
-    { jour: 'Jeu', valeur: 0, xPourcentage: 335, yPourcentage: 220 },
-    { jour: 'Ven', valeur: 0, xPourcentage: 435, yPourcentage: 220 },
-    { jour: 'Sam', valeur: 0, xPourcentage: 535, yPourcentage: 220 },
-    { jour: 'Dim', valeur: 0, xPourcentage: 635, yPourcentage: 220 }
-  ]);
+  // Données brutes de la courbe (7 derniers jours) - alimentées exclusivement par l'API
+  private readonly donneesBrutesSemaine = signal<{ jour: string; date?: string; valeur: number }[]>([]);
+
+  // Hauteur de la zone de tracé SVG (viewBox 0 0 670 270)
+  private readonly HAUTEUR_SVG = 270;
+  private readonly X_POINTS = [35, 135, 235, 335, 435, 535, 635];
+
+  // Valeur maximale de l'axe Y calculée à partir des vraies données (multiple de 9 pour 10 graduations)
+  readonly maxAxeY = computed(() => {
+    const max = Math.max(0, ...this.donneesBrutesSemaine().map((p) => p.valeur));
+    return Math.max(9, Math.ceil((max * 1.15) / 9) * 9);
+  });
+
+  // Graduations de l'axe Y (du haut vers le bas)
+  readonly graduationsAxeY = computed(() => {
+    const max = this.maxAxeY();
+    return Array.from({ length: 10 }, (_, i) => Math.round((max * (9 - i)) / 9));
+  });
+
+  // Points positionnés selon l'échelle réelle
+  readonly pointsGraphiqueSemaine = computed<PointDonneeGraphique[]>(() => {
+    const donnees = this.donneesBrutesSemaine();
+    const max = this.maxAxeY();
+    return donnees.map((p, idx) => ({
+      jour: p.jour,
+      date: p.date,
+      valeur: p.valeur,
+      xPourcentage: this.X_POINTS[idx] ?? 35 + idx * 100,
+      yPourcentage: this.HAUTEUR_SVG - (p.valeur / max) * this.HAUTEUR_SVG
+    }));
+  });
 
   // Tracé SVG dynamique de la ligne de commande
   readonly cheminLigneSvg = computed(() => {
     const pts = this.pointsGraphiqueSemaine();
-    if (!pts.length) return 'M 35 220 L 635 220';
+    if (!pts.length) return `M 35 ${this.HAUTEUR_SVG} L 635 ${this.HAUTEUR_SVG}`;
     let d = `M ${pts[0].xPourcentage} ${pts[0].yPourcentage}`;
     for (let i = 1; i < pts.length; i++) {
       const prev = pts[i - 1];
@@ -118,18 +139,25 @@ export class TableauDeBordComponent {
   // Surface remplie sous la courbe
   readonly cheminSurfaceSvg = computed(() => {
     const pts = this.pointsGraphiqueSemaine();
-    if (!pts.length) return 'M 35 220 L 635 220 L 635 260 L 35 260 Z';
+    const bas = this.HAUTEUR_SVG;
+    if (!pts.length) return `M 35 ${bas} L 635 ${bas} Z`;
     const ligne = this.cheminLigneSvg();
     const last = pts[pts.length - 1];
     const first = pts[0];
-    return `${ligne} L ${last.xPourcentage} 260 L ${first.xPourcentage} 260 Z`;
+    return `${ligne} L ${last.xPourcentage} ${bas} L ${first.xPourcentage} ${bas} Z`;
   });
 
   // Liste des dernières validations réelles (provenant de la base de données)
   readonly dernieresValidations = signal<ValidationRecenteSuperadmin[]>([]);
 
+  // Horodatage de la dernière synchronisation avec l'API
+  readonly derniereMiseAJour = signal<Date | null>(null);
+
   constructor() {
     this.chargerStatistiques();
+    // Rafraîchissement en temps réel toutes les 15 secondes
+    const intervalle = setInterval(() => this.chargerStatistiques(), 15000);
+    inject(DestroyRef).onDestroy(() => clearInterval(intervalle));
   }
 
   chargerStatistiques(): void {
@@ -179,13 +207,21 @@ export class TableauDeBordComponent {
           }
         ]);
 
-        if (Array.isArray(stats.commandesParJour) && stats.commandesParJour.length > 0) {
-          this.pointsGraphiqueSemaine.set(stats.commandesParJour);
+        if (Array.isArray(stats.commandesParJour)) {
+          this.donneesBrutesSemaine.set(
+            stats.commandesParJour.map((p: any) => ({
+              jour: String(p.jour),
+              date: p.date,
+              valeur: Number(p.valeur ?? 0)
+            }))
+          );
         }
 
         if (Array.isArray(stats.dernieresValidations)) {
           this.dernieresValidations.set(stats.dernieresValidations);
         }
+
+        this.derniereMiseAJour.set(new Date());
       },
       error: () => {}
     });

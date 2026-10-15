@@ -496,20 +496,23 @@
           </div>
 
           @if (!commandeEnDetail()!.estCoursierAssigne) {
-            <div class="flex items-center gap-2 pt-1">
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              @for (liv of livreurs(); track liv.id) {
+                <button
+                  type="button"
+                  (click)="assignerCoursier(liv.nomComplet || liv.nom)"
+                  class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
+                >
+                  Assigner {{ liv.nomComplet || liv.nom }}
+                </button>
+              }
               <button
                 type="button"
-                (click)="assignerCoursier('Moussa Diouf')"
-                class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold"
+                (click)="assignerCoursierAutomatique()"
+                class="px-3 py-1.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
               >
-                Assigner Moussa Diouf
-              </button>
-              <button
-                type="button"
-                (click)="assignerCoursier('Abdou Fall')"
-                class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold"
-              >
-                Assigner Abdou Fall
+                <i class="fa-solid fa-bolt text-[10px]"></i>
+                <span>Assignation automatique</span>
               </button>
             </div>
           }

@@ -83,18 +83,11 @@
     <div class="relative w-full overflow-x-auto">
       <div class="min-w-[650px] h-72 sm:h-80 relative flex">
         
-        <!-- Axe vertical Y (labels 900 à 0) -->
+        <!-- Axe vertical Y (graduations calculées à partir des données réelles) -->
         <div class="w-12 h-[calc(100%-30px)] flex flex-col justify-between text-right pr-3 text-[11px] font-semibold text-slate-400 select-none">
-          <span>900</span>
-          <span>800</span>
-          <span>700</span>
-          <span>600</span>
-          <span>500</span>
-          <span>400</span>
-          <span>300</span>
-          <span>200</span>
-          <span>100</span>
-          <span>0</span>
+          @for (graduation of graduationsAxeY(); track $index) {
+            <span>{{ graduation }}</span>
+          }
         </div>
 
         <!-- Conteneur SVG principal -->

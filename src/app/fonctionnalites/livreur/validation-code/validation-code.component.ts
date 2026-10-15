@@ -38,6 +38,13 @@ export class ValidationCodeComponent {
     ];
   });
 
+  // Résumé réel des articles commandés
+  readonly articlesResume = computed(() => {
+    const articles = this.serviceLivreur.courseEnCours()?.articles;
+    if (!articles || articles.length === 0) return 'Articles de la commande';
+    return articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
+  });
+
   // Clavier numérique
   readonly touchesClavier = [
     ['1', '2', '3'],
