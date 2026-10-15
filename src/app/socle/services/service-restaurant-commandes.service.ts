@@ -350,15 +350,14 @@ export class ServiceRestaurantCommandesService {
             )
           );
         },
-        error: () => {
-          // Mise à jour optimiste locale en cas de session valide
-          this.commandesKanban.update((liste) =>
-            liste.map((c) =>
-              c.numero === numero
-                ? { ...c, statut: 'PREPARATION' as const, bordureActive: true }
-                : c
-            )
-          );
+        error: (err) => {
+          const detail =
+            err?.error?.detail ||
+            err?.error?.message ||
+            'Échec de l\'acceptation de la commande. Veuillez vérifier la connexion.';
+          this.messageErreur.set(detail);
+          // Rollback immédiat : synchronisation avec l'état réel de la base de données
+          this.chargerCommandesRestaurant(false);
         }
       });
   }
@@ -376,27 +375,34 @@ export class ServiceRestaurantCommandesService {
         motif_refus: motif
       })
       .subscribe({
-        next: () => {},
-        error: () => {}
+        next: () => {
+          this.commandesKanban.update((liste) => liste.filter((c) => c.numero !== numero));
+
+          const dateNow = new Date();
+          const heureStr = `${dateNow.getHours().toString().padStart(2, '0')}:${dateNow.getMinutes().toString().padStart(2, '0')}`;
+          const articlesStr = cmd.articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
+
+          const ligneRefusee: LigneHistoriqueGerant = {
+            numero: cmd.numero,
+            heure: heureStr,
+            clientNom: cmd.clientNom,
+            type: cmd.typeLivraison === 'LIVRAISON' ? 'LIVRAISON' : cmd.typeLivraison === 'SUR_PLACE' ? 'SUR PLACE' : 'EMPORTÉ',
+            articlesResume: articlesStr,
+            statut: 'ANNULÉE',
+            montantTotal: cmd.totalValeurNumerique
+          };
+
+          this.historiqueCommandes.update((hist) => [ligneRefusee, ...hist]);
+        },
+        error: (err) => {
+          const detail =
+            err?.error?.detail ||
+            err?.error?.message ||
+            'Impossible de refuser la commande sur le serveur.';
+          this.messageErreur.set(detail);
+          this.chargerCommandesRestaurant(false);
+        }
       });
-
-    this.commandesKanban.update((liste) => liste.filter((c) => c.numero !== numero));
-
-    const dateNow = new Date();
-    const heureStr = `${dateNow.getHours().toString().padStart(2, '0')}:${dateNow.getMinutes().toString().padStart(2, '0')}`;
-    const articlesStr = cmd.articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
-
-    const ligneRefusee: LigneHistoriqueGerant = {
-      numero: cmd.numero,
-      heure: heureStr,
-      clientNom: cmd.clientNom,
-      type: cmd.typeLivraison === 'LIVRAISON' ? 'LIVRAISON' : cmd.typeLivraison === 'SUR_PLACE' ? 'SUR PLACE' : 'EMPORTÉ',
-      articlesResume: articlesStr,
-      statut: 'ANNULÉE',
-      montantTotal: cmd.totalValeurNumerique
-    };
-
-    this.historiqueCommandes.update((hist) => [ligneRefusee, ...hist]);
   }
 
   /**
@@ -409,24 +415,31 @@ export class ServiceRestaurantCommandesService {
     this.http
       .post(`${environment.apiUrl}/commandes/${idCommande}/marquer-prete/`, {})
       .subscribe({
-        next: () => {},
-        error: () => {}
+        next: () => {
+          this.commandesKanban.update((liste) =>
+            liste.map((c) =>
+              c.numero === numero
+                ? {
+                    ...c,
+                    statut: 'PRETES' as const,
+                    bordureActive: false,
+                    coursierNom: c.coursierNom,
+                    coursierVehicule: c.coursierVehicule,
+                    coursierPhoto: c.coursierPhoto
+                  }
+                : c
+            )
+          );
+        },
+        error: (err) => {
+          const detail =
+            err?.error?.detail ||
+            err?.error?.message ||
+            'Impossible de marquer la commande comme prête sur le serveur.';
+          this.messageErreur.set(detail);
+          this.chargerCommandesRestaurant(false);
+        }
       });
-
-    this.commandesKanban.update((liste) =>
-      liste.map((c) =>
-        c.numero === numero
-          ? {
-              ...c,
-              statut: 'PRETES' as const,
-              bordureActive: false,
-              coursierNom: c.coursierNom,
-              coursierVehicule: c.coursierVehicule,
-              coursierPhoto: c.coursierPhoto
-            }
-          : c
-      )
-    );
   }
 
   /**
