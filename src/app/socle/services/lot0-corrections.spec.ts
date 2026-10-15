@@ -12,7 +12,8 @@ import {
   gardeGerant,
   gardeLivreur
 } from '../gardes/authentification.guard';
-import { TableauDeBordComponent } from '../../fonctionnalites/administration/tableau-de-bord/tableau-de-bord.component';
+import { CarteIndicateurSuperadmin, TableauDeBordComponent } from '../../fonctionnalites/administration/tableau-de-bord/tableau-de-bord.component';
+import { RoleUtilisateur } from '../modeles/utilisateur.modele';
 
 describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () => {
   let serviceAuth: ServiceAuthentification;
@@ -45,13 +46,13 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
 
   function simulerUtilisateur(role: RoleUtilisateur): void {
     serviceAuth.utilisateurConnecte.set({
-      id: `usr-${role.toLowerCase()}`,
+      identifiant: `usr-${role.toLowerCase()}`,
       prenom: 'Test',
       nom: 'User',
       courriel: `${role.toLowerCase()}@test.ayyou.sn`,
+      telephone: '+221770000000',
       role,
-      actif: true,
-      dateInscription: new Date().toISOString()
+      estActif: true
     });
   }
 
@@ -146,7 +147,7 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
   describe('D. Harmonisation de la devise dans l administration', () => {
     it('doit afficher le chiffre d affaires du superadmin en FCFA et non en Euros', () => {
       const comp = TestBed.runInInjectionContext(() => new TableauDeBordComponent());
-      const carteCA = comp.listeIndicateurs.find((i) => i.titre === "Chiffre d'affaires");
+      const carteCA = comp.listeIndicateurs().find((i: CarteIndicateurSuperadmin) => i.titre === "Chiffre d'affaires");
       expect(carteCA).toBeDefined();
       expect(carteCA?.valeur).toContain('FCFA');
       expect(carteCA?.valeur).not.toContain('€');

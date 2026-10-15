@@ -19,7 +19,7 @@ export class ServiceCommandesService {
   readonly listeCommandes = signal<CommandeClient[]>([]);
 
   // Progression de la géolocalisation GPS du livreur sur le trajet (0 à 100 %)
-  readonly progressionGpsLivreur = signal<number>(68);
+  readonly progressionGpsLivreur = signal<number>(0);
 
   // Modal / écran de confirmation de livraison réussie
   readonly livraisonValidee = signal<boolean>(false);
@@ -62,10 +62,12 @@ export class ServiceCommandesService {
     else if (c.etape_suivi === 'LIVREE') etapeSuivi = 'LIVREE';
     else if (c.etape_suivi === 'EN_ROUTE') etapeSuivi = 'EN_ROUTE';
 
-    const codePin: [number, number, number, number] =
-      Array.isArray(c.code_livraison) && c.code_livraison.length === 4
-        ? [Number(c.code_livraison[0]), Number(c.code_livraison[1]), Number(c.code_livraison[2]), Number(c.code_livraison[3])]
-        : [4, 8, 2, 5];
+    let codePin: [number, number, number, number] = [0, 0, 0, 0];
+    if (Array.isArray(c.code_livraison) && c.code_livraison.length === 4) {
+      codePin = [Number(c.code_livraison[0]), Number(c.code_livraison[1]), Number(c.code_livraison[2]), Number(c.code_livraison[3])];
+    } else if (typeof c.code_livraison_pin === 'string' && c.code_livraison_pin.length === 4) {
+      codePin = [Number(c.code_livraison_pin[0]), Number(c.code_livraison_pin[1]), Number(c.code_livraison_pin[2]), Number(c.code_livraison_pin[3])];
+    }
 
     return {
       identifiant: String(c.identifiant || c.reference || c.id || ''),
