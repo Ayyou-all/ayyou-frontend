@@ -75,6 +75,9 @@ export class ServiceAuthentification {
       adressePhoto: donnees.adresse_photo || donnees.adressePhoto || undefined,
       nomEtablissement: donnees.nom_etablissement || donnees.nomEtablissement || undefined,
       typeVehicule: donnees.type_vehicule || donnees.typeVehicule || undefined,
+      nomVehicule: donnees.nom_vehicule || donnees.nomVehicule || undefined,
+      immatriculation: donnees.immatriculation || undefined,
+      zonePrincipale: donnees.zone_principale || donnees.zonePrincipale || undefined,
       adresse: donnees.adresse || undefined,
       estActif: donnees.est_actif ?? donnees.estActif ?? true,
       dateCreation: donnees.date_creation || donnees.dateCreation || new Date().toISOString()
@@ -145,7 +148,8 @@ export class ServiceAuthentification {
       !!formulaire.logo ||
       !!formulaire.couverture ||
       !!formulaire.permisRecto ||
-      !!formulaire.permisVerso;
+      !!formulaire.permisVerso ||
+      !!formulaire.photo;
 
     let corpsRequete: any;
 
@@ -161,6 +165,10 @@ export class ServiceAuthentification {
       formData.append('conditions_acceptees', 'true');
       if (formulaire.nomEtablissement) formData.append('nom_etablissement', formulaire.nomEtablissement);
       if (formulaire.typeVehicule) formData.append('type_vehicule', formulaire.typeVehicule);
+      if (formulaire.nomVehicule) formData.append('nom_vehicule', formulaire.nomVehicule);
+      if (formulaire.immatriculation) formData.append('immatriculation', formulaire.immatriculation);
+      if (formulaire.zonePrincipale) formData.append('zone_principale', formulaire.zonePrincipale);
+      if (formulaire.photo) formData.append('photo', formulaire.photo);
       if (formulaire.adresse) formData.append('adresse', formulaire.adresse);
       if (formulaire.documentJustificatif) formData.append('document_justificatif', formulaire.documentJustificatif);
       if (formulaire.documentType) formData.append('document_type', formulaire.documentType);
@@ -180,6 +188,9 @@ export class ServiceAuthentification {
         role: formulaire.role || 'CLIENT',
         nom_etablissement: formulaire.nomEtablissement || '',
         type_vehicule: formulaire.typeVehicule || undefined,
+        nom_vehicule: formulaire.nomVehicule || '',
+        immatriculation: formulaire.immatriculation || '',
+        zone_principale: formulaire.zonePrincipale || '',
         adresse: formulaire.adresse || '',
         conditions_acceptees: true
       };

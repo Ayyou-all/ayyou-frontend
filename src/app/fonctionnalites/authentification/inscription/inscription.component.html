@@ -962,6 +962,22 @@
               </div>
             </div>
 
+            <!-- Modèle ou marque du véhicule -->
+            <div class="space-y-1">
+              <label for="champ-modele-mobile" class="block text-xs font-bold text-slate-700">Modèle du véhicule (Optionnel)</label>
+              <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <i class="fa-solid fa-motorcycle text-slate-400 mr-3 text-sm"></i>
+                <input
+                  id="champ-modele-mobile"
+                  type="text"
+                  [ngModel]="nomVehiculeSaisi()"
+                  (ngModelChange)="nomVehiculeSaisi.set($event)"
+                  placeholder="Ex : Yamaha TMAX, Honda PCX..."
+                  class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
+                />
+              </div>
+            </div>
+
             <!-- Numéro de plaque -->
             <div class="space-y-1">
               <label for="champ-plaque-mobile" class="block text-xs font-bold text-slate-700">Numéro de plaque</label>
@@ -1739,8 +1755,24 @@
                 </div>
               </div>
 
-              <!-- Ligne 2 : Numéro de plaque (gauche) & Zone d'activité / Ville (droite) -->
+              <!-- Ligne 2 : Modèle (gauche) & Numéro de plaque (droite) -->
               <div class="grid grid-cols-2 gap-3">
+                <!-- Modèle du véhicule -->
+                <div class="space-y-1.5">
+                  <label for="champ-modele-desk" class="block text-xs font-bold text-slate-700">Modèle du véhicule (Optionnel)</label>
+                  <div class="flex items-center rounded-2xl border border-slate-200 py-3 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                    <i class="fa-solid fa-motorcycle text-slate-400 mr-2.5 text-sm"></i>
+                    <input
+                      id="champ-modele-desk"
+                      type="text"
+                      [ngModel]="nomVehiculeSaisi()"
+                      (ngModelChange)="nomVehiculeSaisi.set($event)"
+                      placeholder="Ex: Yamaha TMAX"
+                      class="w-full text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+
                 <!-- Numéro de plaque -->
                 <div class="space-y-1.5">
                   <label for="champ-plaque-desk" class="block text-xs font-bold text-slate-700">Numéro de plaque</label>
@@ -1756,10 +1788,11 @@
                     />
                   </div>
                 </div>
+              </div>
 
-                <!-- Zone d'activité / Ville -->
-                <div class="space-y-1.5 relative">
-                  <label class="block text-xs font-bold text-slate-700">Zone d'activité / Ville</label>
+              <!-- Ligne 3 : Zone d'activité / Ville -->
+              <div class="space-y-1.5 relative">
+                <label class="block text-xs font-bold text-slate-700">Zone d'activité / Ville</label>
                   <button
                     type="button"
                     (click)="basculerMenuVilles()"
@@ -1789,7 +1822,6 @@
                     </div>
                   }
                 </div>
-              </div>
 
               <!-- Ligne 3 : Permis de conduite (Recto / Verso) -->
               <div class="space-y-1.5">

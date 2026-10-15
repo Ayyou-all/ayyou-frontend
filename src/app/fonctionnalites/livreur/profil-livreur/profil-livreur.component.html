@@ -180,14 +180,14 @@
     }
 
     <!-- ONGLET DE NAVIGATION ENTRE SECTIONS -->
-    <div class="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-200/60 text-xs font-black">
+    <div class="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-200/60 text-xs font-black overflow-x-auto">
       <button
         type="button"
         (click)="changerOnglet('coordonnees')"
         [class]="ongletActif() === 'coordonnees'
           ? 'bg-white text-slate-900 shadow-xs'
           : 'text-slate-500 hover:text-slate-800'"
-        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
       >
         <i class="fa-solid fa-user"></i>
         <span>Identité</span>
@@ -199,10 +199,22 @@
         [class]="ongletActif() === 'vehicule'
           ? 'bg-white text-slate-900 shadow-xs'
           : 'text-slate-500 hover:text-slate-800'"
-        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
       >
         <i class="fa-solid fa-motorcycle"></i>
         <span>Véhicule & Zone</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="changerOnglet('documents')"
+        [class]="ongletActif() === 'documents'
+          ? 'bg-white text-slate-900 shadow-xs'
+          : 'text-slate-500 hover:text-slate-800'"
+        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+      >
+        <i class="fa-solid fa-id-card"></i>
+        <span>Permis & Documents</span>
       </button>
 
       <button
@@ -211,7 +223,7 @@
         [class]="ongletActif() === 'securite'
           ? 'bg-white text-slate-900 shadow-xs'
           : 'text-slate-500 hover:text-slate-800'"
-        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
       >
         <i class="fa-solid fa-shield-halved"></i>
         <span>Sécurité</span>
@@ -427,7 +439,162 @@
     }
 
     <!-- ======================================================================= -->
-    <!-- SECTION 3 : SÉCURITÉ & MOT DE PASSE                                    -->
+    <!-- SECTION 3 : DOCUMENTS JUSTIFICATIFS & PERMIS DE CONDUIRE                -->
+    <!-- ======================================================================= -->
+    @if (ongletActif() === 'documents') {
+      <div class="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-6">
+        <div class="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-base font-black text-slate-900 font-['Outfit']">
+              Permis de conduire & Documents d'inscription
+            </h3>
+            <p class="text-xs text-slate-400">
+              Pièces justificatives officielles saisies lors de votre inscription.
+            </p>
+          </div>
+          <div>
+            @if (serviceLivreur.profilLivreur().statutValidation === 'ACTIF') {
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                Dossier Validé
+              </span>
+            } @else {
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                <i class="fa-solid fa-clock text-amber-600"></i>
+                En cours de vérification
+              </span>
+            }
+          </div>
+        </div>
+
+        <!-- Liste des documents réels archivés en base de données -->
+        @if (documents().length > 0) {
+          <div class="space-y-3">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Pièces enregistrées
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              @for (doc of documents(); track doc.id) {
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3">
+                  <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-50 text-[#E51824] flex items-center justify-center shrink-0">
+                      <i class="fa-solid fa-id-card text-base"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-xs font-black text-slate-900 truncate">
+                        {{ doc.type_document_libelle || 'Permis de conduire' }}
+                      </p>
+                      <p class="text-[11px] text-slate-400 truncate">
+                        {{ doc.nom_fichier || 'Pièce officielle' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+                    <div>
+                      @if (doc.statut === 'VALIDE') {
+                        <span class="text-emerald-600 font-bold flex items-center gap-1 text-[11px]">
+                          <i class="fa-solid fa-circle-check"></i>
+                          Validé
+                        </span>
+                      } @else if (doc.statut === 'REJETE') {
+                        <span class="text-rose-600 font-bold flex items-center gap-1 text-[11px]">
+                          <i class="fa-solid fa-circle-xmark"></i>
+                          Rejeté
+                        </span>
+                      } @else {
+                        <span class="text-amber-600 font-bold flex items-center gap-1 text-[11px]">
+                          <i class="fa-solid fa-clock"></i>
+                          En attente
+                        </span>
+                      }
+                    </div>
+
+                    @if (doc.url_fichier) {
+                      <a
+                        [href]="doc.url_fichier"
+                        target="_blank"
+                        rel="noopener"
+                        class="text-[#E51824] font-bold hover:underline flex items-center gap-1 text-[11px]"
+                      >
+                        <span>Consulter</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                      </a>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 text-amber-800 text-xs flex items-center gap-3">
+            <i class="fa-solid fa-circle-info text-amber-500 text-base shrink-0"></i>
+            <span>Aucune pièce justificative archivée pour le moment. Vous pouvez joindre votre permis de conduire ci-dessous.</span>
+          </div>
+        }
+
+        <!-- Zone de mise à jour / téléversement d'un permis de conduire -->
+        <div class="space-y-3 pt-3 border-t border-slate-100">
+          <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+            Téléverser / Renouveler mon permis de conduire
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Recto -->
+            <label class="relative h-28 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#E51824] hover:bg-red-50/20 transition-all group p-3">
+              @if (nomPermisRecto()) {
+                <i class="fa-solid fa-circle-check text-emerald-500 text-xl mb-1"></i>
+                <span class="text-xs font-bold text-slate-800 truncate max-w-full">{{ nomPermisRecto() }}</span>
+                <span class="text-[10px] text-emerald-600 font-semibold">Recto sélectionné</span>
+              } @else {
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 mb-1 group-hover:text-red-500 shadow-2xs">
+                  <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-700">Permis Recto</span>
+                <span class="text-[10px] text-slate-400">Cliquez pour choisir</span>
+              }
+              <input type="file" accept="image/*,application/pdf" (change)="selectionnerPermisRecto($event)" class="hidden" />
+            </label>
+
+            <!-- Verso -->
+            <label class="relative h-28 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:border-[#E51824] hover:bg-red-50/20 transition-all group p-3">
+              @if (nomPermisVerso()) {
+                <i class="fa-solid fa-circle-check text-emerald-500 text-xl mb-1"></i>
+                <span class="text-xs font-bold text-slate-800 truncate max-w-full">{{ nomPermisVerso() }}</span>
+                <span class="text-[10px] text-emerald-600 font-semibold">Verso sélectionné</span>
+              } @else {
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 mb-1 group-hover:text-red-500 shadow-2xs">
+                  <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-700">Permis Verso</span>
+                <span class="text-[10px] text-slate-400">Cliquez pour choisir</span>
+              }
+              <input type="file" accept="image/*,application/pdf" (change)="selectionnerPermisVerso($event)" class="hidden" />
+            </label>
+          </div>
+
+          <!-- Bouton Sauvegarder Documents -->
+          <div class="pt-2 flex justify-end">
+            <button
+              type="button"
+              (click)="enregistrerDocuments()"
+              [disabled]="chargement() || (!fichierPermisRecto() && !fichierPermisVerso())"
+              class="px-6 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 disabled:opacity-50 text-white font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+            >
+              @if (chargement()) {
+                <i class="fa-solid fa-circle-notch animate-spin"></i>
+                <span>Envoi en cours...</span>
+              } @else {
+                <i class="fa-solid fa-upload"></i>
+                <span>Enregistrer mes documents</span>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 4 : SÉCURITÉ & MOT DE PASSE                                    -->
     <!-- ======================================================================= -->
     @if (ongletActif() === 'securite') {
       <div class="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-5">

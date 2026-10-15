@@ -16,16 +16,18 @@ import {
   PropositionLivraison,
   ResultatValidationCode
 } from '../modeles/livreur.modele';
+import { ServiceAuthentification } from './service-authentification.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ServiceLivreurService {
   private readonly http = inject(HttpClient);
+  private readonly serviceAuth = inject(ServiceAuthentification);
 
   // Profil réel du livreur connecté (initialisé sans fausses données)
   readonly profilLivreur = signal<LivreurProfil>({
-    nomComplet: 'Livreur AYYOU',
+    nomComplet: '',
     adressePhoto: '',
     vehicule: '',
     estDisponible: true,
@@ -83,6 +85,24 @@ export class ServiceLivreurService {
    * Initialise les données et charge la mission active si existante.
    */
   initialiserDonneesLivreur(): void {
+    const user = this.serviceAuth.utilisateurConnecte();
+    if (user && user.role === 'LIVREUR') {
+      const nomCompletCalcule = `${user.prenom || ''} ${user.nom || ''}`.trim() || user.courriel || '';
+      this.profilLivreur.update((p) => ({
+        ...p,
+        nomComplet: nomCompletCalcule || p.nomComplet,
+        prenom: user.prenom || p.prenom || '',
+        nom: user.nom || p.nom || '',
+        courriel: user.courriel || p.courriel || '',
+        telephone: user.telephone || p.telephone || '',
+        adresse: user.adresse || p.adresse || '',
+        adressePhoto: user.adressePhoto || p.adressePhoto || '',
+        typeVehicule: user.typeVehicule || p.typeVehicule || 'MOTO',
+        nomVehicule: user.nomVehicule || p.nomVehicule || '',
+        immatriculation: user.immatriculation || p.immatriculation || '',
+        zonePrincipale: user.zonePrincipale || p.zonePrincipale || ''
+      }));
+    }
     this.chargerProfilLivreur();
     this.chargerMissionEnCours();
     this.verifierNouvellesPropositions();
@@ -96,6 +116,7 @@ export class ServiceLivreurService {
       tap((data) => {
         if (data) {
           const nomCompletCalcule =
+            data.nomComplet ||
             data.nom_complet ||
             `${data.prenom || ''} ${data.nom || ''}`.trim() ||
             this.profilLivreur().nomComplet;
@@ -103,19 +124,19 @@ export class ServiceLivreurService {
           this.profilLivreur.update((p) => ({
             ...p,
             nomComplet: nomCompletCalcule,
-            prenom: data.prenom || p.prenom || '',
-            nom: data.nom || p.nom || '',
-            courriel: data.courriel || p.courriel || '',
-            telephone: data.telephone || p.telephone || '',
-            adresse: data.adresse || p.adresse || '',
-            adressePhoto: data.adresse_photo || p.adressePhoto,
-            vehicule: data.nom_vehicule || (data.type_vehicule ? `${data.type_vehicule}` : p.vehicule),
-            typeVehicule: data.type_vehicule || p.typeVehicule || 'MOTO',
-            nomVehicule: data.nom_vehicule || p.nomVehicule || '',
-            immatriculation: data.immatriculation || p.immatriculation || '',
-            zonePrincipale: data.zone_principale || p.zonePrincipale || '',
-            statutValidation: data.statut_validation || p.statutValidation || '',
-            estDisponible: data.est_disponible ?? (data.disponibilite === 'EN_LIGNE'),
+            prenom: data.prenom ?? p.prenom ?? '',
+            nom: data.nom ?? p.nom ?? '',
+            courriel: data.courriel ?? p.courriel ?? '',
+            telephone: data.telephone ?? p.telephone ?? '',
+            adresse: data.adresse ?? p.adresse ?? '',
+            adressePhoto: data.adressePhoto || data.adresse_photo || p.adressePhoto,
+            vehicule: data.nomVehicule || data.nom_vehicule || (data.typeVehicule || data.type_vehicule ? `${data.typeVehicule || data.type_vehicule}` : p.vehicule),
+            typeVehicule: data.typeVehicule || data.type_vehicule || p.typeVehicule || 'MOTO',
+            nomVehicule: data.nomVehicule ?? data.nom_vehicule ?? p.nomVehicule ?? '',
+            immatriculation: data.immatriculation ?? p.immatriculation ?? '',
+            zonePrincipale: data.zonePrincipale ?? data.zone_principale ?? p.zonePrincipale ?? '',
+            statutValidation: data.statutValidation || data.statut_validation || p.statutValidation || '',
+            estDisponible: data.estDisponible ?? data.est_disponible ?? (data.disponibilite === 'EN_LIGNE'),
             gainsDuJourFcfa: Number(data.gains_du_jour_fcfa ?? 0),
             nombreLivraisonsJour: Number(data.nombre_livraisons_jour ?? 0)
           }));

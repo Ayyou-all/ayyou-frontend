@@ -116,8 +116,10 @@ export class InscriptionComponent {
 
   // Spécifique livreur (Étape 3 Infos Livreur)
   readonly typeVehiculeChoisi = signal<'MOTO' | 'VELO' | 'VOITURE'>('MOTO');
+  readonly nomVehiculeSaisi = signal<string>('');
   readonly numeroPlaqueSaisi = signal<string>('');
   readonly zoneActiviteSaisie = signal<string>('');
+  readonly fichierPhotoProfil = signal<File | null>(null);
   readonly menuVillesOuvert = signal<boolean>(false);
   readonly listeVilles: string[] = [
     'Dakar - Almadies / Plateau',
@@ -305,11 +307,13 @@ export class InscriptionComponent {
   selectionnerPhotoProfil(evenement: Event): void {
     const champFichier = evenement.target as HTMLInputElement;
     if (champFichier.files && champFichier.files[0]) {
+      const fichier = champFichier.files[0];
+      this.fichierPhotoProfil.set(fichier);
       const lecteur = new FileReader();
       lecteur.onload = (e) => {
         this.photoProfilUrl.set(e.target?.result as string);
       };
-      lecteur.readAsDataURL(champFichier.files[0]);
+      lecteur.readAsDataURL(fichier);
     }
   }
 
@@ -552,6 +556,10 @@ export class InscriptionComponent {
             role: this.roleChoisi() as RoleUtilisateur,
             nomEtablissement: this.roleChoisi() === 'RESTAURANT' ? this.nomRestaurantSaisi().trim() : undefined,
             typeVehicule: this.roleChoisi() === 'LIVREUR' ? (this.typeVehiculeChoisi() as any) : undefined,
+            nomVehicule: this.roleChoisi() === 'LIVREUR' ? this.nomVehiculeSaisi().trim() : undefined,
+            immatriculation: this.roleChoisi() === 'LIVREUR' ? this.numeroPlaqueSaisi().trim() : undefined,
+            zonePrincipale: this.roleChoisi() === 'LIVREUR' ? this.zoneActiviteSaisie().trim() : undefined,
+            photo: this.fichierPhotoProfil(),
             adresse: this.roleChoisi() === 'RESTAURANT' ? this.adresseCompleteRestaurantSaisie().trim() : this.adresseLivraisonSaisie().trim(),
             conditionsAcceptees: true,
             documentJustificatif: this.fichierDocumentJustificatif(),

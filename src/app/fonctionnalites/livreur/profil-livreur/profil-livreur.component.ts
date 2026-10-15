@@ -16,8 +16,8 @@ export class ProfilLivreurComponent implements OnInit {
   readonly serviceAuth = inject(ServiceAuthentification);
   private readonly router = inject(Router);
 
-  // Onglet actif : 'coordonnees' | 'vehicule' | 'securite'
-  readonly ongletActif = signal<'coordonnees' | 'vehicule' | 'securite'>('coordonnees');
+  // Onglet actif : 'coordonnees' | 'vehicule' | 'documents' | 'securite'
+  readonly ongletActif = signal<'coordonnees' | 'vehicule' | 'documents' | 'securite'>('coordonnees');
 
   // Coordonnées personnelles
   readonly prenom = signal<string>('');
@@ -31,6 +31,13 @@ export class ProfilLivreurComponent implements OnInit {
   readonly nomVehicule = signal<string>('');
   readonly immatriculation = signal<string>('');
   readonly zonePrincipale = signal<string>('');
+
+  // Documents & Permis
+  readonly documents = signal<any[]>([]);
+  readonly fichierPermisRecto = signal<File | null>(null);
+  readonly fichierPermisVerso = signal<File | null>(null);
+  readonly nomPermisRecto = signal<string | null>(null);
+  readonly nomPermisVerso = signal<string | null>(null);
 
   // Sécurité
   readonly ancienMotDePasse = signal<string>('');
@@ -96,10 +103,10 @@ export class ProfilLivreurComponent implements OnInit {
     this.telephone.set(profil.telephone || user?.telephone || '');
     this.adresse.set(profil.adresse || user?.adresse || '');
 
-    this.typeVehicule.set(profil.typeVehicule || 'MOTO');
-    this.nomVehicule.set(profil.nomVehicule || '');
-    this.immatriculation.set(profil.immatriculation || '');
-    this.zonePrincipale.set(profil.zonePrincipale || '');
+    this.typeVehicule.set(profil.typeVehicule || user?.typeVehicule || 'MOTO');
+    this.nomVehicule.set(profil.nomVehicule || user?.nomVehicule || '');
+    this.immatriculation.set(profil.immatriculation || user?.immatriculation || '');
+    this.zonePrincipale.set(profil.zonePrincipale || user?.zonePrincipale || '');
 
     if (profil.adressePhoto) {
       this.apercuPhoto.set(profil.adressePhoto);
@@ -110,39 +117,42 @@ export class ProfilLivreurComponent implements OnInit {
 
   private appliquerDonneesProfil(data: any): void {
     const user = this.serviceAuth.utilisateurConnecte();
-    if (data.prenom || user?.prenom) {
+    if (data.prenom !== undefined || user?.prenom) {
       this.prenom.set(data.prenom || user?.prenom || '');
     }
-    if (data.nom || user?.nom) {
+    if (data.nom !== undefined || user?.nom) {
       this.nom.set(data.nom || user?.nom || '');
     }
-    if (data.courriel || user?.courriel) {
+    if (data.courriel !== undefined || user?.courriel) {
       this.courriel.set(data.courriel || user?.courriel || '');
     }
-    if (data.telephone || user?.telephone) {
+    if (data.telephone !== undefined || user?.telephone) {
       this.telephone.set(data.telephone || user?.telephone || '');
     }
-    if (data.adresse || user?.adresse) {
+    if (data.adresse !== undefined || user?.adresse) {
       this.adresse.set(data.adresse || user?.adresse || '');
     }
-    if (data.type_vehicule) {
-      this.typeVehicule.set(data.type_vehicule);
+    if (data.typeVehicule || data.type_vehicule) {
+      this.typeVehicule.set(data.typeVehicule || data.type_vehicule);
     }
-    if (data.nom_vehicule) {
-      this.nomVehicule.set(data.nom_vehicule);
+    if (data.nomVehicule !== undefined || data.nom_vehicule !== undefined) {
+      this.nomVehicule.set(data.nomVehicule ?? data.nom_vehicule ?? '');
     }
-    if (data.immatriculation) {
-      this.immatriculation.set(data.immatriculation);
+    if (data.immatriculation !== undefined) {
+      this.immatriculation.set(data.immatriculation ?? '');
     }
-    if (data.zone_principale) {
-      this.zonePrincipale.set(data.zone_principale);
+    if (data.zonePrincipale !== undefined || data.zone_principale !== undefined) {
+      this.zonePrincipale.set(data.zonePrincipale ?? data.zone_principale ?? '');
     }
-    if (data.adresse_photo || user?.adressePhoto) {
-      this.apercuPhoto.set(data.adresse_photo || user?.adressePhoto || null);
+    if (data.adressePhoto || data.adresse_photo || user?.adressePhoto) {
+      this.apercuPhoto.set(data.adressePhoto || data.adresse_photo || user?.adressePhoto || null);
+    }
+    if (data.documents && Array.isArray(data.documents)) {
+      this.documents.set(data.documents);
     }
   }
 
-  changerOnglet(onglet: 'coordonnees' | 'vehicule' | 'securite'): void {
+  changerOnglet(onglet: 'coordonnees' | 'vehicule' | 'documents' | 'securite'): void {
     this.ongletActif.set(onglet);
     this.messageSucces.set(null);
     this.messageErreur.set(null);
@@ -227,14 +237,83 @@ export class ProfilLivreurComponent implements OnInit {
     formData.append('zone_principale', this.zonePrincipale().trim());
 
     this.serviceLivreur.mettreAJourProfilLivreur(formData).subscribe({
-      next: () => {
+      next: (res) => {
         this.chargement.set(false);
         this.messageSucces.set('Vos informations de véhicule et zone ont été enregistrées.');
+        this.serviceAuth.utilisateurConnecte.update((u) =>
+          u
+            ? {
+                ...u,
+                typeVehicule: this.typeVehicule() as any,
+                nomVehicule: this.nomVehicule().trim(),
+                immatriculation: this.immatriculation().trim(),
+                zonePrincipale: this.zonePrincipale().trim()
+              }
+            : null
+        );
       },
       error: (err) => {
         this.chargement.set(false);
         this.messageErreur.set(
           err.error?.message || err.error?.detail || 'Une erreur est survenue lors de la mise à jour.'
+        );
+      }
+    });
+  }
+
+  selectionnerPermisRecto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const fichier = input.files[0];
+      this.fichierPermisRecto.set(fichier);
+      this.nomPermisRecto.set(fichier.name);
+    }
+  }
+
+  selectionnerPermisVerso(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const fichier = input.files[0];
+      this.fichierPermisVerso.set(fichier);
+      this.nomPermisVerso.set(fichier.name);
+    }
+  }
+
+  enregistrerDocuments(): void {
+    this.messageSucces.set(null);
+    this.messageErreur.set(null);
+
+    if (!this.fichierPermisRecto() && !this.fichierPermisVerso()) {
+      this.messageErreur.set('Veuillez sélectionner au moins un fichier pour votre permis.');
+      return;
+    }
+
+    this.chargement.set(true);
+
+    const formData = new FormData();
+    if (this.fichierPermisRecto()) {
+      formData.append('permis_recto', this.fichierPermisRecto()!);
+    }
+    if (this.fichierPermisVerso()) {
+      formData.append('permis_verso', this.fichierPermisVerso()!);
+    }
+
+    this.serviceLivreur.mettreAJourProfilLivreur(formData).subscribe({
+      next: (res) => {
+        this.chargement.set(false);
+        this.messageSucces.set('Vos documents justificatifs ont été téléversés avec succès.');
+        this.fichierPermisRecto.set(null);
+        this.fichierPermisVerso.set(null);
+        this.nomPermisRecto.set(null);
+        this.nomPermisVerso.set(null);
+        if (res?.documents) {
+          this.documents.set(res.documents);
+        }
+      },
+      error: (err) => {
+        this.chargement.set(false);
+        this.messageErreur.set(
+          err.error?.message || err.error?.detail || 'Erreur lors du téléversement des pièces justificatives.'
         );
       }
     });
