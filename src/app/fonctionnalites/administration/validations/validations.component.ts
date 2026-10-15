@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -33,25 +34,28 @@ export interface DocumentPartenaire {
   tailleFichier: string;
   dateTeleversement: string;
   urlFichier: string;
+  nomFichier: string;
+  estImage: boolean;
+  estPdf: boolean;
   estValide: boolean;
   statutVerification: 'VERIFIE' | 'A_VERIFIER' | 'REJETE';
 
-  // Contenu officiel lisible affiché dans l'aperçu authentique
-  titreOfficiel: string;
-  sousTitreOfficiel: string;
-  numeroOfficiel: string;
-  autoriteEmettrice: string;
-  ministere: string;
-  dateDelivrance: string;
+  // Contenu informatif
+  titreOfficiel?: string;
+  sousTitreOfficiel?: string;
+  numeroOfficiel?: string;
+  autoriteEmettrice?: string;
+  ministere?: string;
+  dateDelivrance?: string;
   dateExpiration?: string;
-  titulaireNom: string;
-  detailsChamps: DetailLigneDocument[];
-  mentionsLegales: string[];
-  lieuDelivrance: string;
-  signataireNom: string;
-  signataireFonction: string;
-  tamponTexte: string;
-  numeroSecuriteQr: string;
+  titulaireNom?: string;
+  detailsChamps?: DetailLigneDocument[];
+  mentionsLegales?: string[];
+  lieuDelivrance?: string;
+  signataireNom?: string;
+  signataireFonction?: string;
+  tamponTexte?: string;
+  numeroSecuriteQr?: string;
   remarqueSuperadmin?: string;
 }
 
@@ -111,6 +115,14 @@ export class ValidationsComponent implements OnInit {
   readonly indexDocumentEnCours = signal<number>(0);
   readonly modaleDocumentOuverte = signal<boolean>(false);
   readonly facteurZoom = signal<number>(100);
+
+  private readonly sanitizer = inject(DomSanitizer);
+
+  readonly urlDocumentSecurisee = computed<SafeResourceUrl | null>(() => {
+    const doc = this.documentEnConsultation();
+    if (!doc || !doc.urlFichier) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(doc.urlFichier);
+  });
 
   ngOnInit(): void {
     this.chargerPartenaires();
@@ -209,17 +221,70 @@ export class ValidationsComponent implements OnInit {
     });
   }
 
+  private formaterUrlFichier(url?: string | null): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    const base = environment.mediaUrl.replace(/\/+$/, '');
+    const chemin = url.startsWith('/') ? url : `/${url}`;
+    return `${base}${chemin}`;
+  }
+
+  private obtenirLibelleDocument(typeDoc: string, idx: number, total: number, nomFichier: string = ''): string {
+    const lowerNom = nomFichier.toLowerCase();
+    switch (typeDoc) {
+      case 'PERMIS_CONDUIRE':
+        if (lowerNom.includes('recto') || idx === 0) {
+          return 'Permis de conduire (Recto)';
+        }
+        if (lowerNom.includes('verso') || idx === 1) {
+          return 'Permis de conduire (Verso)';
+        }
+        return `Permis de conduire (Pièce ${idx + 1})`;
+      case 'CNI':
+        return 'Carte Nationale d\'Identité (CNI)';
+      case 'RCCM':
+        return 'Registre du Commerce (RCCM)';
+      case 'NINEA':
+        return 'Numéro NINEA';
+      case 'CERTIFICAT_HYGIENE':
+        return 'Autorisation d\'exploitation / Certificat d\'hygiène';
+      case 'CARTE_GRISE':
+        return 'Carte grise du véhicule';
+      case 'ASSURANCE':
+        return 'Attestation d\'assurance';
+      default:
+        return typeDoc || 'Document justificatif';
+    }
+  }
+
   private construireDocuments(data: any, type: 'RESTAURANT' | 'LIVREUR'): DocumentPartenaire[] {
     const backendDocs = data.documents || [];
-    if (backendDocs.length > 0) {
-      return backendDocs.map((d: any, idx: number) => ({
-        identifiantDoc: `doc-${data.id}-${idx}`,
-        nom: d.type_document || 'Pièce justificative',
-        type: 'PDF',
+    const docsFinaux: DocumentPartenaire[] = [];
+
+    // 1. Documents justificatifs officiels téléversés par le partenaire
+    backendDocs.forEach((d: any, idx: number) => {
+      const nomFichierReel = d.nom_fichier || (d.fichier ? d.fichier.split('/').pop() : `document-${idx + 1}`);
+      const urlComplete = this.formaterUrlFichier(d.url_fichier || d.fichier);
+      const estPdf = !!d.est_pdf || nomFichierReel.toLowerCase().endsWith('.pdf') || urlComplete.toLowerCase().endsWith('.pdf');
+      const estImage = !!d.est_image || /\.(png|jpe?g|webp|gif|svg)$/i.test(nomFichierReel) || /\.(png|jpe?g|webp|gif|svg)$/i.test(urlComplete);
+      const typeFichier = estPdf ? 'PDF' : estImage ? 'IMAGE' : (d.extension?.toUpperCase() || 'DOCUMENT');
+      const nomLisible = this.obtenirLibelleDocument(d.type_document, idx, backendDocs.length, nomFichierReel);
+
+      docsFinaux.push({
+        identifiantDoc: `doc-${data.id}-${d.id || idx}`,
+        nom: nomLisible,
+        type: typeFichier,
         typeDocument: (d.type_document as TypeDocumentOfficiel) || 'RCCM',
-        tailleFichier: '1.5 Mo',
-        dateTeleversement: d.date_envoi ? new Date(d.date_envoi).toLocaleDateString('fr-FR') : 'Récent',
-        urlFichier: d.fichier || '#',
+        tailleFichier: d.taille_fichier || 'Fichier certifié',
+        dateTeleversement: d.date_envoi
+          ? new Date(d.date_envoi).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+          : 'Récent',
+        urlFichier: urlComplete,
+        nomFichier: nomFichierReel,
+        estImage,
+        estPdf,
         estValide: d.statut === 'VALIDE' || d.statut === 'CONFORME',
         statutVerification:
           d.statut === 'VALIDE' || d.statut === 'CONFORME'
@@ -227,30 +292,143 @@ export class ValidationsComponent implements OnInit {
             : d.statut === 'REJETE'
             ? 'REJETE'
             : 'A_VERIFIER',
-        titreOfficiel: `DOCUMENT OFFICIEL — ${d.type_document}`,
-        sousTitreOfficiel: 'RÉPUBLIQUE DU SÉNÉGAL',
-        numeroOfficiel: `SN-DOC-${data.id}-${idx + 100}`,
-        autoriteEmettrice: 'Ministère / Direction compétente',
-        ministere: 'RÉPUBLIQUE DU SÉNÉGAL',
-        dateDelivrance: '2023',
-        titulaireNom: type === 'RESTAURANT' ? data.nom : data.nomComplet,
+        titreOfficiel: nomLisible,
+        sousTitreOfficiel: 'PIÈCE JUSTIFICATIVE IMPORTÉE',
+        numeroOfficiel: nomFichierReel,
+        autoriteEmettrice: 'Fichier importé par le partenaire',
+        ministere: type === 'RESTAURANT' ? 'Dossier Partenaire Restaurant' : 'Dossier Partenaire Coursier',
+        dateDelivrance: d.date_envoi ? new Date(d.date_envoi).toLocaleDateString('fr-FR') : 'Date importation',
+        titulaireNom: type === 'RESTAURANT' ? data.nom : (data.nomComplet || data.nom),
         detailsChamps: [
-          { libelle: 'Partenaire', valeur: type === 'RESTAURANT' ? data.nom : data.nomComplet },
-          { libelle: 'Type document', valeur: d.type_document },
-          { libelle: 'Statut actuel', valeur: d.statut || 'En attente' }
+          { libelle: 'Nom du fichier', valeur: nomFichierReel },
+          { libelle: 'Type de pièce', valeur: nomLisible },
+          { libelle: 'Taille du fichier', valeur: d.taille_fichier || 'Standard' },
+          { libelle: 'Statut de conformité', valeur: d.statut || 'En attente' }
         ],
-        mentionsLegales: ['Document légal vérifié par le service conformité AYYOU.'],
-        lieuDelivrance: 'Dakar',
-        signataireNom: 'Service Conformité',
-        signataireFonction: 'Agent de Modération',
-        tamponTexte: 'AYYOU SÉNÉGAL • CONFORMITÉ PARTENAIRES',
-        numeroSecuriteQr: `QR-SN-${data.id}-${idx}`
-      }));
+        mentionsLegales: ['Document importé directement par le partenaire lors de son inscription.'],
+        lieuDelivrance: 'Sénégal',
+        signataireNom: 'Service Conformité AYYOU',
+        signataireFonction: 'Vérification Superadmin',
+        tamponTexte: 'AYYOU SÉNÉGAL • CONFORMITÉ',
+        numeroSecuriteQr: `DOC-${d.id || idx}`
+      });
+    });
+
+    // 2. Pièces visuelles téléversées pour Restaurant (Logo & Couverture)
+    if (type === 'RESTAURANT') {
+      const urlLogo = this.formaterUrlFichier(data.adresse_logo || data.logo);
+      if (urlLogo) {
+        const nomFichierLogo = urlLogo.split('/').pop() || 'logo_etablissement.png';
+        docsFinaux.push({
+          identifiantDoc: `etab-${data.id}-logo`,
+          nom: 'Logo officiel de l\'établissement',
+          type: 'IMAGE',
+          typeDocument: 'CNI',
+          tailleFichier: 'Image HD',
+          dateTeleversement: 'Inscription',
+          urlFichier: urlLogo,
+          nomFichier: nomFichierLogo,
+          estImage: true,
+          estPdf: false,
+          estValide: true,
+          statutVerification: 'VERIFIE',
+          titreOfficiel: 'Logo officiel de l\'établissement',
+          sousTitreOfficiel: 'IDENTITÉ VISUELLE IMPORTÉE',
+          numeroOfficiel: nomFichierLogo,
+          autoriteEmettrice: 'Importé par l\'établissement',
+          ministere: 'Dossier Partenaire Restaurant',
+          dateDelivrance: 'Inscription',
+          titulaireNom: data.nom,
+          detailsChamps: [
+            { libelle: 'Fichier', valeur: nomFichierLogo },
+            { libelle: 'Usage', valeur: 'Logo de vitrine et d\'application' }
+          ],
+          mentionsLegales: ['Logo officiel de la marque importé par le restaurant.'],
+          lieuDelivrance: 'Sénégal',
+          signataireNom: 'Service Marque AYYOU',
+          signataireFonction: 'Validation Visuelle',
+          tamponTexte: 'AYYOU SÉNÉGAL • LOGO CERTIFIÉ',
+          numeroSecuriteQr: `LOGO-${data.id}`
+        });
+      }
+
+      const urlCouv = this.formaterUrlFichier(data.adresse_couverture || data.couverture);
+      if (urlCouv) {
+        const nomFichierCouv = urlCouv.split('/').pop() || 'couverture_etablissement.jpg';
+        docsFinaux.push({
+          identifiantDoc: `etab-${data.id}-couverture`,
+          nom: 'Bannière / Couverture de la vitrine',
+          type: 'IMAGE',
+          typeDocument: 'CNI',
+          tailleFichier: 'Bannière HD',
+          dateTeleversement: 'Inscription',
+          urlFichier: urlCouv,
+          nomFichier: nomFichierCouv,
+          estImage: true,
+          estPdf: false,
+          estValide: true,
+          statutVerification: 'VERIFIE',
+          titreOfficiel: 'Bannière de couverture de l\'établissement',
+          sousTitreOfficiel: 'VITRINE IMPORTÉE',
+          numeroOfficiel: nomFichierCouv,
+          autoriteEmettrice: 'Importé par l\'établissement',
+          ministere: 'Dossier Partenaire Restaurant',
+          dateDelivrance: 'Inscription',
+          titulaireNom: data.nom,
+          detailsChamps: [
+            { libelle: 'Fichier', valeur: nomFichierCouv },
+            { libelle: 'Usage', valeur: 'Bannière de couverture vitrine' }
+          ],
+          mentionsLegales: ['Bannière de restaurant importée par le partenaire.'],
+          lieuDelivrance: 'Sénégal',
+          signataireNom: 'Service Marque AYYOU',
+          signataireFonction: 'Validation Visuelle',
+          tamponTexte: 'AYYOU SÉNÉGAL • BANNIÈRE CERTIFIÉE',
+          numeroSecuriteQr: `COUV-${data.id}`
+        });
+      }
     }
 
-    // Aucun document fictif : si aucun document n'est présent dans la base de données réelle,
-    // on retourne une liste vide pour refléter fidèlement l'état réel de conformité.
-    return [];
+    // 3. Photo du livreur
+    if (type === 'LIVREUR') {
+      const urlPhoto = this.formaterUrlFichier(data.photo);
+      if (urlPhoto) {
+        const nomFichierPhoto = urlPhoto.split('/').pop() || 'photo_coursier.jpg';
+        docsFinaux.push({
+          identifiantDoc: `liv-${data.id}-photo`,
+          nom: 'Photo d\'identité / Portrait du coursier',
+          type: 'IMAGE',
+          typeDocument: 'CNI',
+          tailleFichier: 'Photo',
+          dateTeleversement: 'Inscription',
+          urlFichier: urlPhoto,
+          nomFichier: nomFichierPhoto,
+          estImage: true,
+          estPdf: false,
+          estValide: true,
+          statutVerification: 'VERIFIE',
+          titreOfficiel: 'Photo d\'identité du coursier',
+          sousTitreOfficiel: 'PORTRAIT IMPORTÉ',
+          numeroOfficiel: nomFichierPhoto,
+          autoriteEmettrice: 'Importé par le coursier',
+          ministere: 'Dossier Partenaire Coursier',
+          dateDelivrance: 'Inscription',
+          titulaireNom: data.nomComplet || data.nom,
+          detailsChamps: [
+            { libelle: 'Fichier', valeur: nomFichierPhoto },
+            { libelle: 'Usage', valeur: 'Photo de profil pour les clients' }
+          ],
+          mentionsLegales: ['Photo d\'identification officielle du coursier.'],
+          lieuDelivrance: 'Sénégal',
+          signataireNom: 'Service Conformité AYYOU',
+          signataireFonction: 'Validation Portrait',
+          tamponTexte: 'AYYOU SÉNÉGAL • PORTRAIT',
+          numeroSecuriteQr: `PHOTO-${data.id}`
+        });
+      }
+    }
+
+    return docsFinaux;
   }
 
   // Filtrage selon l'onglet (Tous / Restaurants / Livreurs) et les critères de recherche
@@ -442,16 +620,50 @@ export class ValidationsComponent implements OnInit {
 
   telechargerDocumentActuel(): void {
     const doc = this.documentEnConsultation();
-    if (!doc) return;
-    this.notificationSucces.set(`Téléchargement de "${doc.nom}" en cours...`);
+    if (!doc || !doc.urlFichier) return;
+    const a = document.createElement('a');
+    a.href = doc.urlFichier;
+    a.target = '_blank';
+    a.download = doc.nomFichier || doc.nom || 'document_ayyou';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    this.notificationSucces.set(`Téléchargement de "${doc.nom}" lancé.`);
     setTimeout(() => this.notificationSucces.set(null), 3000);
+  }
+
+  ouvrirFichierNouvelOnglet(): void {
+    const doc = this.documentEnConsultation();
+    if (!doc || !doc.urlFichier) return;
+    window.open(doc.urlFichier, '_blank');
   }
 
   imprimerDocumentActuel(): void {
     const doc = this.documentEnConsultation();
-    if (!doc) return;
-    this.notificationSucces.set(`Préparation de l'impression pour "${doc.nom}"...`);
-    setTimeout(() => this.notificationSucces.set(null), 2500);
+    if (!doc || !doc.urlFichier) return;
+    if (doc.type === 'PDF') {
+      window.open(doc.urlFichier, '_blank');
+    } else {
+      const fenetre = window.open('', '_blank');
+      if (fenetre) {
+        fenetre.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>${doc.nom}</title>
+              <style>
+                body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
+                img { max-width: 100%; max-height: 95vh; object-fit: contain; }
+              </style>
+            </head>
+            <body>
+              <img src="${doc.urlFichier}" onload="window.print(); window.close();" />
+            </body>
+          </html>
+        `);
+        fenetre.document.close();
+      }
+    }
   }
 
   validerPartenaire(): void {
