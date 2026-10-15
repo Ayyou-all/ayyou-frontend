@@ -205,6 +205,9 @@ export class ServiceRestaurantCommandesService {
     }
     this.messageErreur.set(null);
 
+    // Actualisation conjointe des notifications serveur
+    this.chargerNotifications();
+
     this.http.get<any>(`${environment.apiUrl}/commandes/restaurant/`).subscribe({
       next: (commandes) => {
         const kanban: CommandeKanban[] = [];
@@ -471,13 +474,39 @@ export class ServiceRestaurantCommandesService {
     this.notifications.update((liste) =>
       liste.map((n) => (n.id === id ? { ...n, lue: true } : n))
     );
+    this.http.post(`${environment.apiUrl}/notifications/${id}/lire/`, {}).subscribe({
+      error: () => {}
+    });
   }
 
   toutMarquerCommeLu(): void {
     this.notifications.update((liste) => liste.map((n) => ({ ...n, lue: true })));
+    this.http.post(`${environment.apiUrl}/notifications/tout-lire/`, {}).subscribe({
+      error: () => {}
+    });
   }
 
   ajouterNotification(notif: NotificationGerant): void {
     this.notifications.update((liste) => [notif, ...liste]);
+  }
+
+  chargerNotifications(): void {
+    this.http.get<any>(`${environment.apiUrl}/notifications/`).subscribe({
+      next: (reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : (reponse?.results || []);
+        const adaptees: NotificationGerant[] = liste.map((n: any) => ({
+          id: String(n.id),
+          titre: n.titre || 'Notification',
+          message: n.message || '',
+          texteVocal: n.texteVocal || n.texte_vocal || '',
+          heure: n.heure || '',
+          lue: Boolean(n.lue),
+          type: n.type || 'COMMANDE',
+          numeroCommande: n.numeroCommande || n.numero_commande
+        }));
+        this.notifications.set(adaptees);
+      },
+      error: () => {}
+    });
   }
 }
