@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceAuthentification } from '../../socle/services/service-authentification.service';
 
@@ -214,9 +214,20 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
     </div>
   `
 })
-export class ProfilComponent {
+export class ProfilComponent implements OnInit {
   readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly routeur = inject(Router);
+
+  ngOnInit(): void {
+    if (this.serviceAuthentification.estLivreur()) {
+      this.routeur.navigate(['/livreur/profil'], { replaceUrl: true });
+      return;
+    }
+    if (this.serviceAuthentification.estGerant()) {
+      this.routeur.navigate(['/gerant/profil'], { replaceUrl: true });
+      return;
+    }
+  }
 
   deconnecter(): void {
     this.serviceAuthentification.deconnecter();

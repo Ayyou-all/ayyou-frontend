@@ -63,7 +63,7 @@
       <!-- Profil Utilisateur (Connecté) OU Actions Visiteur (Non Connecté) -->
       @if (serviceAuthentification.estAuthentifie()) {
         <a
-          routerLink="/profil"
+          [routerLink]="obtenirCheminProfil()"
           class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
         >
           <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
@@ -77,7 +77,9 @@
             <div class="text-xs font-bold text-slate-900 truncate max-w-[100px]">
               {{ serviceAuthentification.utilisateurConnecte()?.prenom }}
             </div>
-            <div class="text-[10px] text-slate-400 font-medium">Client</div>
+            <div class="text-[10px] text-slate-400 font-medium">
+              {{ serviceAuthentification.estLivreur() ? 'Livreur' : (serviceAuthentification.estGerant() ? 'Gérant' : (serviceAuthentification.estAdministrateur() ? 'Admin' : 'Client')) }}
+            </div>
           </div>
         </a>
       } @else {
@@ -124,7 +126,7 @@
   <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-3 py-2 flex items-center justify-around">
     @for (onglet of listeOnglets; track onglet.code) {
       <a
-        [routerLink]="onglet.chemin"
+        [routerLink]="obtenirCheminOnglet(onglet)"
         (click)="gererClicOnglet($event, onglet)"
         class="flex flex-col items-center justify-center py-1 px-2 relative transition-all group cursor-pointer"
       >

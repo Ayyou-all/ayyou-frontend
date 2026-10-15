@@ -69,22 +69,53 @@ export class MiseEnPageClientComponent {
     }
   ];
 
+  // Calcul du chemin dynamique pour le profil selon le rôle de l'utilisateur
+  obtenirCheminProfil(): string {
+    if (this.serviceAuthentification.estLivreur()) {
+      return '/livreur/profil';
+    }
+    if (this.serviceAuthentification.estGerant()) {
+      return '/gerant/profil';
+    }
+    if (this.serviceAuthentification.estAdministrateur()) {
+      return '/administration';
+    }
+    return '/profil';
+  }
+
+  obtenirCheminOnglet(onglet: OngletNavigation): string {
+    if (onglet.code === 'profil') {
+      return this.obtenirCheminProfil();
+    }
+    return onglet.chemin;
+  }
+
   // Calcul de l'URL courante pour l'onglet actif
   estOngletActif(chemin: string): boolean {
     return this.routeur.url.startsWith(chemin);
   }
 
   /**
-   * Intercepte le clic sur les onglets sensibles (Commandes, Profil) en mode visiteur.
+   * Intercepte le clic sur les onglets sensibles (Commandes, Profil) en mode visiteur ou selon le rôle.
    */
   gererClicOnglet(evenement: Event, onglet: OngletNavigation): void {
+    if (onglet.code === 'profil' && this.serviceAuthentification.estAuthentifie()) {
+      const cheminCible = this.obtenirCheminProfil();
+      if (cheminCible !== '/profil') {
+        evenement.preventDefault();
+        evenement.stopPropagation();
+        this.routeur.navigate([cheminCible]);
+        return;
+      }
+    }
+
     if ((onglet.code === 'commandes' || onglet.code === 'profil') && !this.serviceAuthentification.estAuthentifie()) {
       evenement.preventDefault();
       evenement.stopPropagation();
       this.serviceAuthentification.exigerAuthentification(
         'ESPACE_PRIVE',
         () => {
-          this.routeur.navigate([onglet.chemin]);
+          this.routeur.navigate([this.obtenirCheminOnglet(onglet)]);
         },
         {
           titre: onglet.code === 'commandes' ? 'Mes Commandes' : 'Mon Profil',
