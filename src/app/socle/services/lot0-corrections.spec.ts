@@ -52,7 +52,8 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       courriel: `${role.toLowerCase()}@test.ayyou.sn`,
       telephone: '+221770000000',
       role,
-      estActif: true
+      estActif: true,
+      dateCreation: new Date().toISOString()
     });
   }
 
@@ -74,6 +75,30 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
   });
 
   describe('B. Cycle de vie des commandes — Remise au livreur', () => {
+    beforeEach(() => {
+      serviceRestaurant.commandesKanban.set([
+        {
+          numero: '#1240',
+          clientNom: 'Amadou Diallo',
+          totalMontant: '12 500 FCFA',
+          totalValeurNumerique: 12500,
+          typeLivraison: 'LIVRAISON',
+          statut: 'PRETES',
+          articles: [{ nom: 'Thieboudienne Penda Mbaye', quantite: 2 }]
+        },
+        {
+          numero: '#1239',
+          clientNom: 'Fatou Sow',
+          totalMontant: '6 000 FCFA',
+          totalValeurNumerique: 6000,
+          typeLivraison: 'A_EMPORTER',
+          statut: 'PRETES',
+          articles: [{ nom: 'Yassa Poulet', quantite: 1 }]
+        }
+      ]);
+      serviceRestaurant.historiqueCommandes.set([]);
+    });
+
     it('ne doit PAS marquer une commande de livraison comme LIVRÉE lors de la remise au livreur', () => {
       // #1240 est une commande de type LIVRAISON
       const cmdAvant = serviceRestaurant.commandesKanban().find((c) => c.numero === '#1240');
@@ -110,6 +135,26 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
   });
 
   describe('C. Validation du code PIN de sécurité', () => {
+    beforeEach(() => {
+      serviceLivreur.courseEnCours.set({
+        identifiantCommande: '1240',
+        restaurantNom: 'Le Teranga',
+        restaurantAdresse: 'Plateau',
+        restaurantTelephone: '+221 33 800 00 00',
+        comptoirRetrait: 'Guichet 1',
+        clientNom: 'Client Test',
+        clientTelephone: '+221 77 000 00 00',
+        clientAdresse: 'Almadies',
+        clientInstructions: 'Appeler à l entrée',
+        distanceKm: 3.2,
+        gainFcfa: 1500,
+        tempsRestantSec: 300,
+        tempsTrajetMin: 12,
+        codeValidation: '8245',
+        articles: []
+      });
+      serviceLivreur.etapeCourse.set('VALIDATION_CODE');
+    });
     it('doit refuser un code incomplet ou de mauvaise longueur', () => {
       const res = serviceLivreur.verifierCodeValidation('12');
       expect(res.valide).toBe(false);

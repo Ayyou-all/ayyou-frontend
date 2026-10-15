@@ -596,6 +596,13 @@ export class ServiceLivreurService {
   }
 
   validerCode(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
+    if (this.etapeCourse() === 'LIVRE' || !this.courseEnCours()) {
+      return {
+        valide: false,
+        message: 'Cette livraison a déjà été validée et clôturée.'
+      };
+    }
+
     if (codeSaisi.length !== 4) {
       return {
         valide: false,
@@ -603,28 +610,35 @@ export class ServiceLivreurService {
       };
     }
 
-    const payload: any = { code_pin: codeSaisi };
-    if (identifiantCommande) {
-      payload.commande_reference = identifiantCommande;
+    if (!/^\d{4}$/.test(codeSaisi)) {
+      return {
+        valide: false,
+        message: 'Le code de confirmation doit comporter uniquement des chiffres.'
+      };
     }
-
-    this.http
-      .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
-      .subscribe({
-        next: (res) => {
-          this.terminerLivraison(res?.gain_fcfa);
-        },
-        error: () => {}
-      });
 
     const course = this.courseEnCours();
     if (course && course.codeValidation && course.codeValidation === codeSaisi) {
+      const payload: any = { code_pin: codeSaisi };
+      if (identifiantCommande) {
+        payload.commande_reference = identifiantCommande;
+      }
+
+      this.http
+        .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
+        .subscribe({
+          next: (res) => {
+            this.terminerLivraison(res?.gain_fcfa);
+          },
+          error: () => {}
+        });
+
       return { valide: true, message: 'Code validé avec succès.' };
     }
 
     return {
       valide: false,
-      message: 'Code de confirmation incorrect. Demandez le code PIN au client.'
+      message: 'Code de sécurité incorrect. Demandez le code PIN au client.'
     };
   }
 
