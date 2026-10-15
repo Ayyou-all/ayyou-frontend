@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, computed, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 
 export type CategorieMenuGerant = 'PLATS_PRINCIPAUX' | 'BOISSONS' | 'DESSERTS';
 
@@ -23,8 +27,15 @@ export interface PlatGerant {
   templateUrl: './gerant-menu.component.html'
 })
 export class GerantMenuComponent {
+  private readonly http = inject(HttpClient);
+  private readonly serviceAuth = inject(ServiceAuthentification);
+
+  // Nom dynamique du restaurant
+  readonly nomRestaurant = signal<string>('Mon Restaurant');
+
   // Recherche textuelle
   readonly rechercheTexte = signal<string>('');
+  readonly chargementEnCours = signal<boolean>(false);
 
   // Notification Toast
   readonly notificationSucces = signal<string | null>(null);
@@ -44,85 +55,73 @@ export class GerantMenuComponent {
   readonly nouvelleCategorie = signal<CategorieMenuGerant>('PLATS_PRINCIPAUX');
   readonly nouvellePhoto = signal<string>('');
   readonly nomFichierPhoto = signal<string>('');
+  readonly fichierPhotoChoisi = signal<File | null>(null);
 
   // Modale d'édition de plat
   readonly platEnEdition = signal<PlatGerant | null>(null);
   readonly modaleEditionOuverte = signal<boolean>(false);
+  readonly fichierPhotoEditionChoisi = signal<File | null>(null);
 
   // Modale Aperçu Menu Client
   readonly modaleApercuClientOuverte = signal<boolean>(false);
 
-  // Liste des plats du menu (conformes à l'Image 2)
-  readonly listePlats = signal<PlatGerant[]>([
-    // PLATS PRINCIPAUX
-    {
-      identifiant: 'plat-01',
-      nom: 'Thieboudienne Rouge',
-      description: 'Riz au poisson à la sénégalaise, servi avec légumes du terroir et sauce nététou...',
-      prix: 4500,
-      categorie: 'PLATS_PRINCIPAUX',
-      estDisponible: true,
-      photoUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300',
-      badges: ['BEST-SELLER', 'POPULAIRE']
-    },
-    {
-      identifiant: 'plat-02',
-      nom: 'Yassa Poulet',
-      description: 'Poulet mariné au citron et oignons caramélisés, servi avec riz blanc parfumé...',
-      prix: 3800,
-      categorie: 'PLATS_PRINCIPAUX',
-      estDisponible: false, // En rupture (Image 2)
-      photoUrl: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=300'
-    },
-    {
-      identifiant: 'plat-03',
-      nom: 'Mafe Boeuf',
-      description: 'Ragoût à la sauce d’arachide onctueuse, viande de bœuf tendre et légumes...',
-      prix: 4200,
-      categorie: 'PLATS_PRINCIPAUX',
-      estDisponible: true,
-      photoUrl: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=300'
-    },
-    {
-      identifiant: 'plat-04',
-      nom: 'Dibi d’Agneau Braisé',
-      description: 'Morceaux d’agneau grillés au feu de bois, oignons marinés et moutarde piquante...',
-      prix: 5500,
-      categorie: 'PLATS_PRINCIPAUX',
-      estDisponible: true,
-      photoUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300',
-      badges: ['POPULAIRE']
-    },
+  // Logo et Couverture réels de l'établissement
+  readonly logoRestaurant = signal<string | null>(null);
+  readonly couvertureRestaurant = signal<string | null>(null);
+  readonly adresseRestaurant = signal<string>('');
+  readonly specialiteRestaurant = signal<string>('');
 
-    // BOISSONS
-    {
-      identifiant: 'bois-01',
-      nom: 'Bissap Maison',
-      description: 'Jus de fleurs d’hibiscus infusées, menthe fraîche et arôme naturel de vanille...',
-      prix: 1000,
-      categorie: 'BOISSONS',
-      estDisponible: true,
-      photoUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=300'
-    },
-    {
-      identifiant: 'bois-02',
-      nom: 'Bouye (Baobab)',
-      description: 'Jus onctueux au fruit du baobab, riche en vitamines et légèrement vanillé...',
-      prix: 1500,
-      categorie: 'BOISSONS',
-      estDisponible: true,
-      photoUrl: 'https://images.unsplash.com/photo-1534353473418-4cfa6c56fd38?w=300'
-    },
-    {
-      identifiant: 'bois-03',
-      nom: 'Jus de Gingembre Citron',
-      description: 'Pur gingembre frais pressé, jus de citron vert et sucre de canne...',
-      prix: 1200,
-      categorie: 'BOISSONS',
-      estDisponible: false, // En rupture
-      photoUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300'
+  // Liste des plats réels du restaurant
+  readonly listePlats = signal<PlatGerant[]>([]);
+
+  constructor() {
+    const user = this.serviceAuth.utilisateurConnecte();
+    if (user?.nomEtablissement) {
+      this.nomRestaurant.set(user.nomEtablissement);
     }
-  ]);
+    this.rafraichirEtablissement();
+    this.chargerMesPlats();
+  }
+
+  rafraichirEtablissement(): void {
+    this.http.get<any>(`${environment.apiUrl}/etablissements/mon-etablissement/`).subscribe({
+      next: (etab) => {
+        if (etab?.nom) this.nomRestaurant.set(etab.nom);
+        if (etab?.adresse_logo) this.logoRestaurant.set(etab.adresse_logo);
+        if (etab?.adresse_couverture) this.couvertureRestaurant.set(etab.adresse_couverture);
+        if (etab?.adresse) this.adresseRestaurant.set(etab.adresse);
+        if (etab?.specialite) this.specialiteRestaurant.set(etab.specialite);
+      },
+      error: () => {}
+    });
+  }
+
+
+
+  chargerMesPlats(): void {
+    this.chargementEnCours.set(true);
+    this.http.get<any[]>(`${environment.apiUrl}/catalogue/mes-plats/`).pipe(
+      map((plats) =>
+        plats.map((item) => ({
+          identifiant: String(item.id),
+          nom: item.nom,
+          description: item.description || '',
+          prix: Number(item.prix_fcfa),
+          categorie: (item.section_menu || 'PLATS_PRINCIPAUX') as CategorieMenuGerant,
+          estDisponible: Boolean(item.est_disponible),
+          photoUrl: item.adresse_image || '/images/plat-accueil.jpg',
+          badges: []
+        }))
+      ),
+      catchError(() => of([]))
+    ).subscribe({
+      next: (plats) => {
+        this.listePlats.set(plats);
+        this.chargementEnCours.set(false);
+      },
+      error: () => this.chargementEnCours.set(false)
+    });
+  }
 
   // Plats principaux filtrés
   readonly platsPrincipaux = computed(() => {
@@ -140,24 +139,33 @@ export class GerantMenuComponent {
     );
   });
 
-  // Métriques de la barre inférieure (Image 2)
-  readonly totalPlatsNombre = computed(() => 24);
+  // Métriques de la barre inférieure calculées sur les données réelles
+  readonly totalPlatsNombre = computed(() => this.listePlats().length);
   readonly enRuptureNombre = computed(
     () => this.listePlats().filter((p) => !p.estDisponible).length
   );
 
   /**
-   * Bascule la disponibilité d'un plat (Disponible <-> Rupture).
+   * Bascule la disponibilité d'un plat dans la base Django.
    */
   basculerDisponibilite(plat: PlatGerant): void {
     const nouvelEtat = !plat.estDisponible;
-    this.listePlats.update((liste) =>
-      liste.map((p) => (p.identifiant === plat.identifiant ? { ...p, estDisponible: nouvelEtat } : p))
-    );
-
-    const texteEtat = nouvelEtat ? 'disponible' : 'en rupture';
-    this.notificationSucces.set(`Le plat "${plat.nom}" est désormais marqué comme ${texteEtat}.`);
-    setTimeout(() => this.notificationSucces.set(null), 2500);
+    this.http.patch(`${environment.apiUrl}/catalogue/mes-plats/${plat.identifiant}/disponibilite/`, {
+      est_disponible: nouvelEtat
+    }).subscribe({
+      next: () => {
+        this.listePlats.update((liste) =>
+          liste.map((p) => (p.identifiant === plat.identifiant ? { ...p, estDisponible: nouvelEtat } : p))
+        );
+        const texteEtat = nouvelEtat ? 'disponible' : 'en rupture';
+        this.notificationSucces.set(`Le plat "${plat.nom}" est désormais marqué comme ${texteEtat}.`);
+        setTimeout(() => this.notificationSucces.set(null), 2500);
+      },
+      error: () => {
+        this.notificationSucces.set(`Erreur lors de la modification de "${plat.nom}".`);
+        setTimeout(() => this.notificationSucces.set(null), 3000);
+      }
+    });
   }
 
   /**
@@ -187,6 +195,7 @@ export class GerantMenuComponent {
         return;
       }
 
+      this.fichierPhotoChoisi.set(fichier);
       const lecteur = new FileReader();
       lecteur.onload = (e) => {
         if (e.target?.result) {
@@ -204,6 +213,7 @@ export class GerantMenuComponent {
   reinitialiserPhoto(): void {
     this.nouvellePhoto.set('');
     this.nomFichierPhoto.set('');
+    this.fichierPhotoChoisi.set(null);
   }
 
   /**
@@ -222,6 +232,7 @@ export class GerantMenuComponent {
         return;
       }
 
+      this.fichierPhotoEditionChoisi.set(fichier);
       const lecteur = new FileReader();
       lecteur.onload = (e) => {
         if (e.target?.result && this.platEnEdition()) {
@@ -235,26 +246,62 @@ export class GerantMenuComponent {
   }
 
   /**
-   * Crée un nouveau plat dans la carte.
+   * Crée un nouveau plat dans la carte réelle via l'API Django.
    */
   creerPlat(): void {
     const nom = this.nouveauNom().trim();
     if (!nom) return;
 
-    const nouveau: PlatGerant = {
-      identifiant: `plat-${Date.now()}`,
-      nom: nom,
-      description: this.nouvelleDescription() || 'Plat fait maison avec des ingrédients frais du terroir sénégalais.',
-      prix: this.nouveauPrix(),
-      categorie: this.nouvelleCategorie(),
-      estDisponible: true,
-      photoUrl: this.nouvellePhoto() || '/images/plat-accueil.jpg'
-    };
+    const desc = this.nouvelleDescription() || 'Plat fait maison avec des ingrédients frais du terroir sénégalais.';
+    const prix = this.nouveauPrix();
+    const cat = this.nouvelleCategorie();
 
-    this.listePlats.update((liste) => [nouveau, ...liste]);
-    this.notificationSucces.set(`Le plat "${nouveau.nom}" a été ajouté à la carte avec succès.`);
-    this.modaleAjoutOuverte.set(false);
-    setTimeout(() => this.notificationSucces.set(null), 3000);
+    let requete: any;
+    if (this.fichierPhotoChoisi()) {
+      const formData = new FormData();
+      formData.append('nom', nom);
+      formData.append('description', desc);
+      formData.append('prix_fcfa', String(prix));
+      formData.append('section_menu', cat);
+      formData.append('est_disponible', 'true');
+      formData.append('image', this.fichierPhotoChoisi()!);
+      requete = this.http.post<any>(`${environment.apiUrl}/catalogue/mes-plats/`, formData);
+    } else {
+      const payload = {
+        nom: nom,
+        description: desc,
+        prix_fcfa: prix,
+        section_menu: cat,
+        est_disponible: true
+      };
+      requete = this.http.post<any>(`${environment.apiUrl}/catalogue/mes-plats/`, payload);
+    }
+
+    requete.subscribe({
+      next: (item: any) => {
+        const nouveau: PlatGerant = {
+          identifiant: String(item.id),
+          nom: item.nom,
+          description: item.description || desc,
+          prix: Number(item.prix_fcfa),
+          categorie: (item.section_menu || cat) as CategorieMenuGerant,
+          estDisponible: true,
+          photoUrl: item.adresse_image || this.nouvellePhoto() || '/images/plat-accueil.jpg'
+        };
+
+        this.listePlats.update((liste) => [nouveau, ...liste]);
+        this.notificationSucces.set(`Le plat "${nouveau.nom}" a été ajouté à la carte avec succès.`);
+        this.modaleAjoutOuverte.set(false);
+        this.reinitialiserPhoto();
+        this.nouveauNom.set('');
+        this.nouvelleDescription.set('');
+        setTimeout(() => this.notificationSucces.set(null), 3000);
+      },
+      error: () => {
+        this.notificationSucces.set(`Erreur lors de l'enregistrement de "${nom}".`);
+        setTimeout(() => this.notificationSucces.set(null), 3000);
+      }
+    });
   }
 
   /**
@@ -262,35 +309,73 @@ export class GerantMenuComponent {
    */
   editerPlat(plat: PlatGerant): void {
     this.platEnEdition.set({ ...plat });
+    this.fichierPhotoEditionChoisi.set(null);
     this.modaleEditionOuverte.set(true);
   }
 
   /**
-   * Sauvegarde les modifications d'un plat.
+   * Sauvegarde les modifications d'un plat via l'API Django.
    */
   sauvegarderPlat(): void {
     const p = this.platEnEdition();
     if (!p) return;
 
-    this.listePlats.update((liste) =>
-      liste.map((item) => (item.identifiant === p.identifiant ? { ...p } : item))
-    );
+    let requete: any;
+    if (this.fichierPhotoEditionChoisi()) {
+      const formData = new FormData();
+      formData.append('nom', p.nom);
+      formData.append('description', p.description);
+      formData.append('prix_fcfa', String(p.prix));
+      formData.append('section_menu', p.categorie);
+      formData.append('image', this.fichierPhotoEditionChoisi()!);
+      requete = this.http.patch<any>(`${environment.apiUrl}/catalogue/mes-plats/${p.identifiant}/`, formData);
+    } else {
+      const payload = {
+        nom: p.nom,
+        description: p.description,
+        prix_fcfa: p.prix,
+        section_menu: p.categorie
+      };
+      requete = this.http.patch<any>(`${environment.apiUrl}/catalogue/mes-plats/${p.identifiant}/`, payload);
+    }
 
-    this.notificationSucces.set(`Le plat "${p.nom}" a été mis à jour.`);
-    this.modaleEditionOuverte.set(false);
-    this.platEnEdition.set(null);
-    setTimeout(() => this.notificationSucces.set(null), 2500);
+    requete.subscribe({
+      next: (item: any) => {
+        const photoUrl = item?.adresse_image || p.photoUrl;
+        this.listePlats.update((liste) =>
+          liste.map((elem) => (elem.identifiant === p.identifiant ? { ...p, photoUrl } : elem))
+        );
+
+        this.notificationSucces.set(`Le plat "${p.nom}" a été mis à jour.`);
+        this.modaleEditionOuverte.set(false);
+        this.platEnEdition.set(null);
+        this.fichierPhotoEditionChoisi.set(null);
+        setTimeout(() => this.notificationSucces.set(null), 2500);
+      },
+      error: () => {
+        this.notificationSucces.set(`Erreur lors de la mise à jour de "${p.nom}".`);
+        setTimeout(() => this.notificationSucces.set(null), 3000);
+      }
+    });
   }
 
   /**
-   * Supprime un plat de la carte.
+   * Supprime / archive un plat de la carte via l'API Django.
    */
   supprimerPlat(plat: PlatGerant): void {
     if (!confirm(`Supprimer définitivement "${plat.nom}" de la carte ?`)) return;
 
-    this.listePlats.update((liste) => liste.filter((p) => p.identifiant !== plat.identifiant));
-    this.notificationSucces.set(`Le plat "${plat.nom}" a été supprimé de la carte.`);
-    setTimeout(() => this.notificationSucces.set(null), 2500);
+    this.http.delete(`${environment.apiUrl}/catalogue/mes-plats/${plat.identifiant}/`).subscribe({
+      next: () => {
+        this.listePlats.update((liste) => liste.filter((p) => p.identifiant !== plat.identifiant));
+        this.notificationSucces.set(`Le plat "${plat.nom}" a été supprimé de la carte.`);
+        setTimeout(() => this.notificationSucces.set(null), 2500);
+      },
+      error: () => {
+        this.notificationSucces.set(`Erreur lors de la suppression de "${plat.nom}".`);
+        setTimeout(() => this.notificationSucces.set(null), 3000);
+      }
+    });
   }
 
   /**
@@ -304,10 +389,6 @@ export class GerantMenuComponent {
    * Exporte la carte au format PDF / Imprimable.
    */
   exporterCarte(): void {
-    this.notificationSucces.set('Génération du menu PDF prêt à imprimer pour "Le Teranga"...');
-    setTimeout(() => {
-      this.notificationSucces.set('Menu "carte-le-teranga.pdf" téléchargé.');
-      setTimeout(() => this.notificationSucces.set(null), 3000);
-    }, 1500);
+    window.print();
   }
 }

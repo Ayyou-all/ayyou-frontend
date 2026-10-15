@@ -4,6 +4,7 @@
  */
 
 export type StatutCommande =
+  | 'EN_ATTENTE_PAIEMENT'
   | 'EN_LIVRAISON'
   | 'PREPARATION'
   | 'LIVRE'
@@ -33,6 +34,7 @@ export interface LivreurCommande {
 
 export interface CommandeClient {
   identifiant: string; // Ex: "ORD-99238"
+  idNumerique?: number;
   nomRestaurant: string;
   adresseImageRestaurant: string;
   dateHeureTexte: string; // Ex: "Aujourd'hui, 13:45"
@@ -47,4 +49,11 @@ export interface CommandeClient {
   articles: ArticleCommande[];
   estEnCours: boolean;
   sourceVideoId?: string; // Attribution commerciale pour le studio vidéo
+  statutBrut?: string;
+  statutLibelle?: string;
+  adresseLivraison?: string;
+  latitudeLivraison?: number;
+  longitudeLivraison?: number;
+  restaurantLatitude?: number;
+  restaurantLongitude?: number;
 }

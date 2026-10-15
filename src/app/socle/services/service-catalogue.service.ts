@@ -1,9 +1,12 @@
 /**
  * Service gérant le catalogue, les publications du fil d'accueil et les restaurants partenaires.
- * Conforme aux données visibles sur les maquettes AYYOU.
+ * Consomme exclusivement l'API Django REST Framework sans aucune donnée mockée.
  */
 
-import { Injectable, computed, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, catchError, forkJoin, map, of, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { PublicationFil } from '../modeles/fil-actualite.modele';
 import { Plat } from '../modeles/plat.modele';
 import { CategorieRestaurant, Restaurant } from '../modeles/restaurant.modele';
@@ -12,375 +15,210 @@ import { CategorieRestaurant, Restaurant } from '../modeles/restaurant.modele';
   providedIn: 'root'
 })
 export class ServiceCatalogueService {
-  // Liste des catégories
-  readonly categories = signal<CategorieRestaurant[]>([
-    {
-      identifiant: 'cat-plats',
-      nom: 'Plats',
-      icone: 'fa-solid fa-utensils',
-      couleurFond: 'bg-rose-50',
-      couleurTexte: 'text-[#E51824]'
-    },
-    {
-      identifiant: 'cat-burgers',
-      nom: 'Burgers',
-      icone: 'fa-solid fa-burger',
-      couleurFond: 'bg-rose-50',
-      couleurTexte: 'text-[#E51824]'
-    },
-    {
-      identifiant: 'cat-poulet',
-      nom: 'Poulet',
-      icone: 'fa-solid fa-drumstick-bite',
-      couleurFond: 'bg-rose-50',
-      couleurTexte: 'text-[#E51824]'
-    },
-    {
-      identifiant: 'cat-poisson',
-      nom: 'Poisson',
-      icone: 'fa-solid fa-fish',
-      couleurFond: 'bg-rose-50',
-      couleurTexte: 'text-[#E51824]'
-    },
-    {
-      identifiant: 'cat-desserts',
-      nom: 'Desserts',
-      icone: 'fa-solid fa-ice-cream',
-      couleurFond: 'bg-rose-50',
-      couleurTexte: 'text-[#E51824]'
-    },
-    {
-      identifiant: 'cat-boissons',
-      nom: 'Boissons',
-      icone: 'fa-solid fa-bottle-water',
-      couleurFond: 'bg-rose-50',
-      couleurTexte: 'text-[#E51824]'
-    }
-  ]);
+  private readonly http = inject(HttpClient);
 
-  // Liste des restaurants partenaires
-  readonly restaurants = signal<Restaurant[]>([
-    {
-      identifiant: 'resto-chez-habitant',
-      nom: "Chez L'Habitant",
-      nomUtilisateur: '@chezlhabitant',
-      description: 'Cuisine authentique sénégalaise préparée avec passion et tradition.',
-      specialite: 'Cuisine authentique sénégalaise • Plateau, Dakar',
-      adresse: 'Rue Carnot, Plateau',
-      quartierVille: 'Keur Massar',
-      heureFermeture: '23h 30',
-      estOuvert: true,
-      noteMoyenne: 4.8,
-      nombreAvis: 342,
-      adresseLogo: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-      adresseCouverture: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200',
-      plats: [
-        {
-          identifiant: 'plat-thieb-royal',
-          identifiantRestaurant: 'resto-chez-habitant',
-          nomRestaurant: "Chez L'Habitant",
-          nom: 'Thieboudienne Royal',
-          description: 'Riz rouge traditionnel au poisson, servi avec légumes frais et sauce gombo.',
-          prixFcfa: 3500,
-          adresseImage: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        },
-        {
-          identifiant: 'plat-yassa-poulet',
-          identifiantRestaurant: 'resto-chez-habitant',
-          nomRestaurant: "Chez L'Habitant",
-          nom: 'Yassa au Poulet',
-          description: 'Poulet mariné au citron et oignons caramélisés, servi avec riz blanc.',
-          prixFcfa: 3000,
-          adresseImage: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        },
-        {
-          identifiant: 'plat-mafe-boeuf',
-          identifiantRestaurant: 'resto-chez-habitant',
-          nomRestaurant: "Chez L'Habitant",
-          nom: 'Mafe au Bœuf',
-          description: "Ragoût de bœuf à la pâte d'arachide et légumes, onctueux et savoureux.",
-          prixFcfa: 2800,
-          adresseImage: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400',
-          categorie: 'Plats',
-          statut: 'INDISPONIBLE'
-        },
-        {
-          identifiant: 'plat-pastels',
-          identifiantRestaurant: 'resto-chez-habitant',
-          nomRestaurant: "Chez L'Habitant",
-          nom: 'Pastels (6 pcs)',
-          description: 'Petits chaussons au thon servis avec une sauce tomate épicée.',
-          prixFcfa: 1500,
-          adresseImage: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=400',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        }
-      ]
-    },
-    {
-      identifiant: 'resto-aissatou-foot',
-      nom: 'Aissatou Foot',
-      nomUtilisateur: '@aissatoufood',
-      description: 'Saveurs africaines et petits plats mijotés au cœur de Keur Massar.',
-      specialite: 'Saveurs locales & Plats du jour',
-      adresse: 'Route de Keur Massar',
-      quartierVille: 'Keur Masssar',
-      heureFermeture: '22h 00',
-      estOuvert: true,
-      noteMoyenne: 4.6,
-      nombreAvis: 198,
-      adresseLogo: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150',
-      adresseCouverture: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
-      plats: [
-        {
-          identifiant: 'plat-aissatou-salade',
-          identifiantRestaurant: 'resto-aissatou-foot',
-          nomRestaurant: 'Aissatou Foot',
-          nom: 'Salade Gourmande Patate & Fromage',
-          description: 'Bol équilibré avec patates douces rôties, graines torréfiées et fromage frais.',
-          prixFcfa: 3500,
-          adresseImage: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        }
-      ]
-    },
-    {
-      identifiant: 'resto-chez-loutcha',
-      nom: 'Chez Loutcha',
-      nomUtilisateur: '@chezloutcha',
-      description: 'Une institution de la gastronomie dakaroise depuis plus de 30 ans.',
-      specialite: 'Thiéboudienne authentique & spécialités ouest-africaines',
-      adresse: 'Rue Raffenel, Dakar Plateau',
-      quartierVille: 'Dakar Plateau',
-      heureFermeture: '23h 00',
-      estOuvert: true,
-      noteMoyenne: 4.9,
-      nombreAvis: 820,
-      adresseLogo: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-      adresseCouverture: '/images/plat-accueil.jpg',
-      plats: [
-        {
-          identifiant: 'plat-thieb-penda',
-          identifiantRestaurant: 'resto-chez-loutcha',
-          nomRestaurant: 'Chez Loutcha',
-          nom: 'Thiéboudienne Penda Mbaye',
-          description: 'Le vrai goût du Sénégal livré chez vous.',
-          prixFcfa: 4500,
-          adresseImage: '/images/plat-accueil.jpg',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        }
-      ]
-    },
-    {
-      identifiant: 'resto-chez-fatou',
-      nom: 'Chez Fatou',
-      nomUtilisateur: '@chezfatou',
-      description: 'Restaurant et lounge en bord de mer aux Almadies. Cuisine sénégalaise et fruits de mer frais.',
-      specialite: 'Poissons braisés, Thieboudienne Royal & Cocktails locaux',
-      adresse: 'Route des Almadies, Dakar',
-      quartierVille: 'Almadies, Dakar',
-      heureFermeture: '00h 00',
-      estOuvert: true,
-      noteMoyenne: 4.9,
-      nombreAvis: 1250,
-      adresseLogo: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-      adresseCouverture: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200',
-      plats: [
-        {
-          identifiant: 'plat-thieb-royal',
-          identifiantRestaurant: 'resto-chez-fatou',
-          nomRestaurant: 'Chez Fatou',
-          nom: 'Thieboudienne Royal',
-          description:
-            'Le plat national par excellence. Riz rouge parfumé cuit dans un bouillon de poisson et légumes, accompagné de mérou frais, manioc, carotte, chou et sa sauce gombo onctueuse.',
-          prixFcfa: 3500,
-          adresseImage: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        },
-        {
-          identifiant: 'plat-bissap-fatou',
-          identifiantRestaurant: 'resto-chez-fatou',
-          nomRestaurant: 'Chez Fatou',
-          nom: 'Bissap Frais Maison',
-          description: '50cl, Sans sucre ajouté, menthe fraîche infusée.',
-          prixFcfa: 1000,
-          adresseImage: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400',
-          categorie: 'Boissons',
-          statut: 'DISPONIBLE'
-        },
-        {
-          identifiant: 'plat-pastels-fatou',
-          identifiantRestaurant: 'resto-chez-fatou',
-          nomRestaurant: 'Chez Fatou',
-          nom: 'Pastels Dorés au Thon (8 pcs)',
-          description: 'Beignets croustillants servis chauds avec sauce tomate pimentée maison.',
-          prixFcfa: 2000,
-          adresseImage: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=400',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        }
-      ]
-    },
-    {
-      identifiant: 'resto-chez-aissatou',
-      nom: 'Chez Aissatou',
-      nomUtilisateur: '@chezaissatou',
-      description: 'Cuisine traditionnelle sénégalaise préparée au feu de bois.',
-      specialite: 'Plats sénégalais & Jus locaux',
-      adresse: 'Rond-point 6, Keur Massar',
-      quartierVille: 'Keur Massar',
-      heureFermeture: '22h 30',
-      estOuvert: true,
-      noteMoyenne: 4.7,
-      nombreAvis: 310,
-      adresseLogo: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150',
-      adresseCouverture: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200',
-      plats: [
-        {
-          identifiant: 'plat-aissatou-salade',
-          identifiantRestaurant: 'resto-chez-aissatou',
-          nomRestaurant: 'Chez Aissatou',
-          nom: 'Bowl Gourmand Keur Massar',
-          description: 'Patates douces rôties, graines torréfiées et fromage frais.',
-          prixFcfa: 3500,
-          adresseImage: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
-          categorie: 'Plats',
-          statut: 'DISPONIBLE'
-        },
-        {
-          identifiant: 'plat-bissap-aissatou',
-          identifiantRestaurant: 'resto-chez-aissatou',
-          nomRestaurant: 'Chez Aissatou',
-          nom: 'Bissap Frais',
-          description: '50cl, fleur d’hibiscus du Sénégal.',
-          prixFcfa: 1000,
-          adresseImage: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400',
-          categorie: 'Boissons',
-          statut: 'DISPONIBLE'
-        }
-      ]
-    }
-  ]);
+  // État réactif du catalogue alimenté par l'API réelle
+  readonly categories = signal<CategorieRestaurant[]>([]);
+  readonly restaurants = signal<Restaurant[]>([]);
+  readonly plats = signal<Plat[]>([]);
+  readonly publicationsFil = signal<PublicationFil[]>([]);
 
-  // Publications du fil immersif d'accueil (vidéos style TikTok / Reels culinaires)
-  readonly publicationsFil = signal<PublicationFil[]>([
-    {
-      identifiant: 'pub-01',
-      identifiantRestaurant: 'resto-chez-loutcha',
-      nomRestaurant: 'Chez Loutcha',
-      nomUtilisateurRestaurant: '@chezloutcha',
-      adresseLogoRestaurant: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-      estAbonne: false,
-      plat: {
-        identifiant: 'plat-thieb-penda',
-        identifiantRestaurant: 'resto-chez-loutcha',
-        nomRestaurant: 'Chez Loutcha',
-        nom: 'Thiéboudienne Penda Mbaye',
-        description: 'Le vrai goût du Sénégal livré chez vous.',
-        prixFcfa: 4500,
-        adresseImage: '/images/plat-accueil.jpg',
-        categorie: 'Plats',
-        statut: 'DISPONIBLE'
-      },
-      descriptionAccroche: 'Le vrai goût du Sénégal livré chez vous.',
-      adresseMedia: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200',
-      adresseVideo: 'https://assets.mixkit.co/videos/preview/mixkit-serving-dinner-in-a-restaurant-42795-large.mp4',
-      typeMedia: 'VIDEO',
-      nombreJeaime: '1.2k',
-      estAime: true,
-      nombrePartages: 48
-    },
-    {
-      identifiant: 'pub-02',
-      identifiantRestaurant: 'resto-chez-habitant',
-      nomRestaurant: "Chez L'Habitant",
-      nomUtilisateurRestaurant: '@chezlhabitant',
-      adresseLogoRestaurant: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150',
-      estAbonne: true,
-      plat: {
-        identifiant: 'plat-yassa-poulet',
-        identifiantRestaurant: 'resto-chez-habitant',
-        nomRestaurant: "Chez L'Habitant",
-        nom: 'Yassa au Poulet Confit',
-        description: 'Mariné au citron vert et oignons dorés caramélisés.',
-        prixFcfa: 3000,
-        adresseImage: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400',
-        categorie: 'Poulet',
-        statut: 'DISPONIBLE'
-      },
-      descriptionAccroche: 'Un délice citronné qui réveille vos papilles !',
-      adresseMedia: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=1200',
-      adresseVideo: 'https://assets.mixkit.co/videos/preview/mixkit-chef-garnishing-a-delicious-dish-42798-large.mp4',
-      typeMedia: 'VIDEO',
-      nombreJeaime: '850',
-      estAime: false,
-      nombrePartages: 22
-    },
-    {
-      identifiant: 'pub-03',
-      identifiantRestaurant: 'resto-chez-habitant',
-      nomRestaurant: "Chez L'Habitant",
-      nomUtilisateurRestaurant: '@chezlhabitant',
-      adresseLogoRestaurant: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150',
-      estAbonne: true,
-      plat: {
-        identifiant: 'plat-pastels',
-        identifiantRestaurant: 'resto-chez-habitant',
-        nomRestaurant: "Chez L'Habitant",
-        nom: 'Pastels Dorés au Thon (6 pcs)',
-        description: 'Petits chaussons croustillants servis avec sauce tomate pimentée maison.',
-        prixFcfa: 1500,
-        adresseImage: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=400',
-        categorie: 'Plats',
-        statut: 'DISPONIBLE'
-      },
-      descriptionAccroche: 'Craquants à l’extérieur, fondants au thon à l’intérieur !',
-      adresseMedia: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=1200',
-      adresseVideo: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-chef-slicing-and-preparing-food-42796-large.mp4',
-      typeMedia: 'VIDEO',
-      nombreJeaime: '2.4k',
-      estAime: true,
-      nombrePartages: 63
-    },
-    {
-      identifiant: 'pub-04',
-      identifiantRestaurant: 'resto-aissatou-foot',
-      nomRestaurant: 'Aissatou Foot',
-      nomUtilisateurRestaurant: '@aissatoufood',
-      adresseLogoRestaurant: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150',
-      estAbonne: false,
-      plat: {
-        identifiant: 'plat-aissatou-salade',
-        identifiantRestaurant: 'resto-aissatou-foot',
-        nomRestaurant: 'Aissatou Foot',
-        nom: 'Bowl Gourmand Keur Massar',
-        description: 'Patates douces rôties, graines torréfiées et fromage frais.',
-        prixFcfa: 3500,
-        adresseImage: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
-        categorie: 'Plats',
-        statut: 'DISPONIBLE'
-      },
-      descriptionAccroche: 'La fraîcheur absolue préparée chaque matin à Keur Massar.',
-      adresseMedia: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200',
-      adresseVideo: 'https://assets.mixkit.co/videos/preview/mixkit-serving-dinner-in-a-restaurant-42795-large.mp4',
-      typeMedia: 'VIDEO',
-      nombreJeaime: '530',
-      estAime: false,
-      nombrePartages: 14
-    }
-  ]);
+  // États de chargement et d'erreur
+  readonly chargementEnCours = signal<boolean>(false);
+  readonly messageErreur = signal<string | null>(null);
+
+  // Plat actuellement sélectionné pour l'affichage de la fiche produit modale
+  readonly platSelectionnePourDetail = signal<Plat | null>(null);
+
+  constructor() {
+    this.chargerTout();
+  }
 
   /**
-   * Plat actuellement sélectionné pour l'affichage de la fiche produit modale (Image 1).
+   * Charge l'ensemble des données du catalogue depuis l'API Django REST Framework.
    */
-  readonly platSelectionnePourDetail = signal<Plat | null>(null);
+  chargerTout(): void {
+    this.chargementEnCours.set(true);
+    this.messageErreur.set(null);
+
+    forkJoin({
+      categories: this.chargerCategories(),
+      restaurants: this.chargerRestaurants(),
+      plats: this.chargerPlats(),
+      publications: this.chargerPublicationsFil()
+    }).subscribe({
+      next: (donnees) => {
+        const platsGlobal = donnees.plats;
+        const restosComplets = donnees.restaurants.map((r) => {
+          if (r.plats && r.plats.length > 0) return r;
+          const platsDuResto = platsGlobal.filter((p) => p.identifiantRestaurant === r.identifiant);
+          return { ...r, plats: platsDuResto };
+        });
+
+        this.categories.set(donnees.categories);
+        this.restaurants.set(restosComplets);
+        this.plats.set(platsGlobal);
+        this.publicationsFil.set(donnees.publications);
+        this.chargementEnCours.set(false);
+      },
+      error: () => {
+        this.chargementEnCours.set(false);
+        this.messageErreur.set('Impossible de charger le catalogue. Veuillez vérifier votre connexion au serveur.');
+      }
+    });
+  }
+
+  /**
+   * Récupère la liste des catégories officielles depuis Django.
+   */
+  chargerCategories(): Observable<CategorieRestaurant[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/categories/`).pipe(
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((cat: any) => ({
+          identifiant: String(cat.id || cat.slug || cat.identifiant),
+          nom: cat.nom,
+          icone: cat.icone || 'fa-solid fa-utensils',
+          couleurFond: cat.couleur_fond || cat.couleurFond || 'bg-rose-50',
+          couleurTexte: cat.couleur_texte || cat.couleurTexte || 'text-[#E51824]'
+        }));
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Récupère les restaurants partenaires et leurs plats associés depuis Django.
+   */
+  chargerRestaurants(): Observable<Restaurant[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/etablissements/`).pipe(
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((resto: any) => this.adapterRestaurant(resto));
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Récupère tous les plats réels actifs depuis Django.
+   */
+  chargerPlats(): Observable<Plat[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/plats/`).pipe(
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((p: any) => this.adapterPlat(p));
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Récupère le fil d'actualité des vidéos immersives (Reels culinaires) depuis Django.
+   */
+  chargerPublicationsFil(): Observable<PublicationFil[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/`).pipe(
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((pub: any) => this.adapterPublication(pub));
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  /**
+   * Récupère les vidéos publiées par un restaurant spécifique.
+   */
+  chargerVideosRestaurant(idRestaurant: string | number): Observable<PublicationFil[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/?etablissement=${idRestaurant}`).pipe(
+      map((reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
+        return liste.map((pub: any) => this.adapterPublication(pub));
+      }),
+      catchError(() => of([]))
+    );
+  }
+
+  adapterPublication(pub: any): PublicationFil {
+    return {
+      identifiant: String(pub.identifiant || pub.id),
+      identifiantRestaurant: String(pub.identifiantRestaurant || pub.etablissement?.id || pub.etablissement_id || ''),
+      nomRestaurant: pub.nomRestaurant || pub.etablissement?.nom || '',
+      nomUtilisateurRestaurant: pub.nomUtilisateurRestaurant || (pub.etablissement?.nom_utilisateur ? `@${pub.etablissement.nom_utilisateur}` : ''),
+      adresseLogoRestaurant: pub.adresseLogoRestaurant || pub.etablissement?.adresse_logo || pub.etablissement?.logo || '',
+      estAbonne: pub.estAbonne ?? pub.est_abonne ?? false,
+      plat: this.adapterPlat(pub.plat, pub.etablissement),
+      descriptionAccroche: pub.descriptionAccroche || pub.description || pub.titre || '',
+      adresseMedia: pub.adresseMedia || pub.image_miniature || pub.fichier_media || '',
+      adresseVideo: pub.adresseVideo || (pub.type_media === 'VIDEO' ? pub.fichier_media : '') || '',
+      typeMedia: pub.typeMedia || pub.type_media || 'VIDEO',
+      nombreJeaime: String(pub.nombreJeaime ?? pub.nombre_jaime ?? '0'),
+      estAime: pub.estAime ?? pub.est_aime ?? false,
+      nombrePartages: Number(pub.nombrePartages ?? pub.nombre_partages ?? 0)
+    };
+  }
+
+  /**
+   * Adapte l'objet Etablissement Django vers le modèle Restaurant frontend.
+   */
+  adapterRestaurant(resto: any): Restaurant {
+    return {
+      identifiant: String(resto.id),
+      nom: resto.nom,
+      nomUtilisateur: resto.nom_utilisateur ? `@${resto.nom_utilisateur}` : `@resto_${resto.id}`,
+      description: resto.description || '',
+      specialite: resto.specialite || 'Restauration',
+      adresse: resto.adresse || '',
+      quartierVille: resto.quartier_ville || resto.quartierVille || 'Dakar',
+      heureFermeture: resto.heure_fermeture ? String(resto.heure_fermeture).slice(0, 5) : '23:30',
+      estOuvert: resto.est_ouvert ?? true,
+      noteMoyenne: resto.note_moyenne ? Number(resto.note_moyenne) : 4.8,
+      nombreAvis: resto.nombre_avis ? Number(resto.nombre_avis) : 0,
+      adresseLogo: resto.adresse_logo || resto.logo || '',
+      adresseCouverture: resto.adresse_couverture || resto.couverture || '',
+      delaiLivraisonMinutes: resto.delai_livraison_estime_minutes || resto.delaiLivraisonMinutes || 30,
+      fraisLivraisonFcfa: Number(resto.frais_livraison_base_fcfa || resto.fraisLivraisonFcfa || 1000),
+      estAbonne: Boolean(resto.est_abonne),
+      estAime: Boolean(resto.est_aime),
+      nombreAbonnes: Number(resto.nombre_abonnes || 0),
+      nombreLikes: Number(resto.nombre_likes || 0),
+      nombreLikesVideos: Number(resto.nombre_likes_videos || resto.nombreLikesVideos || 0),
+      plats: (resto.plats || []).map((p: any) => this.adapterPlat(p, resto))
+    };
+  }
+
+  /**
+   * Adapte l'objet Plat Django vers le modèle Plat frontend sans mocks.
+   */
+  adapterPlat(p: any, resto?: any): Plat {
+    if (!p) {
+      return {
+        identifiant: '',
+        identifiantRestaurant: resto ? String(resto.id) : '',
+        nomRestaurant: resto ? resto.nom : '',
+        nom: '',
+        description: '',
+        prixFcfa: 0,
+        adresseImage: '',
+        categorie: 'Plats',
+        statut: 'DISPONIBLE'
+      };
+    }
+    return {
+      identifiant: String(p.id || p.identifiant || ''),
+      identifiantRestaurant: String(p.identifiant_etablissement || p.etablissement?.id || resto?.id || p.identifiantRestaurant || ''),
+      nomRestaurant: p.nom_etablissement || p.etablissement?.nom || resto?.nom || p.nomRestaurant || '',
+      nom: p.nom || '',
+      description: p.description || '',
+      prixFcfa: Number(p.prix_fcfa || p.prixFcfa || p.prix || 0),
+      adresseImage: p.adresse_image || p.adresseImage || p.image || '',
+      categorie: p.categorie?.nom || p.categorie || 'Plats',
+      statut: (p.est_disponible ?? (p.statut === 'DISPONIBLE')) ? 'DISPONIBLE' : 'INDISPONIBLE',
+      tempsPreparationMinutes: p.temps_preparation_minutes || p.tempsPreparationMinutes || 25,
+      noteMoyenne: p.note_moyenne || p.noteMoyenne || 4.8,
+      nombreCommandes: p.nombre_commandes || p.nombreCommandes || 0
+    };
+  }
 
   /**
    * Ouvre la modale de détail d'un plat.
@@ -403,29 +241,98 @@ export class ServiceCatalogueService {
     return this.restaurants().find((r) => r.identifiant === identifiant);
   }
 
+  trouverRestaurant(identifiant: string): Restaurant | undefined {
+    return this.trouverRestaurantParId(identifiant);
+  }
+
   /**
-   * Bascule l'état d'abonnement à un restaurant.
+   * Bascule l'état d'abonnement à un restaurant via l'API Django.
    */
   basculerAbonnementPublication(identifiantPublication: string): void {
-    this.publicationsFil.update((pubs) =>
-      pubs.map((p) => (p.identifiant === identifiantPublication ? { ...p, estAbonne: !p.estAbonne } : p))
+    const pub = this.publicationsFil().find((p) => p.identifiant === identifiantPublication);
+    if (!pub || !pub.identifiantRestaurant) {
+      return;
+    }
+
+    this.basculerAbonnementRestaurant(pub.identifiantRestaurant).subscribe({
+      next: (reponse) => {
+        const estAbonne = reponse?.estAbonne ?? !pub.estAbonne;
+        this.publicationsFil.update((pubs) =>
+          pubs.map((p) =>
+            p.identifiantRestaurant === pub.identifiantRestaurant
+              ? { ...p, estAbonne }
+              : p
+          )
+        );
+      },
+      error: () => {}
+    });
+  }
+
+  /**
+   * Bascule l'abonnement à un établissement partenaire.
+   */
+  basculerAbonnementRestaurant(idRestaurant: string | number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/abonnements/${idRestaurant}/basculer/`, {}).pipe(
+      tap((reponse) => {
+        const estAbonne = reponse?.estAbonne ?? true;
+        const nombreAbonnes = reponse?.nombreAbonnes;
+        this.restaurants.update((restos) =>
+          restos.map((r) =>
+            r.identifiant === String(idRestaurant)
+              ? { ...r, estAbonne, ...(nombreAbonnes !== undefined ? { nombreAbonnes } : {}) }
+              : r
+          )
+        );
+      })
     );
   }
 
   /**
-   * Bascule le "J'aime" sur une publication.
+   * Bascule la mention "J'aime" d'un établissement partenaire.
+   */
+  basculerLikeRestaurant(idRestaurant: string | number): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/abonnements/${idRestaurant}/aimer/`, {}).pipe(
+      tap((reponse) => {
+        const estAime = reponse?.estAime ?? true;
+        const nombreLikes = reponse?.nombreLikes;
+        this.restaurants.update((restos) =>
+          restos.map((r) =>
+            r.identifiant === String(idRestaurant)
+              ? { ...r, estAime, ...(nombreLikes !== undefined ? { nombreLikes } : {}) }
+              : r
+          )
+        );
+      })
+    );
+  }
+
+  /**
+   * Bascule le "J'aime" sur une publication via l'API Django.
    */
   basculerJaimePublication(identifiantPublication: string): void {
-    this.publicationsFil.update((pubs) =>
-      pubs.map((p) => (p.identifiant === identifiantPublication ? { ...p, estAime: !p.estAime } : p))
-    );
+    this.http
+      .post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/aimer/`, {})
+      .subscribe({
+        next: (reponse) => {
+          const estAime = reponse?.est_aime ?? true;
+          const totalJeaime = reponse?.total_jaime !== undefined ? String(reponse.total_jaime) : '1';
+          this.publicationsFil.update((pubs) =>
+            pubs.map((p) =>
+              p.identifiant === identifiantPublication
+                ? { ...p, estAime, nombreJeaime: totalJeaime }
+                : p
+            )
+          );
+        },
+        error: () => {}
+      });
   }
 
   /**
-   * Publie une nouvelle vidéo depuis Ayyou Studio (Gérant restaurant) directement dans le fil d'actualité client.
+   * Publie une nouvelle vidéo depuis Ayyou Studio (Gérant restaurant) via l'API Django.
    */
   publierVideoFil(publication: PublicationFil): void {
     this.publicationsFil.update((liste) => [publication, ...liste]);
   }
 }
-

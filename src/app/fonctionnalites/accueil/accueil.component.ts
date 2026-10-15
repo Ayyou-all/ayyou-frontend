@@ -52,10 +52,11 @@ export class AccueilComponent {
   @ViewChild('elementVideo') elementVideoRef?: ElementRef<HTMLVideoElement>;
 
   // Publication courante
-  readonly publicationCourante = computed(() => {
+  readonly publicationCourante = computed<PublicationFil | null>(() => {
     const publications = this.serviceCatalogue.publicationsFil();
+    if (!publications || publications.length === 0) return null;
     const index = this.indexPublicationActuelle();
-    return publications[index] ?? publications[0];
+    return publications[index] ?? publications[0] ?? null;
   });
 
   readonly totalPublications = computed(() => this.serviceCatalogue.publicationsFil().length);

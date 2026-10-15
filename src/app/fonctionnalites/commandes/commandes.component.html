@@ -51,17 +51,7 @@
             class="w-full py-3 px-6 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-800 font-extrabold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <i class="fa-solid fa-user-plus text-sm text-slate-500"></i>
-            <span>Créer un compte</span>
           </a>
-
-          <button
-            type="button"
-            (click)="connexionRapideClient()"
-            class="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-900 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-          >
-            <i class="fa-solid fa-bolt text-amber-600"></i>
-            <span>Connexion rapide Démo (Fatou Diop)</span>
-          </button>
         </div>
 
         <div>
@@ -138,10 +128,14 @@
                 </div>
               </div>
 
-              <!-- Bloc droit : Badge statut + Action (Suivre ou temps) -->
+              <!-- Bloc droit : Badge statut + Action (Payer, Suivre ou temps) -->
               <div class="flex flex-col items-end justify-between self-stretch shrink-0 py-0.5">
                 <!-- Badge Statut -->
-                @if (cmd.statut === 'EN_LIVRAISON') {
+                @if (cmd.statut === 'EN_ATTENTE_PAIEMENT' || cmd.statutBrut === 'EN_ATTENTE_PAIEMENT') {
+                  <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 text-[10px] sm:text-xs font-black tracking-wider uppercase">
+                    À PAYER
+                  </span>
+                } @else if (cmd.statut === 'EN_LIVRAISON') {
                   <span class="px-3 py-1 rounded-full bg-[#edf2fe] text-[#3b82f6] text-[10px] sm:text-xs font-black tracking-wider uppercase">
                     EN LIVRAISON
                   </span>
@@ -149,10 +143,28 @@
                   <span class="px-3 py-1 rounded-full bg-[#fef3eb] text-[#ea580c] text-[10px] sm:text-xs font-black tracking-wider uppercase">
                     PRÉPARATION
                   </span>
+                } @else {
+                  <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] sm:text-xs font-black tracking-wider uppercase">
+                    {{ cmd.statutLibelle || 'EN COURS' }}
+                  </span>
                 }
 
-                <!-- Bouton 'Suivre' pour la commande en livraison -->
-                @if (cmd.statut === 'EN_LIVRAISON') {
+                <!-- Bouton d'action -->
+                @if (cmd.statut === 'EN_ATTENTE_PAIEMENT' || cmd.statutBrut === 'EN_ATTENTE_PAIEMENT') {
+                  <button
+                    type="button"
+                    (click)="payerCommande(cmd)"
+                    [disabled]="chargementPaiementId() === cmd.identifiant"
+                    class="py-1.5 px-3.5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-xs shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    @if (chargementPaiementId() === cmd.identifiant) {
+                      <i class="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                    } @else {
+                      <i class="fa-solid fa-credit-card text-xs"></i>
+                    }
+                    <span>Payer</span>
+                  </button>
+                } @else if (cmd.statut === 'EN_LIVRAISON' || cmd.statut === 'PREPARATION') {
                   <button
                     type="button"
                     (click)="suivreCommande(cmd.identifiant)"

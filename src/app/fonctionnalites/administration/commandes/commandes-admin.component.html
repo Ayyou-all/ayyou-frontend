@@ -56,13 +56,13 @@
           <i class="fa-solid fa-clock-rotate-left"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ statsKpi.enAttente.evolution }}
+          {{ statsKpi().enAttente.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En attente</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.enAttente.valeur }}
+          {{ statsKpi().enAttente.valeur }}
         </div>
       </div>
     </div>
@@ -74,13 +74,13 @@
           <i class="fa-solid fa-truck-fast"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ statsKpi.enCours.evolution }}
+          {{ statsKpi().enCours.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En cours</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.enCours.valeur }}
+          {{ statsKpi().enCours.valeur }}
         </div>
       </div>
     </div>
@@ -92,13 +92,13 @@
           <i class="fa-solid fa-circle-check"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ statsKpi.livrees.evolution }}
+          {{ statsKpi().livrees.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Livrées</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.livrees.valeur }}
+          {{ statsKpi().livrees.valeur }}
         </div>
       </div>
     </div>
@@ -110,13 +110,13 @@
           <i class="fa-solid fa-circle-xmark"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-red-50 text-red-600 border border-red-100">
-          {{ statsKpi.annulees.evolution }}
+          {{ statsKpi().annulees.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Annulées</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.annulees.valeur }}
+          {{ statsKpi().annulees.valeur }}
         </div>
       </div>
     </div>
@@ -324,7 +324,7 @@
       <div class="text-xs font-semibold text-slate-500">
         Affichage de <span class="font-bold text-slate-900">1</span> à
         <span class="font-bold text-slate-900">{{ commandesAffichees().length }}</span> sur
-        <span class="font-bold text-slate-900">256</span> commandes
+        <span class="font-bold text-slate-900">{{ commandesFiltrees().length }}</span> commandes
       </div>
 
       <!-- Contrôles : <  1  2  3  > -->
@@ -496,20 +496,23 @@
           </div>
 
           @if (!commandeEnDetail()!.estCoursierAssigne) {
-            <div class="flex items-center gap-2 pt-1">
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              @for (liv of livreurs(); track liv.id) {
+                <button
+                  type="button"
+                  (click)="assignerCoursier(liv.nomComplet || liv.nom)"
+                  class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
+                >
+                  Assigner {{ liv.nomComplet || liv.nom }}
+                </button>
+              }
               <button
                 type="button"
-                (click)="assignerCoursier('Moussa Diouf')"
-                class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold"
+                (click)="assignerCoursierAutomatique()"
+                class="px-3 py-1.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
               >
-                Assigner Moussa Diouf
-              </button>
-              <button
-                type="button"
-                (click)="assignerCoursier('Abdou Fall')"
-                class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold"
-              >
-                Assigner Abdou Fall
+                <i class="fa-solid fa-bolt text-[10px]"></i>
+                <span>Assignation automatique</span>
               </button>
             </div>
           }

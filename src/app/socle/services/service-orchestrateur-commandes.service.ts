@@ -54,9 +54,7 @@ export class ServiceOrchestrateurCommandesService {
     const nouvelleCommandeClient: CommandeClient = {
       identifiant: idCommande,
       nomRestaurant: panier.nomRestaurant,
-      adresseImageRestaurant:
-        panier.adresseLogoRestaurant ||
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+      adresseImageRestaurant: panier.adresseLogoRestaurant || '',
       dateHeureTexte: `Aujourd'hui, ${heureStr}`,
       statut: 'PREPARATION',
       montantTotalFcfa: panier.totalFcfa,
@@ -72,10 +70,10 @@ export class ServiceOrchestrateurCommandesService {
         prixTotalFcfa: l.plat.prixFcfa * l.quantite
       })),
       livreur: {
-        nom: 'Moussa Diop',
-        vehicule: 'Yamaha TMAX • Dakar',
-        adressePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-        numeroTelephone: '+221 77 821 44 90',
+        nom: 'Livreur AYYOU',
+        vehicule: 'Moto • Dakar',
+        adressePhoto: '',
+        numeroTelephone: '+221 77 000 00 00',
         latitude: 14.6710,
         longitude: -17.4320
       }

@@ -182,8 +182,16 @@
           {{ destinataireVerification() }}
         </p>
 
-        <!-- 4 cases interactives de code OTP Mobile -->
-        <div class="flex items-center justify-center gap-3.5 mb-6">
+        <!-- Message d'erreur éventuel -->
+        @if (messageErreur()) {
+          <div class="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5 animation-apparition">
+            <i class="fa-solid fa-circle-exclamation text-red-600 shrink-0 text-sm"></i>
+            <span>{{ messageErreur() }}</span>
+          </div>
+        }
+
+        <!-- 6 cases interactives de code OTP Mobile -->
+        <div class="flex items-center justify-center gap-2 sm:gap-3 mb-6">
           <input
             #caseMobile1
             type="text"
@@ -192,7 +200,7 @@
             [value]="chiffresCode()[0]"
             (input)="saisirChiffre(0, $event, caseMobile2)"
             (keydown)="gererToucheCode(0, $event)"
-            class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile2
@@ -202,7 +210,7 @@
             [value]="chiffresCode()[1]"
             (input)="saisirChiffre(1, $event, caseMobile3)"
             (keydown)="gererToucheCode(1, $event, caseMobile1)"
-            class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile3
@@ -212,7 +220,7 @@
             [value]="chiffresCode()[2]"
             (input)="saisirChiffre(2, $event, caseMobile4)"
             (keydown)="gererToucheCode(2, $event, caseMobile2)"
-            class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile4
@@ -220,10 +228,29 @@
             inputmode="numeric"
             maxlength="1"
             [value]="chiffresCode()[3]"
-            placeholder="-"
-            (input)="saisirChiffre(3, $event)"
+            (input)="saisirChiffre(3, $event, caseMobile5)"
             (keydown)="gererToucheCode(3, $event, caseMobile3)"
-            class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 placeholder:text-slate-400 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+          />
+          <input
+            #caseMobile5
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            [value]="chiffresCode()[4]"
+            (input)="saisirChiffre(4, $event, caseMobile6)"
+            (keydown)="gererToucheCode(4, $event, caseMobile4)"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+          />
+          <input
+            #caseMobile6
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            [value]="chiffresCode()[5]"
+            (input)="saisirChiffre(5, $event)"
+            (keydown)="gererToucheCode(5, $event, caseMobile5)"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
         </div>
 
@@ -327,8 +354,16 @@
             {{ destinataireVerification() }}
           </p>
 
-          <!-- 4 cases interactives de code OTP Desktop -->
-          <div class="flex items-center gap-4 mb-6">
+          <!-- Message d'erreur éventuel -->
+          @if (messageErreur()) {
+            <div class="mb-6 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-start gap-2.5 animation-apparition">
+              <i class="fa-solid fa-circle-exclamation text-red-600 shrink-0 text-sm mt-0.5"></i>
+              <span>{{ messageErreur() }}</span>
+            </div>
+          }
+
+          <!-- 6 cases interactives de code OTP Desktop -->
+          <div class="flex items-center gap-3 mb-6">
             <input
               #caseDesk1
               type="text"
@@ -337,7 +372,7 @@
               [value]="chiffresCode()[0]"
               (input)="saisirChiffre(0, $event, caseDesk2)"
               (keydown)="gererToucheCode(0, $event)"
-              class="w-16 h-18 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk2
@@ -347,7 +382,7 @@
               [value]="chiffresCode()[1]"
               (input)="saisirChiffre(1, $event, caseDesk3)"
               (keydown)="gererToucheCode(1, $event, caseDesk1)"
-              class="w-16 h-18 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk3
@@ -357,7 +392,7 @@
               [value]="chiffresCode()[2]"
               (input)="saisirChiffre(2, $event, caseDesk4)"
               (keydown)="gererToucheCode(2, $event, caseDesk2)"
-              class="w-16 h-18 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk4
@@ -365,10 +400,29 @@
               inputmode="numeric"
               maxlength="1"
               [value]="chiffresCode()[3]"
-              placeholder="•"
-              (input)="saisirChiffre(3, $event)"
+              (input)="saisirChiffre(3, $event, caseDesk5)"
               (keydown)="gererToucheCode(3, $event, caseDesk3)"
-              class="w-16 h-18 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 placeholder:text-slate-400 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            />
+            <input
+              #caseDesk5
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              [value]="chiffresCode()[4]"
+              (input)="saisirChiffre(4, $event, caseDesk6)"
+              (keydown)="gererToucheCode(4, $event, caseDesk4)"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            />
+            <input
+              #caseDesk6
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              [value]="chiffresCode()[5]"
+              (input)="saisirChiffre(5, $event)"
+              (keydown)="gererToucheCode(5, $event, caseDesk5)"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
           </div>
 

@@ -1,6 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import {
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  effect,
+  inject,
+  signal
+} from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import Chart from 'chart.js/auto';
+import { environment } from '../../../../environments/environment';
 
 export interface CarteIndicateurSuperadmin {
   titre: string;
@@ -24,125 +37,292 @@ export interface ValidationRecenteSuperadmin {
   statut: 'EN_ATTENTE' | 'VALIDE' | 'REJETE';
 }
 
-export interface PointDonneeGraphique {
-  jour: string;
-  valeur: number;
-  xPourcentage: number;
-  yPourcentage: number;
-}
-
 @Component({
   selector: 'app-tableau-de-bord',
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './tableau-de-bord.component.html'
 })
-export class TableauDeBordComponent {
+export class TableauDeBordComponent implements AfterViewInit, OnDestroy {
   readonly routeur = inject(Router);
+  private readonly http = inject(HttpClient);
+
+  @ViewChild('canvasCommandes') private canvasRef?: ElementRef<HTMLCanvasElement>;
+  private chartCommandes?: Chart;
 
   // Période sélectionnée pour le graphique (Semaine ou Mois)
   readonly periodeSelectionnee = signal<'SEMAINE' | 'MOIS'>('SEMAINE');
 
-  // Point survolé sur le graphique
-  readonly pointSurvole = signal<PointDonneeGraphique | null>(null);
-
-  // 4 Cartes d'indicateurs (KPIs) conformes à la maquette Superadmin
-  readonly listeIndicateurs: CarteIndicateurSuperadmin[] = [
+  // 4 Cartes d'indicateurs (KPIs) alimentées par l'API Superadmin
+  readonly listeIndicateurs = signal<CarteIndicateurSuperadmin[]>([
     {
       titre: "Chiffre d'affaires",
-      valeur: '16 300 000 FCFA',
+      valeur: '0 FCFA',
       icone: 'fa-solid fa-coins',
       classeCouleurIcone: 'text-emerald-500',
       classeFondIcone: 'bg-emerald-50',
-      badgeTexte: '+12.5%',
+      badgeTexte: 'Réel',
       classeBadge: 'bg-emerald-50 text-emerald-600 border border-emerald-100'
     },
     {
-      titre: 'Commandes actives',
-      valeur: '142',
+      titre: 'Commandes totales',
+      valeur: '0',
       icone: 'fa-solid fa-bag-shopping',
       classeCouleurIcone: 'text-[#E51824]',
       classeFondIcone: 'bg-red-50',
-      badgeTexte: '+4.2%',
+      badgeTexte: 'En direct',
       classeBadge: 'bg-red-50 text-[#E51824] border border-red-100'
     },
     {
-      titre: 'Nouveaux partenaires',
-      valeur: '28',
+      titre: 'Partenaires en attente',
+      valeur: '0',
       icone: 'fa-solid fa-clock-rotate-left',
       classeCouleurIcone: 'text-amber-500',
       classeFondIcone: 'bg-amber-50',
-      badgeTexte: '5 en attente',
+      badgeTexte: 'À modérer',
       classeBadge: 'bg-amber-50 text-amber-700 border border-amber-200'
     },
     {
       titre: 'Utilisateurs totaux',
-      valeur: '8 432',
+      valeur: '0',
       icone: 'fa-solid fa-users',
       classeCouleurIcone: 'text-slate-700',
       classeFondIcone: 'bg-slate-100',
-      badgeTexte: 'Stable',
+      badgeTexte: 'Vérifiés',
       classeBadge: 'bg-slate-100 text-slate-600 border border-slate-200'
     }
-  ];
+  ]);
 
-  // Données de la courbe des commandes (7 jours de la semaine)
-  readonly pointsGraphiqueSemaine: PointDonneeGraphique[] = [
-    { jour: 'Lun', valeur: 420, xPourcentage: 35, yPourcentage: 220 },
-    { jour: 'Mar', valeur: 380, xPourcentage: 135, yPourcentage: 235 },
-    { jour: 'Mer', valeur: 510, xPourcentage: 235, yPourcentage: 185 },
-    { jour: 'Jeu', valeur: 480, xPourcentage: 335, yPourcentage: 195 },
-    { jour: 'Ven', valeur: 620, xPourcentage: 435, yPourcentage: 145 },
-    { jour: 'Sam', valeur: 820, xPourcentage: 535, yPourcentage: 65 },
-    { jour: 'Dim', valeur: 720, xPourcentage: 635, yPourcentage: 105 }
-  ];
+  // Données brutes de la courbe (7 derniers jours ou 30 jours) - alimentées par l'API
+  readonly donneesBrutesSemaine = signal<{ jour: string; date?: string; valeur: number }[]>([]);
 
-  // Liste des dernières validations en attente (conforme à l'Image 1)
-  readonly dernieresValidations: ValidationRecenteSuperadmin[] = [
-    {
-      identifiant: 'val-01',
-      nom: 'La Trattoria',
-      specialiteOuVehicule: 'Cuisine Italienne',
-      type: 'RESTAURANT',
-      iconeOuPhoto: 'fa-solid fa-pizza-slice',
-      estPhoto: false,
-      classeFondIcone: 'bg-rose-50 text-[#E51824]',
-      dateInscription: '24 Oct. 2023',
-      statut: 'EN_ATTENTE'
-    },
-    {
-      identifiant: 'val-02',
-      nom: 'Thomas Dupont',
-      specialiteOuVehicule: 'Scooter Électrique',
-      type: 'LIVREUR',
-      iconeOuPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      estPhoto: true,
-      dateInscription: '25 Oct. 2023',
-      statut: 'EN_ATTENTE'
-    },
-    {
-      identifiant: 'val-03',
-      nom: 'Burger Master',
-      specialiteOuVehicule: 'Fast Food',
-      type: 'RESTAURANT',
-      iconeOuPhoto: 'fa-solid fa-burger',
-      estPhoto: false,
-      classeFondIcone: 'bg-amber-50 text-amber-600',
-      dateInscription: '25 Oct. 2023',
-      statut: 'EN_ATTENTE'
+  // Liste des dernières validations réelles (provenant de la base de données)
+  readonly dernieresValidations = signal<ValidationRecenteSuperadmin[]>([]);
+
+  // Horodatage de la dernière synchronisation avec l'API
+  readonly derniereMiseAJour = signal<Date | null>(null);
+
+  constructor() {
+    this.chargerStatistiques();
+    // Rafraîchissement en temps réel toutes les 15 secondes
+    const intervalle = setInterval(() => this.chargerStatistiques(), 15000);
+    inject(DestroyRef).onDestroy(() => clearInterval(intervalle));
+
+    // Effet pour mettre à jour automatiquement le graphique Chart.js
+    effect(() => {
+      const donnees = this.donneesBrutesSemaine();
+      const periode = this.periodeSelectionnee();
+      if (this.chartCommandes && donnees.length > 0) {
+        this.actualiserGraphique(donnees, periode);
+      }
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this.initialiserGraphique();
+  }
+
+  ngOnDestroy(): void {
+    if (this.chartCommandes) {
+      this.chartCommandes.destroy();
+      this.chartCommandes = undefined;
     }
-  ];
+  }
 
-  /**
-   * Ouvre la page complète des validations en attente.
-   */
+  private initialiserGraphique(): void {
+    if (!this.canvasRef?.nativeElement) return;
+    const ctx = this.canvasRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    // Création d'un dégradé rouge doux sous la courbe
+    const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, 'rgba(229, 24, 36, 0.22)');
+    gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
+    gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
+
+    const donnees = this.donneesBrutesSemaine();
+    const labels = donnees.length > 0 ? donnees.map((p) => p.jour) : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const valeurs = donnees.length > 0 ? donnees.map((p) => p.valeur) : [0, 0, 0, 0, 0, 0, 0];
+
+    this.chartCommandes = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Commandes',
+            data: valeurs,
+            borderColor: '#E51824',
+            borderWidth: 3,
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#E51824',
+            pointBorderWidth: 2.5,
+            pointRadius: 4.5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#E51824',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        animation: {
+          duration: 750,
+          easing: 'easeOutQuart'
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 12,
+            cornerRadius: 12,
+            titleFont: {
+              family: "'Plus Jakarta Sans', sans-serif",
+              size: 11,
+              weight: 'bold'
+            },
+            bodyFont: {
+              family: "'Plus Jakarta Sans', sans-serif",
+              size: 13,
+              weight: 'bold'
+            },
+            displayColors: false,
+            callbacks: {
+              title: (items) => {
+                const idx = items[0]?.dataIndex ?? 0;
+                const d = this.donneesBrutesSemaine()[idx];
+                return d?.date ? `${items[0]?.label} (${d.date})` : `${items[0]?.label}`;
+              },
+              label: (context) => {
+                const val = Number(context.raw || 0);
+                return `${val} commande${val > 1 ? 's' : ''}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                family: "'Plus Jakarta Sans', sans-serif",
+                size: 11,
+                weight: 'bold'
+              },
+              color: '#94a3b8'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#f1f5f9'
+            },
+            ticks: {
+              stepSize: 1,
+              font: {
+                family: "'Plus Jakarta Sans', sans-serif",
+                size: 11,
+                weight: 'bold'
+              },
+              color: '#94a3b8'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private actualiserGraphique(donnees: { jour: string; date?: string; valeur: number }[], periode: 'SEMAINE' | 'MOIS'): void {
+    if (!this.chartCommandes) return;
+    this.chartCommandes.data.labels = donnees.map((p) => p.jour);
+    this.chartCommandes.data.datasets[0].data = donnees.map((p) => p.valeur);
+    this.chartCommandes.update();
+  }
+
+  chargerStatistiques(): void {
+    this.http.get<any>(`${environment.apiUrl}/administration/statistiques/`).subscribe({
+      next: (stats) => {
+        const ca = Number(stats.volumeAffairesFcfa ?? stats.chiffre_affaires_total_fcfa ?? 0);
+        const cmds = Number(stats.totalCommandes ?? stats.nombre_commandes_total ?? 0);
+        const attente = Number(stats.partenairesEnAttente ?? stats.nombre_partenaires_en_attente ?? 0);
+        const totalUsers = Number(stats.totalUtilisateurs ?? stats.nombre_utilisateurs_total ?? 0);
+
+        this.listeIndicateurs.set([
+          {
+            titre: "Chiffre d'affaires",
+            valeur: `${ca.toLocaleString('fr-FR')} FCFA`,
+            icone: 'fa-solid fa-coins',
+            classeCouleurIcone: 'text-emerald-500',
+            classeFondIcone: 'bg-emerald-50',
+            badgeTexte: 'Réel',
+            classeBadge: 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+          },
+          {
+            titre: 'Commandes totales',
+            valeur: String(cmds),
+            icone: 'fa-solid fa-bag-shopping',
+            classeCouleurIcone: 'text-[#E51824]',
+            classeFondIcone: 'bg-red-50',
+            badgeTexte: 'En direct',
+            classeBadge: 'bg-red-50 text-[#E51824] border border-red-100'
+          },
+          {
+            titre: 'Partenaires en attente',
+            valeur: String(attente),
+            icone: 'fa-solid fa-clock-rotate-left',
+            classeCouleurIcone: 'text-amber-500',
+            classeFondIcone: 'bg-amber-50',
+            badgeTexte: 'À modérer',
+            classeBadge: 'bg-amber-50 text-amber-700 border border-amber-200'
+          },
+          {
+            titre: 'Utilisateurs totaux',
+            valeur: String(totalUsers),
+            icone: 'fa-solid fa-users',
+            classeCouleurIcone: 'text-slate-700',
+            classeFondIcone: 'bg-slate-100',
+            badgeTexte: 'Vérifiés',
+            classeBadge: 'bg-slate-100 text-slate-600 border border-slate-200'
+          }
+        ]);
+
+        if (Array.isArray(stats.commandesParJour)) {
+          this.donneesBrutesSemaine.set(
+            stats.commandesParJour.map((p: any) => ({
+              jour: String(p.jour),
+              date: p.date,
+              valeur: Number(p.valeur ?? 0)
+            }))
+          );
+        }
+
+        if (Array.isArray(stats.dernieresValidations)) {
+          this.dernieresValidations.set(stats.dernieresValidations);
+        }
+
+        this.derniereMiseAJour.set(new Date());
+      },
+      error: () => {}
+    });
+  }
+
   voirToutesLesValidations(): void {
     this.routeur.navigate(['/administration/validations']);
   }
 
-  /**
-   * Ouvre l'examen détaillé d'une validation spécifique.
-   */
   examinerPartenaire(identifiant: string): void {
     this.routeur.navigate(['/administration/validations'], {
       queryParams: { cible: identifiant }

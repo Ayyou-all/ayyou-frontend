@@ -15,7 +15,7 @@ export class AccueilLivreurComponent {
   readonly routeur = inject(Router);
 
   /**
-   * Accepte la proposition de livraison et bascule vers la navigation GPS (Image 3).
+   * Accepte la proposition de livraison et bascule vers la navigation GPS.
    */
   accepterLivraison(): void {
     this.serviceLivreur.accepterProposition();
@@ -30,9 +30,10 @@ export class AccueilLivreurComponent {
   }
 
   /**
-   * Déclenche une nouvelle proposition de test.
+   * Actualise immédiatement les courses disponibles depuis la base de données.
    */
-  simulerNouvelleCommande(): void {
-    this.serviceLivreur.declencherNouvelleProposition();
+  rafraichirCourses(): void {
+    this.serviceLivreur.verifierNouvellesPropositions();
+    this.serviceLivreur.chargerProfilLivreur();
   }
 }

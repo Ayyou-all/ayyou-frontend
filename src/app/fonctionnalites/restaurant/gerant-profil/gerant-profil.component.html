@@ -1,0 +1,379 @@
+<!-- Formulaire de profil gérant conforme strictement aux données d'inscription -->
+<div class="space-y-6 max-w-4xl mx-auto pb-16">
+
+  <!-- ========================================================================= -->
+  <!-- NOTIFICATIONS DE SUCCÈS OU D'ERREUR                                       -->
+  <!-- ========================================================================= -->
+  @if (messageSucces()) {
+    <div class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl border border-slate-700 shadow-xl animate-fade-in">
+      <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+      <span class="text-sm font-bold">{{ messageSucces() }}</span>
+    </div>
+  }
+
+  @if (messageErreur()) {
+    <div class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-red-950 text-white px-5 py-3.5 rounded-2xl border border-red-800 shadow-xl animate-fade-in">
+      <i class="fa-solid fa-triangle-exclamation text-red-400 text-lg"></i>
+      <span class="text-sm font-bold">{{ messageErreur() }}</span>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- EN-TÊTE DE LA PAGE AVEC BOUTON SE DÉCONNECTER                             -->
+  <!-- ========================================================================= -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit']">Mon Profil & Établissement</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Consultez et modifiez les informations renseignées lors de votre inscription.</p>
+    </div>
+
+    <!-- Bouton Déconnexion -->
+    <button
+      type="button"
+      (click)="modaleDeconnexionOuverte.set(true)"
+      class="px-4 py-2.5 rounded-2xl bg-red-50 hover:bg-[#E51824] text-[#E51824] hover:text-white border border-red-100 text-xs font-black flex items-center justify-center gap-2 transition cursor-pointer active:scale-95 shadow-xs shrink-0"
+      title="Se déconnecter de votre compte"
+    >
+      <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+      <span>Se déconnecter</span>
+    </button>
+  </div>
+
+  <form (ngSubmit)="enregistrer()" class="space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- 1. PHOTO DE COUVERTURE & LOGO DU RESTAURANT (VISUELS DE L'INSCRIPTION)    -->
+    <!-- ========================================================================= -->
+    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-5">
+      <div class="pb-3 border-b border-slate-100">
+        <h2 class="text-base font-black text-slate-900 font-['Outfit']">Visuels de l'Établissement</h2>
+        <p class="text-xs text-slate-400">Votre logo et votre photo de couverture tels que configurés à l'inscription.</p>
+      </div>
+
+      <!-- Aperçu Bannière avec Couverture & Logo -->
+      <div class="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-900">
+        <!-- Photo de couverture -->
+        <div class="relative w-full h-40 sm:h-52 bg-slate-800 overflow-hidden">
+          @if (apercuCouverture() || urlCouverture()) {
+            <img
+              [src]="apercuCouverture() || urlCouverture()"
+              [alt]="nomRestaurant"
+              class="w-full h-full object-cover"
+            />
+          } @else {
+            <div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-gradient-to-r from-slate-900 to-slate-800">
+              <i class="fa-regular fa-image text-3xl mb-1.5 text-slate-600"></i>
+              <span class="text-xs font-semibold text-slate-400">Aucune photo de couverture</span>
+            </div>
+          }
+
+          <!-- Voile sombre -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+
+          <!-- Bouton pour changer la couverture -->
+          <label
+            class="absolute top-3 right-3 z-10 px-3.5 py-1.5 rounded-xl bg-black/60 hover:bg-black/85 backdrop-blur-md text-white text-xs font-bold flex items-center gap-2 cursor-pointer transition border border-white/20 active:scale-95 shadow-md"
+          >
+            <i class="fa-solid fa-camera text-xs text-rose-400"></i>
+            <span>Changer la couverture</span>
+            <input type="file" accept="image/*" (change)="choisirCouverture($event)" class="hidden" />
+          </label>
+
+          <!-- Logo positionné en bas à gauche de la bannière -->
+          <div class="absolute bottom-3 left-4 flex items-end gap-3 z-10">
+            <div class="relative group">
+              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-white shadow-xl bg-white flex items-center justify-center">
+                @if (apercuLogo() || urlLogo()) {
+                  <img
+                    [src]="apercuLogo() || urlLogo()"
+                    [alt]="nomRestaurant"
+                    class="w-full h-full object-cover"
+                  />
+                } @else {
+                  <div class="w-full h-full bg-rose-50 text-[#E51824] flex items-center justify-center text-xl font-black">
+                    <i class="fa-solid fa-utensils"></i>
+                  </div>
+                }
+              </div>
+
+              <!-- Bouton pour changer le logo -->
+              <label
+                class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#E51824] hover:bg-red-700 text-white flex items-center justify-center text-[10px] shadow-lg border-2 border-white cursor-pointer transition active:scale-90"
+                title="Changer le logo"
+              >
+                <i class="fa-solid fa-pencil"></i>
+                <input type="file" accept="image/*" (change)="choisirLogo($event)" class="hidden" />
+              </label>
+            </div>
+
+            <div class="text-white pb-1">
+              <div class="text-sm sm:text-base font-black font-['Outfit'] drop-shadow">
+                {{ nomRestaurant || 'Mon Restaurant' }}
+              </div>
+              <div class="text-[11px] text-slate-300 drop-shadow">
+                {{ adresseRestaurant || 'Dakar, Sénégal' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Boutons de téléversement directs -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <label class="p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between gap-3 cursor-pointer transition">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <i class="fa-solid fa-camera text-slate-500 text-sm"></i>
+            <div class="truncate">
+              <div class="text-xs font-bold text-slate-800">Photo de couverture</div>
+              <div class="text-[11px] text-slate-400 truncate">{{ fichierCouverture ? fichierCouverture.name : 'Sélectionner un fichier' }}</div>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[11px] font-bold shrink-0">Parcourir</span>
+          <input type="file" accept="image/*" (change)="choisirCouverture($event)" class="hidden" />
+        </label>
+
+        <label class="p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between gap-3 cursor-pointer transition">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <i class="fa-solid fa-image text-slate-500 text-sm"></i>
+            <div class="truncate">
+              <div class="text-xs font-bold text-slate-800">Logo du restaurant</div>
+              <div class="text-[11px] text-slate-400 truncate">{{ fichierLogo ? fichierLogo.name : 'Sélectionner un fichier' }}</div>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[11px] font-bold shrink-0">Parcourir</span>
+          <input type="file" accept="image/*" (change)="choisirLogo($event)" class="hidden" />
+        </label>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. INFORMATIONS DU RESTAURANT & DU GÉRANT (EXACTEMENT COMME L'INSCRIPTION) -->
+    <!-- ========================================================================= -->
+    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-6">
+      
+      <div class="pb-3 border-b border-slate-100">
+        <h2 class="text-base font-black text-slate-900 font-['Outfit']">Informations du Compte & Établissement</h2>
+        <p class="text-xs text-slate-400">Coordonnées du restaurant et informations personnelles du gérant.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        
+        <!-- Nom du restaurant -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Nom de l'établissement <span class="text-[#E51824]">*</span></label>
+          <input
+            type="text"
+            name="nomRestaurant"
+            [(ngModel)]="nomRestaurant"
+            required
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+            placeholder="Nom de votre restaurant"
+          />
+        </div>
+
+        <!-- Adresse du restaurant -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Adresse de l'établissement</label>
+          <input
+            type="text"
+            name="adresseRestaurant"
+            [(ngModel)]="adresseRestaurant"
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+            placeholder="Ex : Médina, Rue 6 x Blaise Diagne, Dakar"
+          />
+        </div>
+
+        <!-- Prénom du gérant -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Prénom du gérant <span class="text-[#E51824]">*</span></label>
+          <input
+            type="text"
+            name="prenom"
+            [(ngModel)]="prenom"
+            required
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+            placeholder="Votre prénom"
+          />
+        </div>
+
+        <!-- Nom du gérant -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Nom du gérant <span class="text-[#E51824]">*</span></label>
+          <input
+            type="text"
+            name="nom"
+            [(ngModel)]="nom"
+            required
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+            placeholder="Votre nom de famille"
+          />
+        </div>
+
+        <!-- Numéro de téléphone -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Numéro de téléphone <span class="text-[#E51824]">*</span></label>
+          <input
+            type="tel"
+            name="telephone"
+            [(ngModel)]="telephone"
+            required
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+            placeholder="+221 77 000 00 00"
+          />
+        </div>
+
+        <!-- Adresse courriel -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Adresse e-mail <span class="text-[#E51824]">*</span></label>
+          <input
+            type="email"
+            name="courriel"
+            [(ngModel)]="courriel"
+            required
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+            placeholder="votre.email@exemple.com"
+          />
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. MOT DE PASSE (MODIFICATION SÉCURISÉE)                                   -->
+    <!-- ========================================================================= -->
+    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-5">
+      <div class="pb-3 border-b border-slate-100">
+        <h2 class="text-base font-black text-slate-900 font-['Outfit']">Mot de passe</h2>
+        <p class="text-xs text-slate-400">Laissez ces champs vides si vous ne souhaitez pas modifier votre mot de passe.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        
+        <!-- Ancien mot de passe -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Ancien mot de passe</label>
+          <div class="relative">
+            <input
+              [type]="masquerAncienMdp() ? 'password' : 'text'"
+              name="ancienMotDePasse"
+              [(ngModel)]="ancienMotDePasse"
+              class="w-full px-4 py-3 pr-10 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+              placeholder="Actuel"
+            />
+            <button
+              type="button"
+              (click)="masquerAncienMdp.set(!masquerAncienMdp())"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+            >
+              <i [class]="masquerAncienMdp() ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Nouveau mot de passe -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Nouveau mot de passe</label>
+          <div class="relative">
+            <input
+              [type]="masquerNouveauMdp() ? 'password' : 'text'"
+              name="nouveauMotDePasse"
+              [(ngModel)]="nouveauMotDePasse"
+              class="w-full px-4 py-3 pr-10 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+              placeholder="8 car. min"
+            />
+            <button
+              type="button"
+              (click)="masquerNouveauMdp.set(!masquerNouveauMdp())"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+            >
+              <i [class]="masquerNouveauMdp() ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirmer le nouveau mot de passe -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-extrabold text-slate-700">Confirmer mot de passe</label>
+          <div class="relative">
+            <input
+              [type]="masquerConfirmationMdp() ? 'password' : 'text'"
+              name="confirmationMotDePasse"
+              [(ngModel)]="confirmationMotDePasse"
+              class="w-full px-4 py-3 pr-10 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
+              placeholder="Répéter"
+            />
+            <button
+              type="button"
+              (click)="masquerConfirmationMdp.set(!masquerConfirmationMdp())"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+            >
+              <i [class]="masquerConfirmationMdp() ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- BOUTON D'ENREGISTREMENT GLOBAL                                            -->
+    <!-- ========================================================================= -->
+    <div class="flex items-center justify-end gap-4 pt-2">
+      <button
+        type="submit"
+        [disabled]="chargementAction()"
+        class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-lg shadow-red-600/25 flex items-center justify-center gap-2.5 transition cursor-pointer active:scale-95 disabled:opacity-50"
+      >
+        @if (chargementAction()) {
+          <i class="fa-solid fa-spinner fa-spin text-sm"></i>
+          <span>Enregistrement en cours...</span>
+        } @else {
+          <i class="fa-solid fa-floppy-disk text-sm"></i>
+          <span>Enregistrer les modifications</span>
+        }
+      </button>
+    </div>
+
+  </form>
+
+  <!-- ========================================================================= -->
+  <!-- MODALE DE CONFIRMATION DE DÉCONNEXION                                     -->
+  <!-- ========================================================================= -->
+  @if (modaleDeconnexionOuverte()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+      <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-scale-up">
+        
+        <div class="w-14 h-14 rounded-2xl bg-red-100 text-[#E51824] flex items-center justify-center text-2xl mx-auto">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </div>
+
+        <div class="text-center space-y-2">
+          <h3 class="text-xl font-black text-slate-900 font-['Outfit']">Confirmer la déconnexion</h3>
+          <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+            Êtes-vous sûr de vouloir quitter votre espace restaurant ? Vous devrez vous reconnecter pour accéder à vos commandes.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <button
+            type="button"
+            (click)="modaleDeconnexionOuverte.set(false)"
+            class="py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black transition cursor-pointer"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            (click)="confirmerDeconnexion()"
+            class="py-3 px-4 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs font-black transition cursor-pointer shadow-lg shadow-red-600/25"
+          >
+            Oui, me déconnecter
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

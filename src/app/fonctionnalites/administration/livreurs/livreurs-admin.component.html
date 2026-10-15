@@ -23,10 +23,10 @@
 
     <!-- Actions à droite : Badge coursiers enregistrés & Bouton '+ Nouveau Livreur' -->
     <div class="flex items-center gap-3 shrink-0">
-      <!-- Badge 156 Coursiers enregistrés -->
+      <!-- Badge coursiers enregistrés -->
       <div class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold shadow-2xs flex items-center gap-2">
         <i class="fa-solid fa-bicycle text-slate-400 text-xs"></i>
-        <span>156 Coursiers enregistrés</span>
+        <span>{{ listeLivreurs().length }} Coursiers enregistrés</span>
       </div>
 
       <!-- Bouton rouge + Nouveau Livreur -->
@@ -53,13 +53,13 @@
           <i class="fa-solid fa-signal"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ statsKpi.enLigne.evolution }}
+          {{ statsKpi().enLigne.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En ligne</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.enLigne.valeur }}
+          {{ statsKpi().enLigne.valeur }}
         </div>
       </div>
     </div>
@@ -71,13 +71,13 @@
           <i class="fa-solid fa-truck-fast"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-sky-50 text-sky-600 border border-sky-100">
-          {{ statsKpi.enLivraison.evolution }}
+          {{ statsKpi().enLivraison.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En livraison</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.enLivraison.valeur }}
+          {{ statsKpi().enLivraison.valeur }}
         </div>
       </div>
     </div>
@@ -89,13 +89,13 @@
           <i class="fa-solid fa-star"></i>
         </div>
         <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-600 border border-amber-100">
-          {{ statsKpi.noteMoyenne.evolution }}
+          {{ statsKpi().noteMoyenne.evolution }}
         </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Note Moyenne</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.noteMoyenne.valeur }}
+          {{ statsKpi().noteMoyenne.valeur }}
         </div>
       </div>
     </div>
@@ -110,7 +110,7 @@
       <div>
         <div class="text-xs font-semibold text-slate-400">Livr. aujourd'hui</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi.livrAujourdhui.valeur }}
+          {{ statsKpi().livrAujourdhui.valeur }}
         </div>
       </div>
     </div>
@@ -307,7 +307,7 @@
       <div class="text-xs font-semibold text-slate-500">
         Affichage de <span class="font-bold text-slate-900">1</span> à
         <span class="font-bold text-slate-900">{{ livreursAffiches().length }}</span> sur
-        <span class="font-bold text-slate-900">156</span> coursiers
+        <span class="font-bold text-slate-900">{{ livreursFiltres().length }}</span> coursiers
       </div>
 
       <!-- Contrôles : <  1  2  3  > -->

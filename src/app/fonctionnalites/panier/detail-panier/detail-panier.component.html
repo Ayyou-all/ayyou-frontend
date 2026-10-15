@@ -57,22 +57,41 @@
               <!-- Libellé et adresse -->
               <div>
                 <span class="block text-[11px] font-medium text-slate-400">
-                  Adresse de livraison
+                  Adresse de livraison (GPS client)
                 </span>
-                <span class="text-sm font-extrabold text-slate-900">
+                <span class="text-sm font-extrabold text-slate-900 block">
                   {{ panier().adresseLivraison }}
                 </span>
+                @if (latitudeClient() && longitudeClient()) {
+                  <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md mt-1">
+                    <i class="fa-solid fa-satellite-dish text-[9px]"></i>
+                    <span>GPS réel : {{ latitudeClient()?.toFixed(4) }}, {{ longitudeClient()?.toFixed(4) }}</span>
+                  </span>
+                }
               </div>
             </div>
 
-            <!-- Bouton 'MODIFIER' en rouge -->
-            <button
-              type="button"
-              (click)="ouvrirModifierAdresse()"
-              class="text-xs font-black text-[#E51824] tracking-wider uppercase hover:underline transition-colors cursor-pointer"
-            >
-              MODIFIER
-            </button>
+            <!-- Actions : Bouton GPS & Modifier -->
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="detecterPositionReelle()"
+                [disabled]="localisationEnCours()"
+                class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Détecter ma position GPS actuelle"
+              >
+                <i [class]="localisationEnCours() ? 'fa-solid fa-circle-notch fa-spin text-[#E51824]' : 'fa-solid fa-location-crosshairs text-[#E51824]'"></i>
+                <span class="hidden sm:inline">{{ localisationEnCours() ? 'Détection...' : 'GPS' }}</span>
+              </button>
+
+              <button
+                type="button"
+                (click)="ouvrirModifierAdresse()"
+                class="text-xs font-black text-[#E51824] tracking-wider uppercase hover:underline transition-colors cursor-pointer"
+              >
+                MODIFIER
+              </button>
+            </div>
           </div>
 
           <!-- Bandeau bleu ciel : Arrivée estimée dans 25-35 min -->
@@ -317,15 +336,28 @@
           </div>
         }
 
+        <!-- Alerte erreur commande/paiement -->
+        @if (messageErreurPaiement()) {
+          <div class="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-[#E51824] text-xs font-bold flex items-center gap-2.5">
+            <i class="fa-solid fa-circle-exclamation text-base shrink-0"></i>
+            <span>{{ messageErreurPaiement() }}</span>
+          </div>
+        }
+
         <!-- BOUTON ROUGE D'ACTION PRINCIPALE : Payer ... FCFA → -->
         <button
           type="button"
           (click)="effectuerPaiement()"
-          [disabled]="panier().lignes.length === 0 || aDesArticlesIndisponibles()"
-          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          [disabled]="panier().lignes.length === 0 || aDesArticlesIndisponibles() || traitementPaiementEnCours()"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-red-500/25"
         >
-          <span>Payer {{ panier().totalFcfa | number }} FCFA</span>
-          <i class="fa-solid fa-arrow-right text-sm"></i>
+          @if (traitementPaiementEnCours()) {
+            <i class="fa-solid fa-circle-notch fa-spin text-lg"></i>
+            <span>Validation en cours...</span>
+          } @else {
+            <span>Payer {{ panier().totalFcfa | number }} FCFA</span>
+            <i class="fa-solid fa-arrow-right text-sm"></i>
+          }
         </button>
 
       </div>
@@ -361,15 +393,25 @@
       </div>
 
       <div class="space-y-2">
-        <label for="champ-adresse" class="text-xs font-bold text-slate-600">
-          Nouvelle adresse (quartier, rue, repère)
-        </label>
+        <div class="flex items-center justify-between">
+          <label for="champ-adresse" class="text-xs font-bold text-slate-600">
+            Nouvelle adresse (quartier, rue, repère)
+          </label>
+          <button
+            type="button"
+            (click)="detecterPositionReelle()"
+            class="text-[11px] font-bold text-[#E51824] hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <i [class]="localisationEnCours() ? 'fa-solid fa-circle-notch fa-spin' : 'fa-solid fa-location-crosshairs'"></i>
+            <span>Utiliser ma position GPS</span>
+          </button>
+        </div>
         <input
           id="champ-adresse"
           type="text"
           [ngModel]="adresseSaisie()"
           (ngModelChange)="adresseSaisie.set($event)"
-          placeholder="Ex: Plateau, Avenue Hassan II"
+          placeholder="Ex: Médina, Rue 6 x Blaise Diagne"
           class="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white transition-all"
         />
       </div>
@@ -412,7 +454,7 @@
       <div class="bg-slate-50 rounded-2xl p-4 text-xs space-y-1.5 border border-slate-100">
         <div class="flex justify-between text-slate-500">
           <span>Numéro de commande</span>
-          <span class="font-bold text-slate-900">{{ numeroCommandeSimulee() }}</span>
+          <span class="font-bold text-slate-900">{{ referenceCommandeCreee() }}</span>
         </div>
         <div class="flex justify-between text-slate-500">
           <span>Paiement</span>

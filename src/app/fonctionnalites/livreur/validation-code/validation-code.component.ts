@@ -38,6 +38,13 @@ export class ValidationCodeComponent {
     ];
   });
 
+  // Résumé réel des articles commandés
+  readonly articlesResume = computed(() => {
+    const articles = this.serviceLivreur.courseEnCours()?.articles;
+    if (!articles || articles.length === 0) return 'Articles de la commande';
+    return articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
+  });
+
   // Clavier numérique
   readonly touchesClavier = [
     ['1', '2', '3'],
@@ -71,6 +78,10 @@ export class ValidationCodeComponent {
    * Valide la livraison avec le code saisi et vérifie sa conformité.
    * En cas de code incorrect, la livraison n'est PAS clôturée et une alerte explicite est affichée.
    */
+  /**
+   * Valide la livraison avec le code saisi et vérifie sa conformité auprès du backend Django.
+   * En cas de code incorrect, la livraison n'est PAS clôturée et une alerte explicite est affichée.
+   */
   confirmerLivraison(): void {
     if (this.validationEnCours() || this.livraisonReussie()) return;
 
@@ -80,33 +91,44 @@ export class ValidationCodeComponent {
       return;
     }
 
-    const verification = this.serviceLivreur.verifierCodeValidation(
-      this.codeSaisi(),
-      courseActive.identifiantCommande
-    );
-
-    if (!verification.valide) {
-      this.messageErreur.set(verification.message);
+    if (this.codeSaisi().length !== 4) {
+      this.messageErreur.set('Veuillez saisir un code PIN à 4 chiffres.');
       return;
     }
 
-    // Le code est strictement validé : passage à l'étape finale
     this.validationEnCours.set(true);
     this.messageErreur.set(null);
 
-    // Clôture effective côté livreur
-    this.serviceLivreur.terminerCourse();
+    this.serviceLivreur
+      .validerCodeAsync(this.codeSaisi(), courseActive.identifiantCommande)
+      .subscribe({
+        next: (verification) => {
+          this.validationEnCours.set(false);
+          if (!verification.valide) {
+            this.messageErreur.set(verification.message);
+            return;
+          }
 
-    // Propagation du statut LIVRÉE à l'historique restaurant si applicable
-    this.serviceRestaurant.marquerCommandeLivreeParLivreur(
-      courseActive.identifiantCommande
-    );
+          // Propagation du statut LIVRÉE à l'historique restaurant si applicable
+          this.serviceRestaurant.marquerCommandeLivreeParLivreur(
+            courseActive.identifiantCommande
+          );
 
-    // Affichage visuel du succès puis transition maîtrisée
-    this.livraisonReussie.set(true);
-    setTimeout(() => {
-      this.routeur.navigate(['/livreur/fin-livraison']);
-    }, 1200);
+          // Affichage visuel du succès puis transition maîtrisée
+          this.livraisonReussie.set(true);
+          setTimeout(() => {
+            this.routeur.navigate(['/livreur/fin-livraison']);
+          }, 1200);
+        },
+        error: (err) => {
+          this.validationEnCours.set(false);
+          const detail =
+            err.error?.detail ||
+            err.error?.message ||
+            'Code PIN de confirmation incorrect. Demandez le code affiché sur l\'application du client.';
+          this.messageErreur.set(detail);
+        }
+      });
   }
 
   /**

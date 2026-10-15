@@ -94,11 +94,30 @@
         >
           <!-- Image du restaurant en haut -->
           <div class="relative w-full h-52 sm:h-56 overflow-hidden bg-slate-100">
-            <img
-              [src]="resto.adresseCouverture"
-              [alt]="resto.nom"
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+            @if (resto.adresseCouverture) {
+              <img
+                [src]="resto.adresseCouverture"
+                [alt]="resto.nom"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            } @else if (resto.adresseLogo) {
+              <img
+                [src]="resto.adresseLogo"
+                [alt]="resto.nom"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            } @else {
+              <div class="w-full h-full flex items-center justify-center bg-slate-900 text-white/40">
+                <i class="fa-solid fa-utensils text-4xl"></i>
+              </div>
+            }
+
+            <!-- Logo du restaurant flottant en badge -->
+            @if (resto.adresseLogo) {
+              <div class="absolute bottom-3 left-3 w-11 h-11 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-white">
+                <img [src]="resto.adresseLogo" [alt]="resto.nom" class="w-full h-full object-cover" />
+              </div>
+            }
             
             <!-- Badge statut 'Ouvert / Fermé' en haut à gauche -->
             <div class="absolute top-3.5 left-3.5">
@@ -185,12 +204,18 @@
           title="Voir la fiche détaillée de {{ plat.nom }}"
         >
           <!-- Image du plat -->
-          <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 group-hover:scale-105 transition-transform">
-            <img
-              [src]="plat.adresseImage"
-              [alt]="plat.nom"
-              class="w-full h-full object-cover"
-            />
+          <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 group-hover:scale-105 transition-transform flex items-center justify-center">
+            @if (plat.adresseImage) {
+              <img
+                [src]="plat.adresseImage"
+                [alt]="plat.nom"
+                class="w-full h-full object-cover"
+              />
+            } @else {
+              <div class="w-full h-full flex items-center justify-center bg-rose-50 text-[#E51824]">
+                <i class="fa-solid fa-bowl-food text-2xl"></i>
+              </div>
+            }
           </div>
 
           <!-- Détails du plat -->
@@ -214,6 +239,12 @@
           >
             <i class="fa-solid fa-chevron-right text-xs"></i>
           </button>
+        </div>
+      } @empty {
+        <div class="col-span-full py-10 text-center space-y-2 text-slate-400">
+          <i class="fa-solid fa-bowl-food text-3xl text-slate-300"></i>
+          <div class="text-sm font-bold text-slate-700">Aucun plat disponible pour le moment</div>
+          <div class="text-xs">Les restaurants partenaires ajouteront bientôt leurs spécialités.</div>
         </div>
       }
     </div>

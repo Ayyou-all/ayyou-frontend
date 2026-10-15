@@ -15,19 +15,8 @@ export class DetailProduitComponent {
   readonly servicePanier = inject(ServicePanierService);
   readonly serviceAuthentification = inject(ServiceAuthentification);
 
-  // Plat affiché (par défaut : Thieboudienne Royal conforme à la maquette 1)
-  @Input() plat: Plat = {
-    identifiant: 'plat-thieb-royal',
-    identifiantRestaurant: 'resto-chez-fatou',
-    nomRestaurant: 'Chez Fatou',
-    nom: 'Thieboudienne Royal',
-    description:
-      'Le plat national par excellence. Riz rouge parfumé cuit dans un bouillon de poisson et légumes, accompagné de mérou frais, manioc, carotte, chou et sa sauce gombo onctueuse.',
-    prixFcfa: 3500,
-    adresseImage: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-    categorie: 'Plats',
-    statut: 'DISPONIBLE'
-  };
+  // Plat affiché
+  @Input({ required: true }) plat!: Plat;
 
   // Événement de fermeture du modal / fiche produit
   @Output() fermer = new EventEmitter<void>();

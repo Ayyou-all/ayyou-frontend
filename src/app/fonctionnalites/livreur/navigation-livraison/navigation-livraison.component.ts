@@ -72,14 +72,21 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
     if (!conteneur) return;
 
     // Coordonnées réelles à Dakar
-    const coordRestaurant = this.serviceCarteDakar.restaurantTeranga; // Le Teranga au Plateau [14.6710, -17.4320]
-    const coordLivreur = this.serviceCarteDakar.livreurVersRestaurant; // [14.6780, -17.4420]
-    const trajet = this.serviceCarteDakar.trajetPlateauMedina;
+    const course = this.serviceLivreur.courseEnCours();
+    const coordRestaurant: [number, number] = (course?.restaurantLatitude && course?.restaurantLongitude)
+      ? [course.restaurantLatitude, course.restaurantLongitude]
+      : this.serviceCarteDakar.restaurantTeranga;
+    const coordLivreur = this.serviceCarteDakar.livreurVersRestaurant;
+    const miTrajet: [number, number] = [
+      (coordLivreur[0] + coordRestaurant[0]) / 2,
+      (coordLivreur[1] + coordRestaurant[1]) / 2
+    ];
+    const trajet: [number, number][] = [coordLivreur, miTrajet, coordRestaurant];
 
     this.carteLeaflet = L.map('carte-navigation-livreur', {
       zoomControl: false,
       attributionControl: false
-    }).setView(coordLivreur, 15);
+    }).setView(coordLivreur, 14);
 
     // Couche de tuiles réelles de Dakar
     this.serviceCarteDakar.creerCoucheTuilesVoyager().addTo(this.carteLeaflet);
@@ -93,7 +100,7 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
       opacity: 0.95
     }).addTo(this.carteLeaflet);
 
-    // Grand Pin rouge de destination sur Le Teranga (Plateau)
+    // Grand Pin rouge de destination sur le restaurant partenaire
     L.marker(coordRestaurant, {
       icon: this.serviceCarteDakar.creerGrandPinDestination()
     }).addTo(this.carteLeaflet);
@@ -102,6 +109,10 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
     this.marqueurLivreur = L.marker(coordLivreur, {
       icon: this.serviceCarteDakar.creerIconeMotoLivreur('Vous')
     }).addTo(this.carteLeaflet);
+
+    if (this.carteLeaflet) {
+      this.carteLeaflet.fitBounds([coordLivreur, coordRestaurant], { padding: [50, 50], maxZoom: 16 });
+    }
   }
 
   /**

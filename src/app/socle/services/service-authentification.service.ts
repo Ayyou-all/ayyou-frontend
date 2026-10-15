@@ -1,6 +1,9 @@
-import { Injectable, computed, signal } from '@angular/core';
-import { Observable, delay, of, tap, throwError } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import {
+  FormulaireInscription,
   IdentifiantsConnexion,
   ReponseAuthentification,
   RoleUtilisateur,
@@ -27,11 +30,14 @@ export interface ConfigurationActionRequise {
 
 const CLE_STOCKAGE_UTILISATEUR = 'ayyou_utilisateur_connecte';
 const CLE_STOCKAGE_JETON = 'ayyou_jeton_acces';
+const CLE_STOCKAGE_RAFRAICHISSEMENT = 'ayyou_jeton_rafraichissement';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ServiceAuthentification {
+  private readonly http = inject(HttpClient);
+
   // Signaux réactifs pour la gestion d'état de l'authentification
   readonly utilisateurConnecte = signal<Utilisateur | null>(null);
   readonly chargementEnCours = signal<boolean>(false);
@@ -51,135 +57,227 @@ export class ServiceAuthentification {
   readonly estLivreur = computed(() => this.utilisateurConnecte()?.role === 'LIVREUR');
   readonly estAdministrateur = computed(() => this.utilisateurConnecte()?.role === 'ADMINISTRATEUR');
 
-  // Utilisateurs de démonstration par rôle métier
-  private readonly utilisateursSimules: Record<RoleUtilisateur, Utilisateur> = {
-    CLIENT: {
-      identifiant: 'util-client-01',
-      prenom: 'Fatou',
-      nom: 'Diop',
-      courriel: 'fatou.diop@ayyou.sn',
-      telephone: '+221 77 123 45 67',
-      role: 'CLIENT',
-      adressePhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      adresse: 'Almadies, Dakar',
-      estActif: true,
-      dateCreation: '2026-01-15'
-    },
-    RESTAURANT: {
-      identifiant: 'util-restau-01',
-      prenom: 'Cheikh',
-      nom: 'Ndiaye',
-      courriel: 'contact@teranga-gourmand.sn',
-      telephone: '+221 77 234 56 78',
-      role: 'RESTAURANT',
-      nomEtablissement: 'Le Teranga Gourmand',
-      adressePhoto: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-      adresse: 'Plateau, Dakar',
-      estActif: true,
-      dateCreation: '2026-01-10'
-    },
-    LIVREUR: {
-      identifiant: 'util-livreur-01',
-      prenom: 'Moussa',
-      nom: 'Ba',
-      courriel: 'moussa.express@ayyou.sn',
-      telephone: '+221 77 456 78 90',
-      role: 'LIVREUR',
-      typeVehicule: 'MOTO',
-      adressePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      estActif: true,
-      dateCreation: '2026-02-10'
-    },
-    ADMINISTRATEUR: {
-      identifiant: 'util-admin-01',
-      prenom: 'Admin',
-      nom: 'AYYOU',
-      courriel: 'admin@ayyou.com',
-      telephone: '+221 77 567 89 01',
-      role: 'ADMINISTRATEUR',
-      adressePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
-      estActif: true,
-      dateCreation: '2025-12-01'
-    }
-  };
-
   constructor() {
     this.chargerSessionExistante();
   }
 
   /**
-   * Connexion avec téléphone ou e-mail et mot de passe.
+   * Adapte l'objet utilisateur Django (snake_case) vers l'interface TypeScript Angular.
+   */
+  private adapterUtilisateur(donnees: any): Utilisateur {
+    return {
+      identifiant: String(donnees.id || donnees.identifiant || ''),
+      prenom: donnees.prenom || '',
+      nom: donnees.nom || '',
+      courriel: donnees.courriel || '',
+      telephone: donnees.telephone || '',
+      role: (donnees.role || 'CLIENT') as RoleUtilisateur,
+      adressePhoto: donnees.adresse_photo || donnees.adressePhoto || undefined,
+      nomEtablissement: donnees.nom_etablissement || donnees.nomEtablissement || undefined,
+      typeVehicule: donnees.type_vehicule || donnees.typeVehicule || undefined,
+      nomVehicule: donnees.nom_vehicule || donnees.nomVehicule || undefined,
+      immatriculation: donnees.immatriculation || undefined,
+      zonePrincipale: donnees.zone_principale || donnees.zonePrincipale || undefined,
+      adresse: donnees.adresse || undefined,
+      estActif: donnees.est_actif ?? donnees.estActif ?? true,
+      dateCreation: donnees.date_creation || donnees.dateCreation || new Date().toISOString()
+    };
+  }
+
+  /**
+   * Met à jour les données de l'utilisateur connecté en mémoire et dans le stockage local.
+   */
+  mettreAJourUtilisateur(donnees: any): void {
+    const adapt = this.adapterUtilisateur(donnees);
+    this.utilisateurConnecte.set(adapt);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(CLE_STOCKAGE_UTILISATEUR, JSON.stringify(adapt));
+    }
+  }
+
+  /**
+   * Connexion réelle avec l'API Django REST Framework.
    */
   connecter(identifiants: IdentifiantsConnexion): Observable<Utilisateur> {
     this.chargementEnCours.set(true);
     this.messageErreur.set(null);
     this.messageSucces.set(null);
 
-    const identifiantNormalise = identifiants.courriel.trim().toLowerCase();
+    const payload = {
+      identifiant: identifiants.courriel.trim(),
+      mot_de_passe: identifiants.motDePasse
+    };
 
-    // Recherche parmi les profils simulés ou création d'une session dynamique
-    let utilisateurTrouve: Utilisateur | undefined;
+    return this.http
+      .post<any>(`${environment.apiUrl}/authentification/connexion/`, payload)
+      .pipe(
+        map((reponse) => {
+          const utilisateur = this.adapterUtilisateur(reponse.utilisateur);
+          this.sauvegarderSession({
+            jetonAcces: reponse.jeton_acces,
+            jetonRafraichissement: reponse.jeton_rafraichissement,
+            utilisateur
+          });
+          this.utilisateurConnecte.set(utilisateur);
+          this.chargementEnCours.set(false);
+          this.messageSucces.set(`Bienvenue, ${utilisateur.prenom} !`);
+          return utilisateur;
+        }),
+        catchError((erreur) => {
+          this.chargementEnCours.set(false);
+          const message =
+            erreur?.error?.message ||
+            erreur?.error?.detail ||
+            'Identifiants incorrects. Veuillez vérifier votre adresse e-mail et mot de passe.';
+          this.messageErreur.set(message);
+          return throwError(() => erreur);
+        })
+      );
+  }
 
-    if (identifiantNormalise.includes('restau') || identifiantNormalise.includes('teranga')) {
-      utilisateurTrouve = this.utilisateursSimules.RESTAURANT;
-    } else if (identifiantNormalise.includes('livreur')) {
-      utilisateurTrouve = this.utilisateursSimules.LIVREUR;
-    } else if (identifiantNormalise.includes('admin')) {
-      utilisateurTrouve = this.utilisateursSimules.ADMINISTRATEUR;
+  /**
+   * Inscription réelle avec l'API Django REST Framework.
+   */
+  inscrire(formulaire: Partial<FormulaireInscription> & { motDePasse: string; confirmationMotDePasse: string }): Observable<Utilisateur> {
+    this.chargementEnCours.set(true);
+    this.messageErreur.set(null);
+    this.messageSucces.set(null);
+
+    const aDesFichiers =
+      !!formulaire.documentJustificatif ||
+      !!formulaire.logo ||
+      !!formulaire.couverture ||
+      !!formulaire.permisRecto ||
+      !!formulaire.permisVerso ||
+      !!formulaire.photo;
+
+    let corpsRequete: any;
+
+    if (aDesFichiers) {
+      const formData = new FormData();
+      formData.append('prenom', formulaire.prenom?.trim() || '');
+      formData.append('nom', formulaire.nom?.trim() || '');
+      formData.append('courriel', formulaire.courriel?.trim().toLowerCase() || '');
+      formData.append('telephone', formulaire.telephone?.replace(/\s+/g, '') || '');
+      formData.append('mot_de_passe', formulaire.motDePasse);
+      formData.append('confirmation_mot_de_passe', formulaire.confirmationMotDePasse);
+      formData.append('role', formulaire.role || 'CLIENT');
+      formData.append('conditions_acceptees', 'true');
+      if (formulaire.nomEtablissement) formData.append('nom_etablissement', formulaire.nomEtablissement);
+      if (formulaire.typeVehicule) formData.append('type_vehicule', formulaire.typeVehicule);
+      if (formulaire.nomVehicule) formData.append('nom_vehicule', formulaire.nomVehicule);
+      if (formulaire.immatriculation) formData.append('immatriculation', formulaire.immatriculation);
+      if (formulaire.zonePrincipale) formData.append('zone_principale', formulaire.zonePrincipale);
+      if (formulaire.photo) formData.append('photo', formulaire.photo);
+      if (formulaire.adresse) formData.append('adresse', formulaire.adresse);
+      if (formulaire.documentJustificatif) formData.append('document_justificatif', formulaire.documentJustificatif);
+      if (formulaire.documentType) formData.append('document_type', formulaire.documentType);
+      if (formulaire.logo) formData.append('logo', formulaire.logo);
+      if (formulaire.couverture) formData.append('couverture', formulaire.couverture);
+      if (formulaire.permisRecto) formData.append('permis_recto', formulaire.permisRecto);
+      if (formulaire.permisVerso) formData.append('permis_verso', formulaire.permisVerso);
+      corpsRequete = formData;
     } else {
-      // Par défaut utilisateur client
-      utilisateurTrouve = {
-        ...this.utilisateursSimules.CLIENT,
-        courriel: identifiantNormalise.includes('@') ? identifiantNormalise : 'utilisateur@ayyou.sn',
-        telephone: !identifiantNormalise.includes('@') ? identifiants.courriel : '+221 77 000 00 00'
+      corpsRequete = {
+        prenom: formulaire.prenom?.trim(),
+        nom: formulaire.nom?.trim(),
+        courriel: formulaire.courriel?.trim().toLowerCase(),
+        telephone: formulaire.telephone?.replace(/\s+/g, ''),
+        mot_de_passe: formulaire.motDePasse,
+        confirmation_mot_de_passe: formulaire.confirmationMotDePasse,
+        role: formulaire.role || 'CLIENT',
+        nom_etablissement: formulaire.nomEtablissement || '',
+        type_vehicule: formulaire.typeVehicule || undefined,
+        nom_vehicule: formulaire.nomVehicule || '',
+        immatriculation: formulaire.immatriculation || '',
+        zone_principale: formulaire.zonePrincipale || '',
+        adresse: formulaire.adresse || '',
+        conditions_acceptees: true
       };
     }
 
-    // Simulation de délai réseau réaliste (600ms)
-    return of(utilisateurTrouve).pipe(
-      delay(600),
-      tap((utilisateur) => {
-        this.sauvegarderSession({
-          jetonAcces: 'jeton_simule_' + Date.now(),
-          jetonRafraichissement: 'rafraichir_' + Date.now(),
-          utilisateur
-        });
-        this.utilisateurConnecte.set(utilisateur);
-        this.chargementEnCours.set(false);
-        this.messageSucces.set(`Bienvenue, ${utilisateur.prenom} !`);
-      })
-    );
+    return this.http
+      .post<any>(`${environment.apiUrl}/authentification/inscription/`, corpsRequete)
+      .pipe(
+        map((reponse) => {
+          const utilisateur = this.adapterUtilisateur(reponse.utilisateur);
+          this.sauvegarderSession({
+            jetonAcces: reponse.jeton_acces,
+            jetonRafraichissement: reponse.jeton_rafraichissement,
+            utilisateur
+          });
+          this.utilisateurConnecte.set(utilisateur);
+          this.chargementEnCours.set(false);
+          this.messageSucces.set(`Compte créé avec succès ! Bienvenue, ${utilisateur.prenom}.`);
+          return utilisateur;
+        }),
+        catchError((erreur) => {
+          this.chargementEnCours.set(false);
+          let message = 'Erreur lors de la création du compte.';
+          if (erreur?.error) {
+            if (typeof erreur.error === 'string') {
+              message = erreur.error;
+            } else if (erreur.error.message) {
+              message = erreur.error.message;
+            } else {
+              const premiersChamps = Object.keys(erreur.error);
+              if (premiersChamps.length > 0) {
+                const champ = premiersChamps[0];
+                const detail = erreur.error[champ];
+                message = Array.isArray(detail) ? detail[0] : String(detail);
+              }
+            }
+          }
+          this.messageErreur.set(message);
+          return throwError(() => erreur);
+        })
+      );
   }
 
   /**
-   * Connexion directe via un rôle prédéfini (idéal pour les démonstrations et tests).
+   * Envoie réellement un code de vérification à 6 chiffres par e-mail via SMTP Django.
    */
-  connecterAvecRolePredefini(role: RoleUtilisateur): Observable<Utilisateur> {
-    const utilisateur = this.utilisateursSimules[role];
-    this.chargementEnCours.set(true);
-    this.messageErreur.set(null);
-    return of(utilisateur).pipe(
-      delay(300),
-      tap((u) => {
-        this.sauvegarderSession({
-          jetonAcces: 'jeton_simule_' + Date.now(),
-          jetonRafraichissement: 'rafraichir_' + Date.now(),
-          utilisateur: u
-        });
-        this.utilisateurConnecte.set(u);
-        this.chargementEnCours.set(false);
-        this.messageSucces.set(`Bienvenue, ${u.prenom} !`);
-      })
+  envoyerCodeVerification(courriel: string): Observable<{ succes: boolean; message: string; expiration_minutes?: number }> {
+    return this.http.post<{ succes: boolean; message: string; expiration_minutes?: number }>(
+      `${environment.apiUrl}/authentification/envoyer-code/`,
+      { courriel: courriel.trim().toLowerCase() }
     );
   }
 
   /**
-   * Déconnexion complète.
+   * Valide le code de vérification e-mail auprès du backend Django.
+   */
+  verifierCodeVerification(courriel: string, code: string): Observable<{ succes: boolean; valide: boolean; message: string }> {
+    return this.http.post<{ succes: boolean; valide: boolean; message: string }>(
+      `${environment.apiUrl}/authentification/verifier-code/`,
+      { courriel: courriel.trim().toLowerCase(), code: code.trim() }
+    );
+  }
+
+  /**
+   * Déconnexion complète auprès de Django et nettoyage du stockage local.
    */
   deconnecter(): void {
+    const jetonRafraichissement =
+      typeof window !== 'undefined' && window.localStorage
+        ? localStorage.getItem(CLE_STOCKAGE_RAFRAICHISSEMENT)
+        : null;
+
+    if (jetonRafraichissement) {
+      this.http
+        .post(`${environment.apiUrl}/authentification/deconnexion/`, {
+          jeton_rafraichissement: jetonRafraichissement
+        })
+        .subscribe({
+          next: () => {},
+          error: () => {}
+        });
+    }
+
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.removeItem(CLE_STOCKAGE_UTILISATEUR);
       localStorage.removeItem(CLE_STOCKAGE_JETON);
+      localStorage.removeItem(CLE_STOCKAGE_RAFRAICHISSEMENT);
     }
     this.utilisateurConnecte.set(null);
     this.messageSucces.set(null);
@@ -193,13 +291,15 @@ export class ServiceAuthentification {
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem(CLE_STOCKAGE_UTILISATEUR, JSON.stringify(reponse.utilisateur));
       localStorage.setItem(CLE_STOCKAGE_JETON, reponse.jetonAcces);
+      if (reponse.jetonRafraichissement) {
+        localStorage.setItem(CLE_STOCKAGE_RAFRAICHISSEMENT, reponse.jetonRafraichissement);
+      }
     }
   }
 
   /**
    * Vérifie si l'utilisateur est authentifié. Si oui, exécute l'action immédiatement.
    * Si non (mode visiteur), ouvre la modale de connexion avec le contexte approprié.
-   * @returns true si authentifié, false si l'authentification est exigée
    */
   exigerAuthentification(
     type: TypeActionConnexionRequise,
@@ -286,28 +386,13 @@ export class ServiceAuthentification {
   }
 
   /**
-   * Connexion express avec le profil Client de démonstration (Fatou Diop).
-   * Idéal pour les tests et la certification sans ressaisir de mot de passe.
-   */
-  connexionRapideClientVisiteur(): Observable<Utilisateur> {
-    const callback = this.configurationActionRequise()?.callbackApresConnexion;
-    return this.connecterAvecRolePredefini('CLIENT').pipe(
-      tap(() => {
-        this.fermerModaleConnexion();
-        if (callback) {
-          setTimeout(() => callback(), 150);
-        }
-      })
-    );
-  }
-
-  /**
    * Restaure la session au rechargement de la page si existante.
    */
   chargerSessionExistante(): void {
     if (typeof window !== 'undefined' && window.localStorage) {
       const donneesUtilisateur = localStorage.getItem(CLE_STOCKAGE_UTILISATEUR);
-      if (donneesUtilisateur) {
+      const jeton = localStorage.getItem(CLE_STOCKAGE_JETON);
+      if (donneesUtilisateur && jeton) {
         try {
           const utilisateur = JSON.parse(donneesUtilisateur) as Utilisateur;
           this.utilisateurConnecte.set(utilisateur);
