@@ -1,11 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import Chart from 'chart.js/auto';
 import { catchError, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 
 export type FiltrePeriodeRevenu = '24h' | '7j' | '30j';
@@ -24,9 +34,17 @@ export interface CommandeRecenteAnalytique {
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './gerant-analytiques.component.html'
 })
-export class GerantAnalytiquesComponent {
+export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly serviceAuth = inject(ServiceAuthentification);
+
+  @ViewChild('canvasRevenus') private canvasRevenusRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvasCategories') private canvasCategoriesRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvasCommandesSemaine') private canvasSemaineRef?: ElementRef<HTMLCanvasElement>;
+
+  private chartRevenus?: Chart;
+  private chartCategories?: Chart;
+  private chartSemaine?: Chart;
 
   // Informations réelles de l'établissement
   readonly nomRestaurant = signal<string>('Mon Restaurant');
@@ -55,103 +73,8 @@ export class GerantAnalytiquesComponent {
   readonly partChiffreAffairesVideos = signal<string>('0% du CA');
   readonly commandesVideos = signal<number>(0);
 
-  // Données de répartition par catégories (calculées depuis les articles réels commandés ou la carte réelle)
+  // Données de répartition par catégories
   readonly categoriesDonut = signal<{ nom: string; pourcentage: number; couleur: string; valeur: number }[]>([]);
-
-  // Segments calculés pour le Donut SVG
-  readonly segmentsDonut = computed(() => {
-    const cats = this.categoriesDonut();
-    const circonference = 345.575; // 2 * PI * 55
-    let offsetCumule = 0;
-    return cats.map((cat) => {
-      const longueur = (cat.pourcentage / 100) * circonference;
-      const segment = {
-        ...cat,
-        dasharray: `${longueur.toFixed(2)} ${circonference.toFixed(2)}`,
-        dashoffset: (-offsetCumule).toFixed(2)
-      };
-      offsetCumule += longueur;
-      return segment;
-    });
-  });
-
-  // Commandes de la semaine calculées dynamiquement par jour (L, M, M, J, V, S, D)
-  readonly barresSemaine = computed(() => {
-    const jours = [
-      { code: 1, jour: 'L' },
-      { code: 2, jour: 'M' },
-      { code: 3, jour: 'M' },
-      { code: 4, jour: 'J' },
-      { code: 5, jour: 'V' },
-      { code: 6, jour: 'S' },
-      { code: 0, jour: 'D' }
-    ];
-
-    const commandes = this.commandesRaw();
-    const compteursParJour: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-
-    commandes.forEach((c) => {
-      if (c.date_creation) {
-        const d = new Date(c.date_creation);
-        const dayIdx = d.getDay();
-        compteursParJour[dayIdx] = (compteursParJour[dayIdx] || 0) + 1;
-      }
-    });
-
-    const maxVal = Math.max(...Object.values(compteursParJour), 0);
-
-    return jours.map((j) => {
-      const qte = compteursParJour[j.code] || 0;
-      const hauteur = maxVal > 0 ? Math.max(10, Math.round((qte / maxVal) * 85)) : 0;
-      return {
-        jour: j.jour,
-        hauteur,
-        quantite: qte,
-        estMax: qte === maxVal && maxVal > 0
-      };
-    });
-  });
-
-  // Points SVG dynamiques pour la courbe des revenus
-  readonly donneesCourbe = computed(() => {
-    const commandes = this.commandesRaw();
-    const totalGlobal = commandes.reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
-
-    // 7 points équidistants pour Lun..Dim
-    const xPositions = [90, 220, 350, 480, 610, 740, 870];
-    const joursCode = [1, 2, 3, 4, 5, 6, 0];
-
-    const revenusParJour: number[] = joursCode.map((code) => {
-      return commandes
-        .filter((c) => {
-          if (!c.date_creation) return false;
-          return new Date(c.date_creation).getDay() === code;
-        })
-        .reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
-    });
-
-    const maxRev = Math.max(...revenusParJour, 0);
-
-    const points = xPositions.map((x, idx) => {
-      const montant = revenusParJour[idx] || 0;
-      // y=220 est la ligne 0 F, y=50 est le max
-      const y = maxRev > 0 ? 220 - Math.round((montant / maxRev) * 165) : 220;
-      return { x, y, montant, label: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][idx] };
-    });
-
-    const cheminLigne = 'M ' + points.map((p) => `${p.x},${p.y}`).join(' L ');
-    const cheminAire = cheminLigne + ' L 870,220 L 90,220 Z';
-
-    return {
-      points,
-      cheminLigne,
-      cheminAire,
-      maxRev,
-      totalGlobal,
-      labelMax: maxRev > 0 ? `${maxRev >= 1000 ? Math.round(maxRev / 1000) + 'k' : maxRev} F` : '0 F',
-      labelMilieu: maxRev > 0 ? `${Math.round(maxRev / 2000)}k F` : '0 F'
-    };
-  });
 
   // Données de la table des commandes réelles
   readonly listeCommandes = signal<CommandeRecenteAnalytique[]>([]);
@@ -173,6 +96,340 @@ export class GerantAnalytiquesComponent {
     });
 
     this.chargerAnalytiques();
+
+    // Effet réactif pour actualiser les graphiques Chart.js dès que les données arrivent
+    effect(() => {
+      const cmds = this.commandesRaw();
+      const periode = this.periodeActive();
+      if (this.chartRevenus) {
+        this.actualiserGraphiqueRevenus(cmds, periode);
+      }
+      if (this.chartSemaine) {
+        this.actualiserGraphiqueSemaine(cmds);
+      }
+    });
+
+    effect(() => {
+      const cats = this.categoriesDonut();
+      if (this.chartCategories && cats.length > 0) {
+        this.actualiserGraphiqueCategories(cats);
+      }
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this.initialiserGraphiqueRevenus();
+    this.initialiserGraphiqueCategories();
+    this.initialiserGraphiqueSemaine();
+  }
+
+  ngOnDestroy(): void {
+    if (this.chartRevenus) {
+      this.chartRevenus.destroy();
+      this.chartRevenus = undefined;
+    }
+    if (this.chartCategories) {
+      this.chartCategories.destroy();
+      this.chartCategories = undefined;
+    }
+    if (this.chartSemaine) {
+      this.chartSemaine.destroy();
+      this.chartSemaine = undefined;
+    }
+  }
+
+  // =========================================================================
+  // 1. GRAPHIQUE REVENUS (LIGNE CONTINUE AVEC DÉGRADÉ SOUPLE)
+  // =========================================================================
+  private initialiserGraphiqueRevenus(): void {
+    if (!this.canvasRevenusRef?.nativeElement) return;
+    const ctx = this.canvasRevenusRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+    gradient.addColorStop(0, 'rgba(229, 24, 36, 0.22)');
+    gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
+    gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
+
+    const donnees = this.calculerPointsRevenus(this.commandesRaw(), this.periodeActive());
+
+    this.chartRevenus = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: donnees.labels,
+        datasets: [
+          {
+            label: 'Revenus',
+            data: donnees.valeurs,
+            borderColor: '#E51824',
+            borderWidth: 3,
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#E51824',
+            pointBorderWidth: 2.5,
+            pointRadius: 4.5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#E51824',
+            pointHoverBorderColor: '#ffffff'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 12,
+            cornerRadius: 12,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13, weight: 'bold' },
+            displayColors: false,
+            callbacks: {
+              label: (ctxItem) => {
+                const val = Number(ctxItem.raw || 0);
+                return `${val.toLocaleString('fr-FR')} FCFA`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+              color: '#94a3b8'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: 'bold' },
+              color: '#94a3b8',
+              callback: (value) => {
+                const n = Number(value);
+                return n >= 1000 ? `${Math.round(n / 1000)}k F` : `${n} F`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private actualiserGraphiqueRevenus(commandes: any[], periode: FiltrePeriodeRevenu): void {
+    if (!this.chartRevenus) return;
+    const donnees = this.calculerPointsRevenus(commandes, periode);
+    this.chartRevenus.data.labels = donnees.labels;
+    this.chartRevenus.data.datasets[0].data = donnees.valeurs;
+    this.chartRevenus.update();
+  }
+
+  private calculerPointsRevenus(commandes: any[], periode: FiltrePeriodeRevenu): { labels: string[]; valeurs: number[] } {
+    if (periode === '24h') {
+      const labels = ['00h-04h', '04h-08h', '08h-12h', '12h-16h', '16h-20h', '20h-24h'];
+      const valeurs = [0, 0, 0, 0, 0, 0];
+      const today = new Date().toISOString().split('T')[0];
+      commandes
+        .filter((c) => (c.date_creation || '').startsWith(today))
+        .forEach((c) => {
+          const h = new Date(c.date_creation).getHours();
+          const idx = Math.min(Math.floor(h / 4), 5);
+          valeurs[idx] += Number(c.total_fcfa || 0);
+        });
+      return { labels, valeurs };
+    }
+
+    if (periode === '30j') {
+      const labels = ['Semaine 1', 'Semaine 2', 'Semaine 3', 'Semaine 4'];
+      const valeurs = [0, 0, 0, 0];
+      commandes.forEach((c) => {
+        const d = new Date(c.date_creation || Date.now());
+        const jourDuMois = d.getDate();
+        const idx = Math.min(Math.floor((jourDuMois - 1) / 7), 3);
+        valeurs[idx] += Number(c.total_fcfa || 0);
+      });
+      return { labels, valeurs };
+    }
+
+    // Par défaut '7j' (Lun..Dim)
+    const labels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const joursCode = [1, 2, 3, 4, 5, 6, 0];
+    const valeurs = joursCode.map((code) => {
+      return commandes
+        .filter((c) => c.date_creation && new Date(c.date_creation).getDay() === code)
+        .reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
+    });
+
+    return { labels, valeurs };
+  }
+
+  // =========================================================================
+  // 2. GRAPHIQUE CATÉGORIES (DONUT / DOUGHNUT)
+  // =========================================================================
+  private initialiserGraphiqueCategories(): void {
+    if (!this.canvasCategoriesRef?.nativeElement) return;
+    const ctx = this.canvasCategoriesRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const cats = this.categoriesDonut();
+    const labels = cats.map((c) => c.nom);
+    const data = cats.map((c) => c.pourcentage || 1);
+    const bgColors = cats.map((c) => c.couleur || '#E51824');
+
+    this.chartCategories = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [
+          {
+            data,
+            backgroundColor: bgColors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 10,
+            cornerRadius: 10,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: 'bold' },
+            callbacks: {
+              label: (context) => ` ${context.label} : ${context.raw}%`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private actualiserGraphiqueCategories(cats: { nom: string; pourcentage: number; couleur: string }[]): void {
+    if (!this.chartCategories) return;
+    this.chartCategories.data.labels = cats.map((c) => c.nom);
+    this.chartCategories.data.datasets[0].data = cats.map((c) => c.pourcentage);
+    this.chartCategories.data.datasets[0].backgroundColor = cats.map((c) => c.couleur);
+    this.chartCategories.update();
+  }
+
+  // =========================================================================
+  // 3. GRAPHIQUE COMMANDES SEMAINE (BAR CHART)
+  // =========================================================================
+  private initialiserGraphiqueSemaine(): void {
+    if (!this.canvasSemaineRef?.nativeElement) return;
+    const ctx = this.canvasSemaineRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const barres = this.calculerBarresSemaine(this.commandesRaw());
+    const labels = barres.map((b) => b.jour);
+    const data = barres.map((b) => b.quantite);
+    const maxVal = Math.max(...data, 0);
+    const bgColors = data.map((v) => (v === maxVal && maxVal > 0 ? '#E51824' : '#F1F5F9'));
+
+    this.chartSemaine = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Commandes',
+            data,
+            backgroundColor: bgColors,
+            hoverBackgroundColor: '#E51824',
+            borderRadius: 6,
+            borderSkipped: false,
+            maxBarThickness: 38
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 10,
+            cornerRadius: 10,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: 'bold' },
+            displayColors: false,
+            callbacks: {
+              label: (context) => `${context.raw} commande(s)`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+              color: '#94a3b8'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              stepSize: 1,
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: 'bold' },
+              color: '#94a3b8'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private actualiserGraphiqueSemaine(commandes: any[]): void {
+    if (!this.chartSemaine) return;
+    const barres = this.calculerBarresSemaine(commandes);
+    const data = barres.map((b) => b.quantite);
+    const maxVal = Math.max(...data, 0);
+    this.chartSemaine.data.labels = barres.map((b) => b.jour);
+    this.chartSemaine.data.datasets[0].data = data;
+    this.chartSemaine.data.datasets[0].backgroundColor = data.map((v) => (v === maxVal && maxVal > 0 ? '#E51824' : '#F1F5F9'));
+    this.chartSemaine.update();
+  }
+
+  private calculerBarresSemaine(commandes: any[]): { jour: string; quantite: number }[] {
+    const jours = [
+      { code: 1, jour: 'Lun' },
+      { code: 2, jour: 'Mar' },
+      { code: 3, jour: 'Mer' },
+      { code: 4, jour: 'Jeu' },
+      { code: 5, jour: 'Ven' },
+      { code: 6, jour: 'Sam' },
+      { code: 0, jour: 'Dim' }
+    ];
+
+    const compteurs: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+    commandes.forEach((c) => {
+      if (c.date_creation) {
+        const idx = new Date(c.date_creation).getDay();
+        compteurs[idx] = (compteurs[idx] || 0) + 1;
+      }
+    });
+
+    return jours.map((j) => ({
+      jour: j.jour,
+      quantite: compteurs[j.code] || 0
+    }));
   }
 
   chargerAnalytiques(): void {
@@ -206,7 +463,6 @@ export class GerantAnalytiquesComponent {
         const clientsUniques = new Set(commandes.map((c) => c.client_nom).filter(Boolean));
         this.clientsNombre.set(clientsUniques.size || 1);
 
-        // Ventes attribuées aux vidéos
         const cmdsVideos = commandes.filter((c) => Boolean(c.source_video_id));
         const totalVideos = cmdsVideos.reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
         this.commandesVideos.set(cmdsVideos.length);
@@ -215,10 +471,8 @@ export class GerantAnalytiquesComponent {
           this.partChiffreAffairesVideos.set(`${Math.round((totalVideos / totalGlobal) * 100)}% du CA`);
         }
 
-        // Calcul des catégories réelles commandées
         this.calculerCategoriesReelles(commandes);
 
-        // Mapping des commandes récentes
         const recentes: CommandeRecenteAnalytique[] = commandes.slice(0, 10).map((c) => {
           let statutAffiche: 'Préparation' | 'En attente' | 'Livré' = 'En attente';
           if (c.statut === 'EN_PREPARATION' || c.statut === 'PRETE_POUR_RETRAIT') {
@@ -246,9 +500,6 @@ export class GerantAnalytiquesComponent {
     });
   }
 
-  /**
-   * Calcule la répartition des ventes par catégories depuis les articles réels.
-   */
   private calculerCategoriesReelles(commandes: any[]): void {
     const compteurCat: Record<string, number> = {};
     let totalArticles = 0;
@@ -278,9 +529,6 @@ export class GerantAnalytiquesComponent {
     this.categoriesDonut.set(resultat);
   }
 
-  /**
-   * Si aucune commande n'a encore été passée, base la répartition sur la carte réelle du restaurant.
-   */
   private chargerProportionsMenu(): void {
     this.http.get<any[]>(`${environment.apiUrl}/catalogue/mes-plats/`).pipe(
       catchError(() => of([]))

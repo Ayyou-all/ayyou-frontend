@@ -159,43 +159,9 @@
         </span>
       </div>
 
-      <!-- Graphique en barres verticales rouges -->
-      <div class="relative pt-4 pb-2">
-        <!-- Lignes de repères Y horizontales (0k, 5k, 10k, 15k) -->
-        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-[10px] text-slate-300 font-bold pr-2 pb-6">
-          <div class="border-b border-dashed border-slate-100 flex items-center justify-between pb-1">
-            <span>15kk</span>
-          </div>
-          <div class="border-b border-dashed border-slate-100 flex items-center justify-between pb-1">
-            <span>10kk</span>
-          </div>
-          <div class="border-b border-dashed border-slate-100 flex items-center justify-between pb-1">
-            <span>5kk</span>
-          </div>
-          <div class="flex items-center justify-between pb-1">
-            <span>0k</span>
-          </div>
-        </div>
-
-        <!-- 7 Bâtonnets rouges -->
-        <div class="grid grid-cols-7 gap-2 sm:gap-3 h-48 items-end relative z-10 px-4 sm:px-6">
-          @for (barre of serviceLivreur.activiteHebdomadaire(); track barre.jour) {
-            <div class="flex flex-col items-center gap-2 group h-full justify-end">
-              <!-- Barre rouge -->
-              <div class="w-full max-w-[28px] rounded-t-lg bg-[#E51824] transition-all duration-500 group-hover:bg-red-700 relative flex items-center justify-center"
-                   [style.height.%]="barre.hauteurPourcentage">
-                <!-- Tooltip au survol -->
-                <div class="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-20">
-                  {{ barre.montantFcfa | number }}
-                </div>
-              </div>
-              <!-- Libellé du jour -->
-              <span class="text-[11px] font-bold text-slate-400">
-                {{ barre.jour }}
-              </span>
-            </div>
-          }
-        </div>
+      <!-- Graphique en barres Chart.js dynamique -->
+      <div class="relative w-full h-52 sm:h-56 pt-2">
+        <canvas #canvasActivite class="w-full h-full"></canvas>
       </div>
 
     </div>

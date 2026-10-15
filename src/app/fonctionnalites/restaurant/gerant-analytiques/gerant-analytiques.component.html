@@ -159,73 +159,9 @@
       </div>
     </div>
 
-    <!-- Canevas SVG Haute Définition du Graphique de Revenus -->
-    <div class="relative w-full overflow-hidden">
-      <svg
-        viewBox="0 0 920 260"
-        class="w-full h-56 sm:h-64 lg:h-72 select-none"
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <!-- Dégradé sous la courbe -->
-          <linearGradient id="degradeRevenusCourbe" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#E51824" stop-opacity="0.16" />
-            <stop offset="85%" stop-color="#E51824" stop-opacity="0.02" />
-            <stop offset="100%" stop-color="#E51824" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-
-        <!-- Lignes horizontales de repère & Étiquettes Axe Y -->
-        <!-- Max -->
-        <line x1="75" y1="55" x2="890" y2="55" stroke="#F1F5F9" stroke-width="1.2" stroke-dasharray="3 3" />
-        <text x="65" y="59" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">{{ donneesCourbe().labelMax }}</text>
-
-        <!-- Milieu -->
-        <line x1="75" y1="135" x2="890" y2="135" stroke="#F1F5F9" stroke-width="1.2" stroke-dasharray="3 3" />
-        <text x="65" y="139" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">{{ donneesCourbe().labelMilieu }}</text>
-
-        <!-- 0 F -->
-        <line x1="75" y1="220" x2="890" y2="220" stroke="#E2E8F0" stroke-width="1.2" />
-        <text x="65" y="224" font-size="11" font-weight="600" fill="#94A3B8" text-anchor="end">0 F</text>
-
-        <!-- AIRE REMPLIE SOUS LA COURBE (Gradient) -->
-        <path
-          [attr.d]="donneesCourbe().cheminAire"
-          fill="url(#degradeRevenusCourbe)"
-        />
-
-        <!-- COURBE ROUGE (Ligne continue) -->
-        <path
-          [attr.d]="donneesCourbe().cheminLigne"
-          fill="none"
-          stroke="#E51824"
-          stroke-width="3"
-          stroke-linecap="round"
-        />
-
-        <!-- POINTS CLÉS SUR LA COURBE (7 jours : Lun..Dim) -->
-        @for (pt of donneesCourbe().points; track pt.label) {
-          <circle
-            [attr.cx]="pt.x"
-            [attr.cy]="pt.y"
-            [attr.r]="pt.montant > 0 && pt.montant === donneesCourbe().maxRev ? 5 : 3.5"
-            fill="#E51824"
-          />
-          @if (pt.montant > 0 && pt.montant === donneesCourbe().maxRev) {
-            <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="9" fill="#E51824" fill-opacity="0.2" />
-          }
-          <text
-            [attr.x]="pt.x"
-            y="244"
-            font-size="11"
-            [attr.font-weight]="pt.montant > 0 && pt.montant === donneesCourbe().maxRev ? '700' : '600'"
-            [attr.fill]="pt.montant > 0 && pt.montant === donneesCourbe().maxRev ? '#E51824' : '#64748B'"
-            text-anchor="middle"
-          >
-            {{ pt.label }}
-          </text>
-        }
-      </svg>
+    <!-- Canevas Chart.js Haute Définition du Graphique de Revenus -->
+    <div class="relative w-full h-64 sm:h-72 pt-2">
+      <canvas #canvasRevenus class="w-full h-full"></canvas>
     </div>
   </div>
 
@@ -236,31 +172,18 @@
     <div class="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col justify-between">
       <h2 class="text-base font-black text-gray-900 tracking-tight">Catégories les plus vendues</h2>
 
-      <!-- Visualisation Donut SVG -->
-      <div class="py-6 flex flex-col items-center justify-center">
-        @if (segmentsDonut().length > 0) {
+      <!-- Visualisation Donut Chart.js -->
+      <div class="py-4 flex flex-col items-center justify-center">
+        @if (categoriesDonut().length > 0) {
           <div class="relative w-44 h-44 flex items-center justify-center">
-            <svg viewBox="0 0 160 160" class="w-full h-full -rotate-90">
-              @for (seg of segmentsDonut(); track seg.nom) {
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="55"
-                  fill="transparent"
-                  [attr.stroke]="seg.couleur"
-                  stroke-width="26"
-                  [attr.stroke-dasharray]="seg.dasharray"
-                  [attr.stroke-dashoffset]="seg.dashoffset"
-                />
-              }
-            </svg>
+            <canvas #canvasCategories class="w-full h-full"></canvas>
           </div>
 
           <!-- Légende en dessous avec pourcentages réels -->
-          <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-6">
-            @for (seg of segmentsDonut(); track seg.nom) {
-              <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-xs" [style.background-color]="seg.couleur"></span>
+          <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-5">
+            @for (seg of categoriesDonut(); track seg.nom) {
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-xs shrink-0" [style.background-color]="seg.couleur"></span>
                 <span class="text-xs font-bold text-gray-700">{{ seg.nom }} ({{ seg.pourcentage }}%)</span>
               </div>
             }
@@ -276,45 +199,13 @@
       </div>
     </div>
 
-    <!-- CARTE DROITE : Commandes de la semaine (Barres verticales) -->
+    <!-- CARTE DROITE : Commandes de la semaine (Histogramme Chart.js) -->
     <div class="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col justify-between">
       <h2 class="text-base font-black text-gray-900 tracking-tight">Commandes de la semaine</h2>
 
-      <!-- Visualisation Histogramme -->
-      <div class="py-4">
-        <div class="flex items-end gap-3 sm:gap-4 h-48 sm:h-52 pt-4 px-2">
-          <!-- Axe Y repères -->
-          <div class="flex flex-col justify-between h-full text-[10px] font-bold text-gray-400 pr-1 pb-6 select-none">
-            <span>Max</span>
-            <span>50%</span>
-            <span>0</span>
-          </div>
-
-          <!-- Colonnes de barres -->
-          <div class="flex-1 grid grid-cols-7 gap-2 sm:gap-3 h-full items-end pb-6 border-b border-gray-100">
-            @for (barre of barresSemaine(); track $index) {
-              <div class="flex flex-col items-center h-full justify-end group relative" [title]="barre.quantite + ' commandes'">
-                <!-- Tooltip hover -->
-                <div class="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 bg-gray-900 text-white text-[10px] font-bold py-0.5 px-1.5 rounded pointer-events-none whitespace-nowrap z-10">
-                  {{ barre.quantite }} cmd
-                </div>
-                <!-- Barre -->
-                <div
-                  class="w-full max-w-[42px] rounded-t-sm transition-all duration-300"
-                  [style.height.%]="barre.hauteur"
-                  [class]="barre.estMax ? 'bg-[#E51824]' : 'bg-gray-100 group-hover:bg-gray-200'"
-                ></div>
-                <!-- Libellé du jour -->
-                <span
-                  class="mt-2.5 text-xs font-bold select-none"
-                  [class]="barre.estMax ? 'text-[#E51824] font-black' : 'text-gray-500'"
-                >
-                  {{ barre.jour }}
-                </span>
-              </div>
-            }
-          </div>
-        </div>
+      <!-- Visualisation Histogramme Chart.js -->
+      <div class="relative w-full h-56 pt-2">
+        <canvas #canvasCommandesSemaine class="w-full h-full"></canvas>
       </div>
     </div>
 

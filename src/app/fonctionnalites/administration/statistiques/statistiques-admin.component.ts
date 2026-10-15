@@ -1,8 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  effect,
+  inject,
+  signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import Chart from 'chart.js/auto';
 import { environment } from '../../../../environments/environment';
 
 export interface PointEvolutionRevenu {
@@ -16,39 +27,40 @@ export interface PointEvolutionRevenu {
 export interface RestaurantPerformanceTop {
   nom: string;
   commandes: number;
-  pourcentageBarre: number; // largeur % relative
+  pourcentageBarre: number;
 }
 
 export interface CategorieStatistique {
   nom: string;
   total: number;
   pourcentage: number;
-  dasharray: string;
-  dashoffset: string;
+  dasharray?: string;
+  dashoffset?: string;
   couleur: string;
 }
 
 @Component({
   selector: 'app-statistiques-admin',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './statistiques-admin.component.html'
 })
-export class StatistiquesAdminComponent implements OnInit {
+export class StatistiquesAdminComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
 
-  // Horodatage de synchronisation temps réel
-  readonly derniereMiseAJour = signal<string>('En direct');
+  @ViewChild('canvasEvolution') private canvasEvolutionRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvasCategoriesDonut') private canvasDonutRef?: ElementRef<HTMLCanvasElement>;
 
-  // Période sélectionnée
+  private chartEvolution?: Chart;
+  private chartDonut?: Chart;
+
+  // Sélecteur de période globale
   readonly periodeSelectionnee = signal<string>('30 derniers jours');
 
   // Fréquence graphique (Hebdomadaire vs Mensuel)
   readonly frequenceGraphique = signal<'HEBDOMADAIRE' | 'MENSUEL'>('HEBDOMADAIRE');
-
-  // Point survolé sur la courbe des revenus
-  readonly pointSurvole = signal<PointEvolutionRevenu | null>(null);
+  readonly derniereMiseAJour = signal<string>('En direct');
 
   // Notification d'action
   readonly notificationSucces = signal<string | null>(null);
@@ -70,58 +82,25 @@ export class StatistiquesAdminComponent implements OnInit {
 
   // Répartition réelle par catégorie (Donut chart)
   readonly categories = signal<CategorieStatistique[]>([
-    { nom: 'Plats locaux', total: 0, pourcentage: 100, dasharray: '238 238', dashoffset: '0', couleur: '#E51824' }
+    { nom: 'Plats locaux', total: 0, pourcentage: 100, couleur: '#E51824' }
   ]);
 
-  // Graduation dynamique de l'axe Y en fonction du pic de commandes réel
-  readonly maxAxeY = computed(() => {
-    const pts = this.pointsCourbeRevenus();
-    if (pts.length === 0) return 3000;
-    const maxVal = Math.max(...pts.map((p) => p.valeurMilliers), 0);
-    if (maxVal === 0) return 600;
-    return Math.ceil(maxVal / 500) * 500;
-  });
+  constructor() {
+    // Mise à jour réactive des graphiques Chart.js lors de l'arrivée des données
+    effect(() => {
+      const pts = this.pointsCourbeRevenus();
+      if (this.chartEvolution && pts.length > 0) {
+        this.actualiserGraphiqueEvolution(pts);
+      }
+    });
 
-  readonly graduationsAxeY = computed(() => {
-    const max = this.maxAxeY();
-    const pas = Math.max(Math.round(max / 6), 1);
-    return [
-      max,
-      Math.round(max - pas),
-      Math.round(max - 2 * pas),
-      Math.round(max - 3 * pas),
-      Math.round(max - 4 * pas),
-      Math.round(max - 5 * pas),
-      0
-    ];
-  });
-
-  // Génération dynamique du tracé de la ligne SVG
-  readonly cheminLigneSvg = computed(() => {
-    const pts = this.pointsCourbeRevenus();
-    if (pts.length === 0) return 'M 35 195 L 485 195';
-    let d = `M ${pts[0].xPourcentage} ${pts[0].yPourcentage}`;
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1];
-      const curr = pts[i];
-      const cx1 = prev.xPourcentage + (curr.xPourcentage - prev.xPourcentage) / 2;
-      const cy1 = prev.yPourcentage;
-      const cx2 = prev.xPourcentage + (curr.xPourcentage - prev.xPourcentage) / 2;
-      const cy2 = curr.yPourcentage;
-      d += ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${curr.xPourcentage} ${curr.yPourcentage}`;
-    }
-    return d;
-  });
-
-  // Génération dynamique de la surface sous la courbe SVG
-  readonly cheminSurfaceSvg = computed(() => {
-    const pts = this.pointsCourbeRevenus();
-    if (pts.length === 0) return 'M 35 195 L 485 195 L 485 200 L 35 200 Z';
-    const ligneD = this.cheminLigneSvg();
-    const premier = pts[0];
-    const dernier = pts[pts.length - 1];
-    return `${ligneD} L ${dernier.xPourcentage} 200 L ${premier.xPourcentage} 200 Z`;
-  });
+    effect(() => {
+      const cats = this.categories();
+      if (this.chartDonut && cats.length > 0) {
+        this.actualiserGraphiqueDonut(cats);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.chargerStatistiques();
@@ -134,6 +113,164 @@ export class StatistiquesAdminComponent implements OnInit {
     this.destroyRef.onDestroy(() => {
       clearInterval(intervalle);
     });
+  }
+
+  ngAfterViewInit(): void {
+    this.initialiserGraphiqueEvolution();
+    this.initialiserGraphiqueDonut();
+  }
+
+  ngOnDestroy(): void {
+    if (this.chartEvolution) {
+      this.chartEvolution.destroy();
+      this.chartEvolution = undefined;
+    }
+    if (this.chartDonut) {
+      this.chartDonut.destroy();
+      this.chartDonut = undefined;
+    }
+  }
+
+  private initialiserGraphiqueEvolution(): void {
+    if (!this.canvasEvolutionRef?.nativeElement) return;
+    const ctx = this.canvasEvolutionRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, 'rgba(229, 24, 36, 0.22)');
+    gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
+    gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
+
+    const pts = this.pointsCourbeRevenus();
+    const labels = pts.length > 0 ? pts.map((p) => p.date) : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const data = pts.length > 0 ? pts.map((p) => p.valeurMilliers / 100) : [0, 0, 0, 0, 0, 0, 0];
+
+    this.chartEvolution = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Commandes',
+            data,
+            borderColor: '#E51824',
+            borderWidth: 3,
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#E51824',
+            pointBorderWidth: 2.5,
+            pointRadius: 4.5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#E51824',
+            pointHoverBorderColor: '#ffffff'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 10,
+            cornerRadius: 10,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13, weight: 'bold' },
+            displayColors: false,
+            callbacks: {
+              label: (context) => {
+                const val = Number(context.raw || 0);
+                return `${val} commande${val > 1 ? 's' : ''}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+              color: '#94a3b8'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              stepSize: 1,
+              font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: 'bold' },
+              color: '#94a3b8'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private actualiserGraphiqueEvolution(pts: PointEvolutionRevenu[]): void {
+    if (!this.chartEvolution) return;
+    this.chartEvolution.data.labels = pts.map((p) => p.date);
+    this.chartEvolution.data.datasets[0].data = pts.map((p) => p.valeurMilliers / 100);
+    this.chartEvolution.update();
+  }
+
+  private initialiserGraphiqueDonut(): void {
+    if (!this.canvasDonutRef?.nativeElement) return;
+    const ctx = this.canvasDonutRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const cats = this.categories();
+    const labels = cats.map((c) => c.nom);
+    const data = cats.map((c) => c.pourcentage || 1);
+    const bgColors = cats.map((c) => c.couleur || '#E51824');
+
+    this.chartDonut = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [
+          {
+            data,
+            backgroundColor: bgColors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 10,
+            cornerRadius: 10,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 'bold' },
+            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: 'bold' },
+            callbacks: {
+              label: (context) => ` ${context.label} : ${context.raw}%`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private actualiserGraphiqueDonut(cats: CategorieStatistique[]): void {
+    if (!this.chartDonut) return;
+    this.chartDonut.data.labels = cats.map((c) => c.nom);
+    this.chartDonut.data.datasets[0].data = cats.map((c) => c.pourcentage);
+    this.chartDonut.data.datasets[0].backgroundColor = cats.map((c) => c.couleur || '#E51824');
+    this.chartDonut.update();
   }
 
   chargerStatistiques(silencieux: boolean = false): void {
@@ -157,13 +294,11 @@ export class StatistiquesAdminComponent implements OnInit {
           tauxCroissance: { valeur: '98.5%', evolution: 'Optimal' }
         });
 
-        // Horodatage de synchronisation
         const maintenant = new Date();
         this.derniereMiseAJour.set(
           `Mis à jour à ${maintenant.getHours().toString().padStart(2, '0')}:${maintenant.getMinutes().toString().padStart(2, '0')}:${maintenant.getSeconds().toString().padStart(2, '0')}`
         );
 
-        // Points de la courbe hebdomadaire
         if (stats.commandesParJour && Array.isArray(stats.commandesParJour)) {
           const points: PointEvolutionRevenu[] = stats.commandesParJour.map((pt: any) => ({
             date: pt.date || 'Jour',
@@ -175,7 +310,6 @@ export class StatistiquesAdminComponent implements OnInit {
           this.pointsCourbeRevenus.set(points);
         }
 
-        // Top restaurants
         if (stats.topRestaurants && Array.isArray(stats.topRestaurants)) {
           this.topRestaurants.set(
             stats.topRestaurants.map((r: any) => ({
@@ -186,7 +320,6 @@ export class StatistiquesAdminComponent implements OnInit {
           );
         }
 
-        // Répartition réelle des catégories
         if (stats.commandesParCategorie && Array.isArray(stats.commandesParCategorie) && stats.commandesParCategorie.length > 0) {
           this.categories.set(stats.commandesParCategorie);
         }

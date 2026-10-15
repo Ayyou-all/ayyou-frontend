@@ -169,104 +169,9 @@
         </div>
       </div>
 
-      <!-- Graphique SVG interactif haute résolution -->
-      <div class="relative w-full pt-4">
-        <div class="flex gap-4">
-          
-          <!-- Axe Y dynamique des valeurs -->
-          <div class="flex flex-col justify-between text-[11px] font-semibold text-slate-400 select-none pb-8 text-right h-56 w-9 shrink-0">
-            @for (val of graduationsAxeY(); track $index) {
-              <span>{{ val }}</span>
-            }
-          </div>
-
-          <!-- Zone du canevas SVG -->
-          <div class="relative flex-1 h-56">
-            
-            <!-- Grille horizontale en pointillés -->
-            <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8">
-              @for (ligne of [1, 2, 3, 4, 5, 6, 7]; track ligne) {
-                <div class="w-full border-b border-slate-100"></div>
-              }
-            </div>
-
-            <!-- SVG Spline Curve -->
-            <svg class="w-full h-full overflow-visible" viewBox="0 0 520 220" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="gradientRevenus" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#E51824" stop-opacity="0.18" />
-                  <stop offset="100%" stop-color="#E51824" stop-opacity="0.0" />
-                </linearGradient>
-              </defs>
-
-              <!-- Remplissage dégradé sous la courbe -->
-              <path
-                [attr.d]="cheminSurfaceSvg()"
-                fill="url(#gradientRevenus)"
-              />
-
-              <!-- Ligne de courbe rouge -->
-              <path
-                [attr.d]="cheminLigneSvg()"
-                fill="none"
-                stroke="#E51824"
-                stroke-width="3"
-                stroke-linecap="round"
-              />
-
-              <!-- Points interactifs sur la courbe -->
-              @for (point of pointsCourbeRevenus(); track point.date) {
-                <g
-                  (mouseenter)="pointSurvole.set(point)"
-                  (mouseleave)="pointSurvole.set(null)"
-                  class="cursor-pointer group"
-                >
-                  <circle
-                    [attr.cx]="point.xPourcentage"
-                    [attr.cy]="point.yPourcentage"
-                    r="12"
-                    fill="transparent"
-                  />
-                  <circle
-                    [attr.cx]="point.xPourcentage"
-                    [attr.cy]="point.yPourcentage"
-                    r="5"
-                    fill="#ffffff"
-                    stroke="#E51824"
-                    stroke-width="2.5"
-                    class="transition-transform group-hover:scale-125"
-                  />
-                  <circle
-                    [attr.cx]="point.xPourcentage"
-                    [attr.cy]="point.yPourcentage"
-                    r="2.5"
-                    fill="#E51824"
-                  />
-                </g>
-              }
-            </svg>
-
-            <!-- Infobulle dynamique au survol -->
-            @if (pointSurvole()) {
-              <div
-                class="absolute -top-3 z-20 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xl -translate-x-1/2 pointer-events-none transition-all"
-                [style.left]="(pointSurvole()!.xPourcentage / 5.2) + '%'"
-              >
-                <div class="text-[10px] text-slate-400">{{ pointSurvole()!.date }}</div>
-                <div>{{ pointSurvole()!.label }}</div>
-              </div>
-            }
-
-            <!-- Axe horizontal X (Dates du mois) -->
-            <div class="h-6 flex items-center justify-between text-[11px] font-semibold text-slate-400 pt-2 select-none">
-              @for (point of pointsCourbeRevenus(); track point.date) {
-                <span>{{ point.date }}</span>
-              }
-            </div>
-
-          </div>
-
-        </div>
+      <!-- Graphique Chart.js interactif haute résolution -->
+      <div class="relative w-full h-64 pt-2">
+        <canvas #canvasEvolution class="w-full h-full"></canvas>
       </div>
 
     </div>
@@ -278,27 +183,10 @@
         Commandes par Catégorie
       </h3>
 
-      <!-- Donut Chart SVG Dynamique -->
+      <!-- Donut Chart.js Dynamique -->
       <div class="flex items-center justify-center py-2">
         <div class="relative w-48 h-48">
-          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            <!-- Cercle de fond -->
-            <circle cx="50" cy="50" r="38" stroke="#f1f5f9" stroke-width="15" fill="none" />
-            
-            <!-- Segments dynamiques par catégorie -->
-            @for (cat of categories(); track cat.nom) {
-              <circle
-                cx="50" cy="50" r="38"
-                [attr.stroke]="cat.couleur"
-                stroke-width="15"
-                [attr.stroke-dasharray]="cat.dasharray"
-                [attr.stroke-dashoffset]="cat.dashoffset"
-                fill="none"
-                class="transition-all hover:opacity-90"
-              />
-            }
-          </svg>
-
+          <canvas #canvasCategoriesDonut class="w-full h-full"></canvas>
           <!-- Centre vide du donut -->
           <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span class="text-xl font-black text-slate-900 font-['Outfit']">{{ kpis().commandesTotales.valeur }}</span>

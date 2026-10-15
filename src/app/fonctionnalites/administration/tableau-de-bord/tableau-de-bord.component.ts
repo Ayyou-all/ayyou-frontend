@@ -1,7 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  effect,
+  inject,
+  signal
+} from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import Chart from 'chart.js/auto';
 import { environment } from '../../../../environments/environment';
 
 export interface CarteIndicateurSuperadmin {
@@ -26,29 +37,21 @@ export interface ValidationRecenteSuperadmin {
   statut: 'EN_ATTENTE' | 'VALIDE' | 'REJETE';
 }
 
-export interface PointDonneeGraphique {
-  jour: string;
-  date?: string;
-  valeur: number;
-  xPourcentage: number;
-  yPourcentage: number;
-}
-
 @Component({
   selector: 'app-tableau-de-bord',
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './tableau-de-bord.component.html'
 })
-export class TableauDeBordComponent {
+export class TableauDeBordComponent implements AfterViewInit, OnDestroy {
   readonly routeur = inject(Router);
   private readonly http = inject(HttpClient);
 
+  @ViewChild('canvasCommandes') private canvasRef?: ElementRef<HTMLCanvasElement>;
+  private chartCommandes?: Chart;
+
   // Période sélectionnée pour le graphique (Semaine ou Mois)
   readonly periodeSelectionnee = signal<'SEMAINE' | 'MOIS'>('SEMAINE');
-
-  // Point survolé sur le graphique
-  readonly pointSurvole = signal<PointDonneeGraphique | null>(null);
 
   // 4 Cartes d'indicateurs (KPIs) alimentées par l'API Superadmin
   readonly listeIndicateurs = signal<CarteIndicateurSuperadmin[]>([
@@ -90,62 +93,8 @@ export class TableauDeBordComponent {
     }
   ]);
 
-  // Données brutes de la courbe (7 derniers jours) - alimentées exclusivement par l'API
-  private readonly donneesBrutesSemaine = signal<{ jour: string; date?: string; valeur: number }[]>([]);
-
-  // Hauteur de la zone de tracé SVG (viewBox 0 0 670 270)
-  private readonly HAUTEUR_SVG = 270;
-  private readonly X_POINTS = [35, 135, 235, 335, 435, 535, 635];
-
-  // Valeur maximale de l'axe Y calculée à partir des vraies données (multiple de 9 pour 10 graduations)
-  readonly maxAxeY = computed(() => {
-    const max = Math.max(0, ...this.donneesBrutesSemaine().map((p) => p.valeur));
-    return Math.max(9, Math.ceil((max * 1.15) / 9) * 9);
-  });
-
-  // Graduations de l'axe Y (du haut vers le bas)
-  readonly graduationsAxeY = computed(() => {
-    const max = this.maxAxeY();
-    return Array.from({ length: 10 }, (_, i) => Math.round((max * (9 - i)) / 9));
-  });
-
-  // Points positionnés selon l'échelle réelle
-  readonly pointsGraphiqueSemaine = computed<PointDonneeGraphique[]>(() => {
-    const donnees = this.donneesBrutesSemaine();
-    const max = this.maxAxeY();
-    return donnees.map((p, idx) => ({
-      jour: p.jour,
-      date: p.date,
-      valeur: p.valeur,
-      xPourcentage: this.X_POINTS[idx] ?? 35 + idx * 100,
-      yPourcentage: this.HAUTEUR_SVG - (p.valeur / max) * this.HAUTEUR_SVG
-    }));
-  });
-
-  // Tracé SVG dynamique de la ligne de commande
-  readonly cheminLigneSvg = computed(() => {
-    const pts = this.pointsGraphiqueSemaine();
-    if (!pts.length) return `M 35 ${this.HAUTEUR_SVG} L 635 ${this.HAUTEUR_SVG}`;
-    let d = `M ${pts[0].xPourcentage} ${pts[0].yPourcentage}`;
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1];
-      const cur = pts[i];
-      const cpx = prev.xPourcentage + (cur.xPourcentage - prev.xPourcentage) / 2;
-      d += ` C ${cpx} ${prev.yPourcentage}, ${cpx} ${cur.yPourcentage}, ${cur.xPourcentage} ${cur.yPourcentage}`;
-    }
-    return d;
-  });
-
-  // Surface remplie sous la courbe
-  readonly cheminSurfaceSvg = computed(() => {
-    const pts = this.pointsGraphiqueSemaine();
-    const bas = this.HAUTEUR_SVG;
-    if (!pts.length) return `M 35 ${bas} L 635 ${bas} Z`;
-    const ligne = this.cheminLigneSvg();
-    const last = pts[pts.length - 1];
-    const first = pts[0];
-    return `${ligne} L ${last.xPourcentage} ${bas} L ${first.xPourcentage} ${bas} Z`;
-  });
+  // Données brutes de la courbe (7 derniers jours ou 30 jours) - alimentées par l'API
+  readonly donneesBrutesSemaine = signal<{ jour: string; date?: string; valeur: number }[]>([]);
 
   // Liste des dernières validations réelles (provenant de la base de données)
   readonly dernieresValidations = signal<ValidationRecenteSuperadmin[]>([]);
@@ -158,6 +107,149 @@ export class TableauDeBordComponent {
     // Rafraîchissement en temps réel toutes les 15 secondes
     const intervalle = setInterval(() => this.chargerStatistiques(), 15000);
     inject(DestroyRef).onDestroy(() => clearInterval(intervalle));
+
+    // Effet pour mettre à jour automatiquement le graphique Chart.js
+    effect(() => {
+      const donnees = this.donneesBrutesSemaine();
+      const periode = this.periodeSelectionnee();
+      if (this.chartCommandes && donnees.length > 0) {
+        this.actualiserGraphique(donnees, periode);
+      }
+    });
+  }
+
+  ngAfterViewInit(): void {
+    this.initialiserGraphique();
+  }
+
+  ngOnDestroy(): void {
+    if (this.chartCommandes) {
+      this.chartCommandes.destroy();
+      this.chartCommandes = undefined;
+    }
+  }
+
+  private initialiserGraphique(): void {
+    if (!this.canvasRef?.nativeElement) return;
+    const ctx = this.canvasRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    // Création d'un dégradé rouge doux sous la courbe
+    const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, 'rgba(229, 24, 36, 0.22)');
+    gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
+    gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
+
+    const donnees = this.donneesBrutesSemaine();
+    const labels = donnees.length > 0 ? donnees.map((p) => p.jour) : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const valeurs = donnees.length > 0 ? donnees.map((p) => p.valeur) : [0, 0, 0, 0, 0, 0, 0];
+
+    this.chartCommandes = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Commandes',
+            data: valeurs,
+            borderColor: '#E51824',
+            borderWidth: 3,
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#E51824',
+            pointBorderWidth: 2.5,
+            pointRadius: 4.5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#E51824',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        animation: {
+          duration: 750,
+          easing: 'easeOutQuart'
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            padding: 12,
+            cornerRadius: 12,
+            titleFont: {
+              family: "'Plus Jakarta Sans', sans-serif",
+              size: 11,
+              weight: 'bold'
+            },
+            bodyFont: {
+              family: "'Plus Jakarta Sans', sans-serif",
+              size: 13,
+              weight: 'bold'
+            },
+            displayColors: false,
+            callbacks: {
+              title: (items) => {
+                const idx = items[0]?.dataIndex ?? 0;
+                const d = this.donneesBrutesSemaine()[idx];
+                return d?.date ? `${items[0]?.label} (${d.date})` : `${items[0]?.label}`;
+              },
+              label: (context) => {
+                const val = Number(context.raw || 0);
+                return `${val} commande${val > 1 ? 's' : ''}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                family: "'Plus Jakarta Sans', sans-serif",
+                size: 11,
+                weight: 'bold'
+              },
+              color: '#94a3b8'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#f1f5f9'
+            },
+            ticks: {
+              stepSize: 1,
+              font: {
+                family: "'Plus Jakarta Sans', sans-serif",
+                size: 11,
+                weight: 'bold'
+              },
+              color: '#94a3b8'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private actualiserGraphique(donnees: { jour: string; date?: string; valeur: number }[], periode: 'SEMAINE' | 'MOIS'): void {
+    if (!this.chartCommandes) return;
+    this.chartCommandes.data.labels = donnees.map((p) => p.jour);
+    this.chartCommandes.data.datasets[0].data = donnees.map((p) => p.valeur);
+    this.chartCommandes.update();
   }
 
   chargerStatistiques(): void {
@@ -227,16 +319,10 @@ export class TableauDeBordComponent {
     });
   }
 
-  /**
-   * Ouvre la page complète des validations en attente.
-   */
   voirToutesLesValidations(): void {
     this.routeur.navigate(['/administration/validations']);
   }
 
-  /**
-   * Ouvre l'examen détaillé d'une validation spécifique.
-   */
   examinerPartenaire(identifiant: string): void {
     this.routeur.navigate(['/administration/validations'], {
       queryParams: { cible: identifiant }
