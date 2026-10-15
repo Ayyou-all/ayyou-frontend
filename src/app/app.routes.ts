@@ -78,11 +78,21 @@ export const routes: Routes = [
   },
   {
     path: 'livreur/gains',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/gains-livreur/gains-livreur.component'
       ).then((m) => m.GainsLivreurComponent),
     title: 'Mes Gains — AYYOU'
+  },
+  {
+    path: 'livreur/profil',
+    canActivate: [gardeLivreur],
+    loadComponent: () =>
+      import(
+        './fonctionnalites/livreur/profil-livreur/profil-livreur.component'
+      ).then((m) => m.ProfilLivreurComponent),
+    title: 'Mon Profil — Espace Livreur AYYOU'
   },
   {
     path: 'administration',

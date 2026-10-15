@@ -2,29 +2,34 @@
 
   <!-- ========================================================================= -->
   <!-- 1. EN-TÊTE DU LIVREUR : AVATAR + BONJOUR + TOGGLE DISPONIBLE               -->
-  <!-- Conforme au haut de l'Image 1                                             -->
   <!-- ========================================================================= -->
   <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40 shadow-2xs">
     <div class="max-w-2xl mx-auto flex items-center justify-between">
       
       <!-- Profil livreur à gauche -->
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-full overflow-hidden bg-slate-900 border-2 border-slate-100 shadow-xs shrink-0">
-          <img
-            [src]="serviceLivreur.profilLivreur().adressePhoto"
-            alt="Moussa Diop"
-            class="w-full h-full object-cover"
-          />
+      <a routerLink="/livreur/profil" class="flex items-center gap-3 group cursor-pointer">
+        <div class="w-12 h-12 rounded-full overflow-hidden bg-slate-900 border-2 border-slate-100 shadow-xs shrink-0 flex items-center justify-center">
+          @if (serviceLivreur.profilLivreur().adressePhoto) {
+            <img
+              [src]="serviceLivreur.profilLivreur().adressePhoto"
+              [alt]="serviceLivreur.profilLivreur().nomComplet"
+              class="w-full h-full object-cover"
+            />
+          } @else {
+            <div class="w-full h-full bg-[#E51824] text-white flex items-center justify-center font-black text-sm">
+              <i class="fa-solid fa-motorcycle"></i>
+            </div>
+          }
         </div>
         <div>
           <span class="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
             BONJOUR,
           </span>
-          <h1 class="text-base sm:text-lg font-black text-slate-900 leading-tight font-['Outfit']">
+          <h1 class="text-base sm:text-lg font-black text-slate-900 leading-tight font-['Outfit'] group-hover:text-[#E51824] transition-colors">
             {{ serviceLivreur.profilLivreur().nomComplet }}
           </h1>
         </div>
-      </div>
+      </a>
 
       <!-- Toggle de disponibilité (DISPONIBLE ON/OFF) -->
       <button
@@ -62,10 +67,10 @@
   <!-- ========================================================================= -->
   <main class="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-8 flex flex-col justify-center">
 
-    <!-- CARTE : GAINS DU JOUR (CONFORME À L'IMAGE 1) -->
+    <!-- CARTE : GAINS DU JOUR (DONNÉES RÉELLES DE LA BD) -->
     <a routerLink="/livreur/gains" class="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm flex items-center justify-between gap-4 hover:border-red-200 transition-colors cursor-pointer group">
       
-      <!-- Gauche : GAINS DU JOUR + 12 500 FCFA -->
+      <!-- Gauche : GAINS DU JOUR + MONTANT RÉEL -->
       <div class="space-y-1">
         <div class="flex items-center gap-2">
           <span class="text-xs font-black text-slate-400 uppercase tracking-wider">
@@ -86,7 +91,7 @@
         </div>
       </div>
 
-      <!-- Droite : Icône moto rouge + 8 Livraisons -->
+      <!-- Droite : Icône moto rouge + Livraisons du jour réelles -->
       <div class="flex flex-col items-center justify-center text-center pl-4 border-l border-slate-100">
         <div class="flex items-center gap-1.5 text-[#E51824]">
           <i class="fa-solid fa-motorcycle text-lg"></i>
@@ -95,23 +100,28 @@
           </span>
         </div>
         <span class="text-xs text-slate-400 font-medium">
-          Livraisons
+          {{ serviceLivreur.profilLivreur().nombreLivraisonsJour > 1 ? 'Livraisons' : 'Livraison' }}
         </span>
       </div>
 
     </a>
 
     <!-- ========================================================================= -->
-    <!-- ILLUSTRATION CENTRALE : LIVREUR SCOOTER DANS LE CERCLE SAUMON             -->
-    <!-- Conforme à l'illustration de l'Image 1                                    -->
+    <!-- ILLUSTRATION CENTRALE + RADAR TEMPS RÉEL                                  -->
     <!-- ========================================================================= -->
     <div class="flex flex-col items-center text-center space-y-6 my-auto py-4">
       
-      <!-- Grand disque saumon / pêche avec l'illustration -->
+      <!-- Disque central avec animation radar en temps réel -->
       <div class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full border-12 border-[#fed7aa]/60 bg-[#fff7ed] flex items-center justify-center shadow-inner">
         
+        <!-- Anneaux pulsants de radar en temps réel si disponible -->
+        @if (serviceLivreur.profilLivreur().estDisponible) {
+          <div class="absolute inset-0 rounded-full border-2 border-emerald-400/40 animate-ping"></div>
+          <div class="absolute -inset-3 rounded-full border border-emerald-300/30 animate-pulse"></div>
+        }
+
         <!-- Illustration SVG soignée du livreur en scooter orange -->
-        <svg class="w-44 h-44 sm:w-48 sm:h-48 drop-shadow-md" viewBox="0 0 200 200" fill="none">
+        <svg class="w-44 h-44 sm:w-48 sm:h-48 drop-shadow-md z-10" viewBox="0 0 200 200" fill="none">
           <!-- Ombre sous le scooter -->
           <ellipse cx="100" cy="165" rx="55" ry="8" fill="#cbd5e1" opacity="0.6"/>
 
@@ -139,16 +149,16 @@
 
           <!-- Conducteur : Corps et veste orange -->
           <path d="M90,110 L94,80 L110,80 L112,110 Z" fill="#ea580c"/>
-          <path d="M102,80 L102,110" stroke="#ffffff" stroke-width="2"/> <!-- Fermeture éclair -->
+          <path d="M102,80 L102,110" stroke="#ffffff" stroke-width="2"/>
 
           <!-- Bras et mains sur le guidon -->
           <path d="M96,85 L80,90 L70,86" stroke="#ea580c" stroke-width="6" stroke-linecap="round"/>
-          <circle cx="68" cy="86" r="3" fill="#fdba74"/> <!-- Main -->
+          <circle cx="68" cy="86" r="3" fill="#fdba74"/>
 
           <!-- Tête, visage et casque jaune -->
-          <circle cx="102" cy="65" r="10" fill="#fed7aa"/> <!-- Tête -->
-          <path d="M95,68 Q102,74 108,68" stroke="#0f172a" stroke-width="1.5" fill="none"/> <!-- Sourire -->
-          <circle cx="99" cy="63" r="1.5" fill="#0f172a"/> <!-- Œil -->
+          <circle cx="102" cy="65" r="10" fill="#fed7aa"/>
+          <path d="M95,68 Q102,74 108,68" stroke="#0f172a" stroke-width="1.5" fill="none"/>
+          <circle cx="99" cy="63" r="1.5" fill="#0f172a"/>
           <!-- Casque de moto jaune vif -->
           <path d="M91,62 Q102,48 113,62 Q115,50 102,50 Q89,50 91,62 Z" fill="#f59e0b"/>
           <rect x="90" y="58" width="24" height="6" rx="3" fill="#fbbf24"/>
@@ -156,25 +166,44 @@
 
       </div>
 
-      <!-- Textes d'état en attente -->
+      <!-- Textes d'état en temps réel -->
       <div class="space-y-2 max-w-sm px-4">
-        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-['Outfit']">
-          En attente de commandes...
-        </h2>
-        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
-          Restez à proximité des zones commerciales pour augmenter vos chances.
-        </p>
+        @if (serviceLivreur.profilLivreur().estDisponible) {
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border border-emerald-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span>Écoute des commandes clients en direct</span>
+          </div>
+
+          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-['Outfit']">
+            En attente de commandes...
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+            Vous recevrez une alerte sonore instantanée dès qu'un client passe commande dans votre zone.
+          </p>
+        } @else {
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-black border border-slate-200">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span>Vous êtes hors-ligne</span>
+          </div>
+
+          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-['Outfit']">
+            Service en pause
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+            Activez le bouton « DISPONIBLE » en haut pour commencer à recevoir des courses en temps réel.
+          </p>
+        }
       </div>
 
-      <!-- Bouton de simulation pour tester la réception d'une commande (Image 2) -->
+      <!-- Bouton d'actualisation manuelle en direct -->
       <div class="pt-2">
         <button
           type="button"
-          (click)="simulerNouvelleCommande()"
-          class="px-5 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+          (click)="rafraichirCourses()"
+          class="px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
         >
-          <i class="fa-solid fa-bell animate-bounce"></i>
-          <span>Simuler une nouvelle livraison</span>
+          <i class="fa-solid fa-arrows-rotate text-slate-400 group-hover:rotate-180 transition-transform"></i>
+          <span>Actualiser les courses</span>
         </button>
       </div>
 
@@ -184,7 +213,6 @@
 
   <!-- ========================================================================= -->
   <!-- 3. BARRE DE NAVIGATION INFÉRIEURE DU LIVREUR (ACCUEIL, GAINS, PROFIL)      -->
-  <!-- Conforme au bas de l'Image 1                                              -->
   <!-- ========================================================================= -->
   <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
     <!-- Onglet 1 : Accueil (Actif rouge) -->
@@ -192,8 +220,10 @@
       routerLink="/livreur"
       class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer group"
     >
-      <i class="fa-solid fa-house text-xl text-[#E51824]"></i>
-      <span class="text-[11px] font-black text-[#E51824] mt-1">
+      <div class="px-4 py-1 rounded-full bg-red-50 text-[#E51824] flex items-center justify-center">
+        <i class="fa-solid fa-house text-lg"></i>
+      </div>
+      <span class="text-[11px] font-black text-[#E51824] mt-0.5">
         Accueil
       </span>
     </a>
@@ -211,7 +241,7 @@
 
     <!-- Onglet 3 : Profil -->
     <a
-      routerLink="/profil"
+      routerLink="/livreur/profil"
       class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
     >
       <i class="fa-solid fa-user text-xl"></i>
@@ -224,8 +254,8 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODALE PROPOSITION DE LIVRAISON (IMAGE 2)                                 -->
-<!-- S'affiche dès qu'une course est proposée                                 -->
+<!-- MODALE PROPOSITION DE LIVRAISON EN TEMPS RÉEL                             -->
+<!-- S'affiche dès qu'une commande est passée par un client                   -->
 <!-- ========================================================================= -->
 @if (serviceLivreur.propositionActive()) {
   <app-proposition-livraison

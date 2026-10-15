@@ -1,0 +1,508 @@
+<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-['Plus_Jakarta_Sans',sans-serif]">
+
+  <!-- ========================================================================= -->
+  <!-- 1. EN-TÊTE : RETOUR + TITRE + DÉCONNEXION                                  -->
+  <!-- ========================================================================= -->
+  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40 shadow-2xs">
+    <div class="max-w-2xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a
+          routerLink="/livreur"
+          class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+          aria-label="Retour à l'accueil"
+        >
+          <i class="fa-solid fa-arrow-left text-sm"></i>
+        </a>
+        <div>
+          <h1 class="text-lg sm:text-xl font-black text-slate-900 leading-tight font-['Outfit']">
+            Mon Profil Livreur
+          </h1>
+          <span class="text-xs text-slate-400 font-medium">
+            Gérez vos informations d'inscription et votre véhicule
+          </span>
+        </div>
+      </div>
+
+      <!-- Bouton Déconnexion -->
+      <button
+        type="button"
+        (click)="seDeconnecter()"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-[#E51824] text-xs font-black transition-colors cursor-pointer"
+        title="Se déconnecter"
+      >
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span class="hidden sm:inline">Quitter</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CONTENU PRINCIPAL                                                      -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- CARTE D'IDENTITÉ DU LIVREUR AVEC AVATAR MODIFIABLE -->
+    <div class="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5">
+      
+      <!-- Photo avec bouton d'upload -->
+      <div class="relative shrink-0">
+        <div class="w-24 h-24 rounded-full overflow-hidden bg-slate-900 border-4 border-white shadow-md">
+          @if (apercuPhoto()) {
+            <img [src]="apercuPhoto()" alt="Photo de profil" class="w-full h-full object-cover" />
+          } @else {
+            <div class="w-full h-full flex items-center justify-center text-slate-400 text-3xl font-black bg-slate-100">
+              <i class="fa-solid fa-user"></i>
+            </div>
+          }
+        </div>
+
+        <label
+          class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#E51824] hover:bg-red-700 text-white flex items-center justify-center shadow cursor-pointer transition-transform active:scale-95"
+          title="Changer de photo"
+        >
+          <i class="fa-solid fa-camera text-xs"></i>
+          <input
+            type="file"
+            accept="image/*"
+            class="hidden"
+            (change)="surSelectionPhoto($event)"
+          />
+        </label>
+      </div>
+
+      <!-- Informations récapitulatives -->
+      <div class="flex-1 text-center sm:text-left space-y-2">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-xl font-black text-slate-900 font-['Outfit']">
+              {{ prenom() }} {{ nom() }}
+            </h2>
+            <p class="text-xs text-slate-500 font-medium">
+              {{ courriel() }} • {{ telephone() }}
+            </p>
+          </div>
+
+          <!-- Badge Statut du compte -->
+          <div>
+            @if (serviceLivreur.profilLivreur().statutValidation === 'ACTIF') {
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-black border border-emerald-200">
+                <i class="fa-solid fa-circle-check text-[10px]"></i>
+                Compte Validé & Actif
+              </span>
+            } @else {
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-black border border-amber-200">
+                <i class="fa-solid fa-clock text-[10px]"></i>
+                Dossier Partenaire
+              </span>
+            }
+          </div>
+        </div>
+
+        <!-- Badges Véhicule & Zone -->
+        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">
+            <i class="fa-solid fa-motorcycle text-red-500"></i>
+            {{ nomVehicule() || typeVehicule() }}
+          </span>
+
+          @if (immatriculation()) {
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-mono font-bold">
+              <i class="fa-solid fa-id-card text-slate-400"></i>
+              {{ immatriculation() }}
+            </span>
+          }
+
+          @if (zonePrincipale()) {
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold truncate max-w-[200px]">
+              <i class="fa-solid fa-location-dot text-slate-400"></i>
+              {{ zonePrincipale() }}
+            </span>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BANNIÈRES DE RETOUR UTILISATEUR -->
+    @if (messageSucces()) {
+      <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-bold flex items-center gap-3 animate-fade-in">
+        <i class="fa-solid fa-circle-check text-emerald-500 text-base shrink-0"></i>
+        <span>{{ messageSucces() }}</span>
+      </div>
+    }
+
+    @if (messageErreur()) {
+      <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-bold flex items-center gap-3 animate-fade-in">
+        <i class="fa-solid fa-circle-exclamation text-rose-500 text-base shrink-0"></i>
+        <span>{{ messageErreur() }}</span>
+      </div>
+    }
+
+    <!-- ONGLET DE NAVIGATION ENTRE SECTIONS -->
+    <div class="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-200/60 text-xs font-black">
+      <button
+        type="button"
+        (click)="changerOnglet('coordonnees')"
+        [class]="ongletActif() === 'coordonnees'
+          ? 'bg-white text-slate-900 shadow-xs'
+          : 'text-slate-500 hover:text-slate-800'"
+        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+      >
+        <i class="fa-solid fa-user"></i>
+        <span>Identité</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="changerOnglet('vehicule')"
+        [class]="ongletActif() === 'vehicule'
+          ? 'bg-white text-slate-900 shadow-xs'
+          : 'text-slate-500 hover:text-slate-800'"
+        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+      >
+        <i class="fa-solid fa-motorcycle"></i>
+        <span>Véhicule & Zone</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="changerOnglet('securite')"
+        [class]="ongletActif() === 'securite'
+          ? 'bg-white text-slate-900 shadow-xs'
+          : 'text-slate-500 hover:text-slate-800'"
+        class="flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+      >
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Sécurité</span>
+      </button>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 1 : COORDONNÉES PERSONNELLES                                    -->
+    <!-- ======================================================================= -->
+    @if (ongletActif() === 'coordonnees') {
+      <div class="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-5">
+        <div class="border-b border-slate-100 pb-3">
+          <h3 class="text-base font-black text-slate-900 font-['Outfit']">
+            Informations d'identité & Contact
+          </h3>
+          <p class="text-xs text-slate-400">
+            Ces informations sont utilisées lors de vos courses et pour votre rémunération.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Prénom -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Prénom
+            </label>
+            <input
+              type="text"
+              [ngModel]="prenom()"
+              (ngModelChange)="prenom.set($event)"
+              placeholder="Ex : Moussa"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+
+          <!-- Nom -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Nom de famille
+            </label>
+            <input
+              type="text"
+              [ngModel]="nom()"
+              (ngModelChange)="nom.set($event)"
+              placeholder="Ex : Diop"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+
+          <!-- E-mail (lecture seule) -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Adresse e-mail (Identifiant de connexion)
+            </label>
+            <input
+              type="email"
+              [value]="courriel()"
+              disabled
+              class="w-full px-4 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-medium text-slate-400 cursor-not-allowed"
+            />
+          </div>
+
+          <!-- Téléphone -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Numéro de téléphone (Mobile)
+            </label>
+            <input
+              type="tel"
+              [ngModel]="telephone()"
+              (ngModelChange)="telephone.set($event)"
+              placeholder="Ex : +221 77 123 45 67"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Adresse de domicile / point de départ -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+            Adresse de résidence / Quartier habituel
+          </label>
+          <input
+            type="text"
+            [ngModel]="adresse()"
+            (ngModelChange)="adresse.set($event)"
+            placeholder="Ex : Dakar, Mermoz Pyrotechnie Villa 24"
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+          />
+        </div>
+
+        <!-- Bouton Sauvegarder Identité -->
+        <div class="pt-2 flex justify-end">
+          <button
+            type="button"
+            (click)="enregistrerCoordonnees()"
+            [disabled]="chargement()"
+            class="px-6 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 disabled:opacity-50 text-white font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+          >
+            @if (chargement()) {
+              <i class="fa-solid fa-circle-notch animate-spin"></i>
+              <span>Enregistrement...</span>
+            } @else {
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Enregistrer les coordonnées</span>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 2 : VÉHICULE & LOGISTIQUE                                      -->
+    <!-- ======================================================================= -->
+    @if (ongletActif() === 'vehicule') {
+      <div class="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-6">
+        <div class="border-b border-slate-100 pb-3">
+          <h3 class="text-base font-black text-slate-900 font-['Outfit']">
+            Véhicule & Zone de desserte
+          </h3>
+          <p class="text-xs text-slate-400">
+            Mettez à jour le moyen de transport que vous utilisez pour livrer les clients AYYOU.
+          </p>
+        </div>
+
+        <!-- Choix du type de véhicule -->
+        <div class="space-y-2">
+          <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+            Type de véhicule
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            @for (veh of listeTypesVehicule; track veh.valeur) {
+              <button
+                type="button"
+                (click)="typeVehicule.set(veh.valeur)"
+                [class]="typeVehicule() === veh.valeur
+                  ? 'border-[#E51824] bg-red-50/50 text-[#E51824] shadow-xs'
+                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'"
+                class="p-3.5 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all cursor-pointer"
+              >
+                <i [class]="veh.icone" class="text-xl"></i>
+                <span class="text-xs font-black uppercase">{{ veh.libelle }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Modèle / Nom du véhicule -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Modèle du véhicule
+            </label>
+            <input
+              type="text"
+              [ngModel]="nomVehicule()"
+              (ngModelChange)="nomVehicule.set($event)"
+              placeholder="Ex : Yamaha TMAX, Honda PCX..."
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+
+          <!-- Numéro de plaque d'immatriculation -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Numéro d'immatriculation (Plaque)
+            </label>
+            <input
+              type="text"
+              [ngModel]="immatriculation()"
+              (ngModelChange)="immatriculation.set($event)"
+              placeholder="Ex : DK-4582-AZ"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-mono font-bold text-slate-800 uppercase focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Zone d'activité principale -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+            Zone principale de livraison
+          </label>
+          <select
+            [ngModel]="zonePrincipale()"
+            (ngModelChange)="zonePrincipale.set($event)"
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all cursor-pointer"
+          >
+            <option value="">Sélectionnez votre zone prioritaire...</option>
+            @for (z of listeZones; track z) {
+              <option [value]="z">{{ z }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Bouton Sauvegarder Véhicule -->
+        <div class="pt-2 flex justify-end">
+          <button
+            type="button"
+            (click)="enregistrerVehicule()"
+            [disabled]="chargement()"
+            class="px-6 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 disabled:opacity-50 text-white font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+          >
+            @if (chargement()) {
+              <i class="fa-solid fa-circle-notch animate-spin"></i>
+              <span>Enregistrement...</span>
+            } @else {
+              <i class="fa-solid fa-motorcycle"></i>
+              <span>Enregistrer le véhicule</span>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 3 : SÉCURITÉ & MOT DE PASSE                                    -->
+    <!-- ======================================================================= -->
+    @if (ongletActif() === 'securite') {
+      <div class="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-5">
+        <div class="border-b border-slate-100 pb-3">
+          <h3 class="text-base font-black text-slate-900 font-['Outfit']">
+            Sécurité du compte Livreur
+          </h3>
+          <p class="text-xs text-slate-400">
+            Modifiez votre mot de passe pour sécuriser l'accès à vos gains et vos courses.
+          </p>
+        </div>
+
+        <!-- Ancien mot de passe -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+            Mot de passe actuel
+          </label>
+          <input
+            type="password"
+            [ngModel]="ancienMotDePasse()"
+            (ngModelChange)="ancienMotDePasse.set($event)"
+            placeholder="••••••••"
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Nouveau mot de passe -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Nouveau mot de passe
+            </label>
+            <input
+              type="password"
+              [ngModel]="nouveauMotDePasse()"
+              (ngModelChange)="nouveauMotDePasse.set($event)"
+              placeholder="Minimum 6 caractères"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+
+          <!-- Confirmation -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Confirmation du nouveau mot de passe
+            </label>
+            <input
+              type="password"
+              [ngModel]="confirmationMotDePasse()"
+              (ngModelChange)="confirmationMotDePasse.set($event)"
+              placeholder="Répétez le mot de passe"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Bouton Valider mot de passe -->
+        <div class="pt-2 flex justify-end">
+          <button
+            type="button"
+            (click)="changerMotDePasse()"
+            [disabled]="chargement()"
+            class="px-6 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 disabled:opacity-50 text-white font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+          >
+            @if (chargement()) {
+              <i class="fa-solid fa-circle-notch animate-spin"></i>
+              <span>Modification...</span>
+            } @else {
+              <i class="fa-solid fa-lock"></i>
+              <span>Mettre à jour le mot de passe</span>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 3. BARRE DE NAVIGATION INFÉRIEURE DU LIVREUR (ACCUEIL, GAINS, PROFIL)      -->
+  <!-- ========================================================================= -->
+  <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+    <!-- Onglet 1 : Accueil -->
+    <a
+      routerLink="/livreur"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors group"
+    >
+      <i class="fa-solid fa-house text-xl"></i>
+      <span class="text-[11px] font-bold mt-1">
+        Accueil
+      </span>
+    </a>
+
+    <!-- Onglet 2 : Gains -->
+    <a
+      routerLink="/livreur/gains"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors group"
+    >
+      <i class="fa-solid fa-wallet text-xl"></i>
+      <span class="text-[11px] font-bold mt-1">
+        Gains
+      </span>
+    </a>
+
+    <!-- Onglet 3 : Profil (Actif en rouge avec fond pilule doux) -->
+    <a
+      routerLink="/livreur/profil"
+      class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer group"
+    >
+      <div class="px-4 py-1 rounded-full bg-red-50 text-[#E51824] flex items-center justify-center">
+        <i class="fa-solid fa-user text-lg"></i>
+      </div>
+      <span class="text-[11px] font-black text-[#E51824] mt-0.5">
+        Profil
+      </span>
+    </a>
+  </nav>
+
+</div>

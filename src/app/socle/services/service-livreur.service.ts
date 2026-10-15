@@ -1,6 +1,7 @@
 /**
  * Service gérant l'état et le flux de travail du livreur AYYOU.
- * Consomme l'API Django REST Framework sans données mockées.
+ * Consomme l'API Django REST Framework sans données mockées statiques.
+ * Réception en temps réel des commandes clients avec alerte sonore.
  */
 
 import { HttpClient } from '@angular/common/http';
@@ -22,54 +23,43 @@ import {
 export class ServiceLivreurService {
   private readonly http = inject(HttpClient);
 
-  // Profil du livreur connecté
+  // Profil réel du livreur connecté (initialisé sans fausses données)
   readonly profilLivreur = signal<LivreurProfil>({
-    nomComplet: 'Moussa Ba',
-    adressePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-    vehicule: 'Yamaha TMAX',
+    nomComplet: 'Livreur AYYOU',
+    adressePhoto: '',
+    vehicule: '',
     estDisponible: true,
-    gainsDuJourFcfa: 12500,
-    nombreLivraisonsJour: 8
+    gainsDuJourFcfa: 0,
+    nombreLivraisonsJour: 0,
+    typeVehicule: 'MOTO',
+    nomVehicule: '',
+    immatriculation: '',
+    zonePrincipale: ''
   });
 
-  // Gains de la semaine
+  // Gains réels de la semaine issus de la base de données
   readonly gainsSemaine = signal({
-    montantTotalFcfa: 85000,
-    pourcentageEvolution: 12,
-    livraisonsSemaine: 42,
-    heuresEnLigne: '28h 15m'
+    montantTotalFcfa: 0,
+    pourcentageEvolution: 0,
+    livraisonsSemaine: 0,
+    heuresEnLigne: '0h'
   });
 
-  // Activité hebdomadaire pour le graphique
+  // Activité hebdomadaire réelle pour le graphique
   readonly activiteHebdomadaire = signal<ActiviteJourLivreur[]>([
-    { jour: 'Lun', montantFcfa: 11000, hauteurPourcentage: 62 },
-    { jour: 'Mar', montantFcfa: 14000, hauteurPourcentage: 80 },
-    { jour: 'Mer', montantFcfa: 10000, hauteurPourcentage: 55 },
-    { jour: 'Jeu', montantFcfa: 12500, hauteurPourcentage: 70 },
-    { jour: 'Ven', montantFcfa: 13000, hauteurPourcentage: 74 },
-    { jour: 'Sam', montantFcfa: 18000, hauteurPourcentage: 98 },
-    { jour: 'Dim', montantFcfa: 5000, hauteurPourcentage: 35 }
+    { jour: 'Lun', montantFcfa: 0, hauteurPourcentage: 6 },
+    { jour: 'Mar', montantFcfa: 0, hauteurPourcentage: 6 },
+    { jour: 'Mer', montantFcfa: 0, hauteurPourcentage: 6 },
+    { jour: 'Jeu', montantFcfa: 0, hauteurPourcentage: 6 },
+    { jour: 'Ven', montantFcfa: 0, hauteurPourcentage: 6 },
+    { jour: 'Sam', montantFcfa: 0, hauteurPourcentage: 6 },
+    { jour: 'Dim', montantFcfa: 0, hauteurPourcentage: 6 }
   ]);
 
-  // Détails quotidiens
-  readonly detailsQuotidiens = signal<DetailGainJournalier[]>([
-    {
-      titreDate: "Aujourd'hui",
-      nombreLivraisons: 8,
-      montantFcfa: 12500,
-      icone: 'fa-regular fa-calendar-check',
-      couleurFond: 'bg-amber-100/70 text-red-600'
-    },
-    {
-      titreDate: 'Hier',
-      nombreLivraisons: 11,
-      montantFcfa: 15000,
-      icone: 'fa-solid fa-clock-rotate-left',
-      couleurFond: 'bg-slate-100 text-slate-500'
-    }
-  ]);
+  // Détails quotidiens réels
+  readonly detailsQuotidiens = signal<DetailGainJournalier[]>([]);
 
-  // Proposition de course en attente de réponse
+  // Proposition de course en attente de réponse (temps réel)
   readonly propositionActive = signal<PropositionLivraison | null>(null);
 
   // Course en cours acceptée
@@ -79,12 +69,14 @@ export class ServiceLivreurService {
   readonly etapeCourse = signal<EtapeCourseLivreur>('VERS_RESTAURANT');
 
   // Compte à rebours de la proposition en secondes
-  readonly secondesRestantes = signal<number>(22);
+  readonly secondesRestantes = signal<number>(30);
 
   private intervalleCompteARebours?: any;
+  private intervalleEcouteTempsReel?: any;
 
   constructor() {
     this.initialiserDonneesLivreur();
+    this.demarrerEcouteTempsReel();
   }
 
   /**
@@ -103,19 +95,121 @@ export class ServiceLivreurService {
     this.http.get<any>(`${environment.apiUrl}/livraisons/profil/`).subscribe({
       next: (data) => {
         if (data) {
+          const nomCompletCalcule =
+            data.nom_complet ||
+            `${data.prenom || ''} ${data.nom || ''}`.trim() ||
+            this.profilLivreur().nomComplet;
+
           this.profilLivreur.update((p) => ({
             ...p,
-            nomComplet: data.nom_complet || p.nomComplet,
+            nomComplet: nomCompletCalcule,
+            prenom: data.prenom || p.prenom || '',
+            nom: data.nom || p.nom || '',
+            courriel: data.courriel || p.courriel || '',
+            telephone: data.telephone || p.telephone || '',
+            adresse: data.adresse || p.adresse || '',
             adressePhoto: data.adresse_photo || p.adressePhoto,
-            vehicule: data.nom_vehicule || p.vehicule,
+            vehicule: data.nom_vehicule || (data.type_vehicule ? `${data.type_vehicule}` : p.vehicule),
+            typeVehicule: data.type_vehicule || p.typeVehicule || 'MOTO',
+            nomVehicule: data.nom_vehicule || p.nomVehicule || '',
+            immatriculation: data.immatriculation || p.immatriculation || '',
+            zonePrincipale: data.zone_principale || p.zonePrincipale || '',
+            statutValidation: data.statut_validation || p.statutValidation || '',
             estDisponible: data.est_disponible ?? (data.disponibilite === 'EN_LIGNE'),
-            gainsDuJourFcfa: Number(data.gains_du_jour_fcfa ?? p.gainsDuJourFcfa),
-            nombreLivraisonsJour: Number(data.nombre_livraisons_jour ?? p.nombreLivraisonsJour)
+            gainsDuJourFcfa: Number(data.gains_du_jour_fcfa ?? 0),
+            nombreLivraisonsJour: Number(data.nombre_livraisons_jour ?? 0)
           }));
+
+          if (data.gains_semaine) {
+            this.gainsSemaine.set({
+              montantTotalFcfa: Number(data.gains_semaine.montantTotalFcfa ?? 0),
+              pourcentageEvolution: Number(data.gains_semaine.pourcentageEvolution ?? 0),
+              livraisonsSemaine: Number(data.gains_semaine.livraisonsSemaine ?? 0),
+              heuresEnLigne: String(data.gains_semaine.heuresEnLigne ?? '0h')
+            });
+          }
+
+          if (data.activite_hebdomadaire && Array.isArray(data.activite_hebdomadaire)) {
+            this.activiteHebdomadaire.set(data.activite_hebdomadaire);
+          }
+
+          if (data.details_quotidiens && Array.isArray(data.details_quotidiens)) {
+            this.detailsQuotidiens.set(data.details_quotidiens);
+          }
         }
       },
       error: () => {}
     });
+  }
+
+  /**
+   * Met à jour les informations du profil livreur (véhicule, immatriculation, zone, etc.).
+   */
+  mettreAJourProfilLivreur(donnees: FormData | any): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/livraisons/profil/`, donnees).pipe(
+      tap((data) => {
+        if (data) {
+          this.chargerProfilLivreur();
+        }
+      })
+    );
+  }
+
+  /**
+   * Écoute en continu les commandes passées par les clients (polling toutes les 3 secondes).
+   */
+  demarrerEcouteTempsReel(): void {
+    this.arreterEcouteTempsReel();
+    this.intervalleEcouteTempsReel = setInterval(() => {
+      if (this.profilLivreur().estDisponible && !this.courseEnCours() && !this.propositionActive()) {
+        this.verifierNouvellesPropositions();
+      }
+    }, 3000);
+  }
+
+  arreterEcouteTempsReel(): void {
+    if (this.intervalleEcouteTempsReel) {
+      clearInterval(this.intervalleEcouteTempsReel);
+      this.intervalleEcouteTempsReel = undefined;
+    }
+  }
+
+  /**
+   * Joue une alerte sonore (double carillon harmonieux) dès qu'une nouvelle commande client arrive.
+   */
+  jouerAlerteSonore(): void {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const maintenant = ctx.currentTime;
+
+      // Note 1 (880 Hz - La 5)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(880, maintenant);
+      gain1.gain.setValueAtTime(0.2, maintenant);
+      gain1.gain.exponentialRampToValueAtTime(0.001, maintenant + 0.28);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(maintenant);
+      osc1.stop(maintenant + 0.28);
+
+      // Note 2 (1320 Hz - Mi 6)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1320, maintenant + 0.16);
+      gain2.gain.setValueAtTime(0.25, maintenant + 0.16);
+      gain2.gain.exponentialRampToValueAtTime(0.001, maintenant + 0.55);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(maintenant + 0.16);
+      osc2.stop(maintenant + 0.55);
+    } catch {
+      // Navigateur en mode silencieux
+    }
   }
 
   /**
@@ -131,44 +225,96 @@ export class ServiceLivreurService {
         disponibilite: statutDjango
       })
       .subscribe({
-        next: () => {},
+        next: () => {
+          if (nouveauStatut) {
+            this.demarrerEcouteTempsReel();
+            this.verifierNouvellesPropositions();
+          } else {
+            this.arreterEcouteTempsReel();
+          }
+        },
         error: () => {}
       });
   }
 
   /**
-   * Vérifie si des courses sont disponibles pour le livreur.
+   * Vérifie si des courses sont disponibles pour le livreur et affiche la modale en temps réel.
    */
   verifierNouvellesPropositions(): void {
+    if (!this.profilLivreur().estDisponible || this.courseEnCours() || this.propositionActive()) {
+      return;
+    }
+
     this.http.get<any[]>(`${environment.apiUrl}/livraisons/propositions/`).subscribe({
       next: (propositions) => {
         if (propositions && propositions.length > 0) {
           const premiere = propositions[0];
-          this.secondesRestantes.set(premiere.temps_restant_secondes || 25);
+          const tempsRestant = Number(
+            premiere.tempsRestantSec ?? premiere.temps_restant_secondes ?? 30
+          );
+          this.secondesRestantes.set(tempsRestant);
+
           this.propositionActive.set({
-            identifiantCommande: String(premiere.commande_id || premiere.reference),
-            restaurantNom: premiere.restaurant_nom || 'Restaurant partenaire',
-            restaurantAdresse: premiere.restaurant_adresse || 'Dakar',
-            restaurantTelephone: premiere.restaurant_telephone || '+221 33 800 00 00',
-            comptoirRetrait: 'Comptoir principal',
-            clientNom: premiere.client_nom || 'Client AYYOU',
-            clientTelephone: premiere.client_telephone || '+221 77 000 00 00',
-            clientAdresse: premiere.client_adresse || 'Dakar',
-            clientInstructions: premiere.instructions_client || '',
-            distanceKm: Number(premiere.distance_km || 2.5),
-            gainFcfa: Number(premiere.gain_livreur_fcfa || 1000),
-            tempsRestantSec: Number(premiere.temps_restant_secondes || 25),
-            tempsTrajetMin: Number(premiere.temps_trajet_minutes || 8),
+            identifiantCommande: String(
+              premiere.identifiantCommande ??
+                premiere.commande_id ??
+                premiere.id ??
+                premiere.reference ??
+                ''
+            ),
+            restaurantNom:
+              premiere.restaurantNom ??
+              premiere.restaurant_nom ??
+              premiere.etablissement_nom ??
+              'Restaurant Partenaire',
+            restaurantAdresse:
+              premiere.restaurantAdresse ??
+              premiere.restaurant_adresse ??
+              'Dakar',
+            restaurantTelephone:
+              premiere.restaurantTelephone ??
+              premiere.restaurant_telephone ??
+              '',
+            comptoirRetrait: 'Comptoir de retrait AYYOU',
+            clientNom:
+              premiere.clientNom ?? premiere.client_nom ?? 'Client',
+            clientTelephone:
+              premiere.clientTelephone ??
+              premiere.client_telephone ??
+              '',
+            clientAdresse:
+              premiere.clientAdresse ??
+              premiere.client_adresse ??
+              'Adresse client',
+            clientInstructions:
+              premiere.clientInstructions ??
+              premiere.instructions_client ??
+              premiere.instructions ??
+              '',
+            distanceKm: Number(
+              premiere.distanceKm ?? premiere.distance_km ?? 2.5
+            ),
+            gainFcfa: Number(
+              premiere.gainFcfa ?? premiere.gain_livreur_fcfa ?? 1000
+            ),
+            tempsRestantSec: tempsRestant,
+            tempsTrajetMin: Number(
+              premiere.tempsTrajetMin ?? premiere.temps_trajet_minutes ?? 10
+            ),
             codeValidation: '',
             articles: (premiere.articles || []).map((art: any) => ({
-              nom: art.nom_plat || 'Plat',
+              nom: art.nom ?? art.nom_plat ?? 'Article',
               quantite: Number(art.quantite || 1),
-              format: 'Standard',
+              format: art.format || 'Standard',
               instructions: art.instructions || '',
               estVerifie: false
             })),
-            photoCommande: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
+            photoCommande:
+              premiere.photoCommande ||
+              'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
           });
+
+          this.jouerAlerteSonore();
           this.demarrerCompteARebours();
         }
       },
@@ -185,11 +331,11 @@ export class ServiceLivreurService {
         if (reponse?.mission_active && reponse?.livraison) {
           const l = reponse.livraison;
           this.courseEnCours.set({
-            identifiantCommande: String(l.commande_id || l.reference || ''),
+            identifiantCommande: String(l.commande_id || l.reference || l.id || ''),
             restaurantNom: l.restaurant_nom || '',
             restaurantAdresse: l.restaurant_adresse || '',
             restaurantTelephone: l.restaurant_telephone || '',
-            comptoirRetrait: 'Comptoir principal',
+            comptoirRetrait: 'Comptoir de retrait AYYOU',
             clientNom: l.client_nom || '',
             clientTelephone: l.client_telephone || '',
             clientAdresse: l.client_adresse || '',
@@ -200,10 +346,10 @@ export class ServiceLivreurService {
             tempsTrajetMin: 10,
             codeValidation: '',
             articles: (l.articles || []).map((art: any) => ({
-              nom: art.nom_plat || 'Plat',
+              nom: art.nom_plat || art.nom || 'Article',
               quantite: Number(art.quantite || 1),
-              format: 'Standard',
-              instructions: '',
+              format: art.format || 'Standard',
+              instructions: art.instructions || '',
               estVerifie: art.est_verifie || false
             })),
             photoCommande: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
@@ -211,7 +357,8 @@ export class ServiceLivreurService {
 
           // Étape de livraison
           if (l.etape === 'VERS_RESTAURANT') this.etapeCourse.set('VERS_RESTAURANT');
-          else if (l.etape === 'AU_RESTAURANT') this.etapeCourse.set('ARRIVE_RESTAURANT');
+          else if (l.etape === 'VERIFICATION_ARTICLES' || l.etape === 'AU_RESTAURANT')
+            this.etapeCourse.set('ARRIVE_RESTAURANT');
           else if (l.etape === 'VERS_CLIENT') this.etapeCourse.set('VERS_CLIENT');
           else if (l.etape === 'ARRIVE_CLIENT') this.etapeCourse.set('ARRIVE_CLIENT');
         }
@@ -357,7 +504,7 @@ export class ServiceLivreurService {
   }
 
   /**
-   * Valide le code PIN à 4 chiffres fourni par le client auprès de Django de manière asynchrone et sécurisée.
+   * Valide le code PIN à 4 chiffres fourni par le client auprès de Django.
    */
   validerCodeAsync(codeSaisi: string, identifiantCommande?: string): Observable<ResultatValidationCode> {
     if (!codeSaisi || codeSaisi.length !== 4) {
@@ -399,9 +546,6 @@ export class ServiceLivreurService {
     return this.validerCode(codeSaisi, identifiantCommande);
   }
 
-  /**
-   * Valide le code PIN à 4 chiffres fourni par le client.
-   */
   validerCode(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
     if (codeSaisi.length !== 4) {
       return {
@@ -451,6 +595,7 @@ export class ServiceLivreurService {
 
     this.courseEnCours.set(null);
     this.etapeCourse.set('LIVRE');
+    this.chargerProfilLivreur();
   }
 
   recommencerMission(): void {

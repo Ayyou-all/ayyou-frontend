@@ -180,6 +180,13 @@
             </div>
 
           </div>
+        } @empty {
+          <div class="bg-white rounded-2xl p-6 border border-slate-100 text-center space-y-2">
+            <div class="w-12 h-12 rounded-full bg-slate-50 text-slate-300 mx-auto flex items-center justify-center text-lg">
+              <i class="fa-solid fa-receipt"></i>
+            </div>
+            <p class="text-xs text-slate-400 font-bold">Aucune course enregistrée pour cette période</p>
+          </div>
         }
       </div>
 
@@ -218,7 +225,7 @@
 
     <!-- Onglet 3 : Profil -->
     <a
-      routerLink="/profil"
+      routerLink="/livreur/profil"
       class="flex flex-col items-center justify-center py-1 px-4 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors"
     >
       <i class="fa-solid fa-user text-xl"></i>
