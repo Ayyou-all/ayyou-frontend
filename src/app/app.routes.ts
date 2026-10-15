@@ -25,8 +25,8 @@ export const routes: Routes = [
   },
   {
     path: 'restaurant',
-    redirectTo: 'gerant',
-    pathMatch: 'prefix'
+    redirectTo: 'catalogue',
+    pathMatch: 'full'
   },
   {
     path: 'livreur',
@@ -39,6 +39,7 @@ export const routes: Routes = [
   },
   {
     path: 'livreur/navigation',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/navigation-livraison/navigation-livraison.component'
@@ -47,6 +48,7 @@ export const routes: Routes = [
   },
   {
     path: 'livreur/verification',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/verification-commande/verification-commande.component'
@@ -55,6 +57,7 @@ export const routes: Routes = [
   },
   {
     path: 'livreur/trajet-client',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/trajet-client/trajet-client.component'
@@ -63,6 +66,7 @@ export const routes: Routes = [
   },
   {
     path: 'livreur/validation-code',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/validation-code/validation-code.component'
@@ -71,6 +75,7 @@ export const routes: Routes = [
   },
   {
     path: 'livreur/fin-livraison',
+    canActivate: [gardeLivreur],
     loadComponent: () =>
       import(
         './fonctionnalites/livreur/fin-livraison/fin-livraison.component'

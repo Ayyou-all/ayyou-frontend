@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnInit,
   ViewChild,
   computed,
   inject,
@@ -22,11 +23,16 @@ import { DetailProduitComponent } from '../catalogue/detail-produit/detail-produ
   imports: [CommonModule, RouterModule, DetailProduitComponent],
   templateUrl: './accueil.component.html'
 })
-export class AccueilComponent {
+export class AccueilComponent implements OnInit {
   readonly serviceCatalogue = inject(ServiceCatalogueService);
   readonly servicePanier = inject(ServicePanierService);
   readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly routeur = inject(Router);
+
+  ngOnInit(): void {
+    // Actualisation automatique du fil d'actualité pour récupérer les nouveaux Reels
+    this.serviceCatalogue.chargerPublicationsFil().subscribe();
+  }
 
   // Plat actuellement en consultation via le modal (Image 1)
   readonly platEnConsultation = signal<Plat | null>(null);

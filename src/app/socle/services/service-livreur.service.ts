@@ -337,6 +337,7 @@ export class ServiceLivreurService {
             clientLatitude: Number(premiere.clientLatitude ?? premiere.client_latitude ?? 14.6850),
             clientLongitude: Number(premiere.clientLongitude ?? premiere.client_longitude ?? -17.4520),
             articles: (premiere.articles || []).map((art: any) => ({
+              id: art.id ? Number(art.id) : undefined,
               nom: art.nom ?? art.nom_plat ?? 'Article',
               quantite: Number(art.quantite || 1),
               format: art.format || 'Standard',
@@ -384,6 +385,7 @@ export class ServiceLivreurService {
             clientLatitude: Number(l.client_latitude || 14.6850),
             clientLongitude: Number(l.client_longitude || -17.4520),
             articles: (l.articles || []).map((art: any) => ({
+              id: art.id ? Number(art.id) : undefined,
               nom: art.nom_plat || art.nom || 'Article',
               quantite: Number(art.quantite || 1),
               format: art.format || 'Standard',
@@ -428,8 +430,8 @@ export class ServiceLivreurService {
     }
   }
 
-  accepterProposition(): void {
-    this.accepterCourse();
+  accepterProposition(surSucces?: () => void, surErreur?: (message: string) => void): void {
+    this.accepterCourse(surSucces, surErreur);
   }
 
   refuserProposition(): void {
@@ -439,7 +441,7 @@ export class ServiceLivreurService {
   /**
    * Accepte la proposition de course via l'API Django.
    */
-  accepterCourse(): void {
+  accepterCourse(surSucces?: () => void, surErreur?: (message: string) => void): void {
     this.arreterCompteARebours();
     const prop = this.propositionActive();
     if (prop) {
@@ -450,11 +452,19 @@ export class ServiceLivreurService {
             this.courseEnCours.set(prop);
             this.propositionActive.set(null);
             this.etapeCourse.set('VERS_RESTAURANT');
+            if (surSucces) {
+              surSucces();
+            }
           },
-          error: () => {
-            this.courseEnCours.set(prop);
+          error: (err) => {
             this.propositionActive.set(null);
-            this.etapeCourse.set('VERS_RESTAURANT');
+            const message =
+              err.error?.detail ||
+              err.error?.message ||
+              "Cette mission n'est plus disponible ou a été acceptée par un autre coursier.";
+            if (surErreur) {
+              surErreur(message);
+            }
           }
         });
     }
@@ -483,6 +493,7 @@ export class ServiceLivreurService {
 
     const article = course.articles[indexArticle];
     const nouvelEtat = !article.estVerifie;
+    const ligneIdReelle = article.id ?? (indexArticle + 1);
 
     this.courseEnCours.update((c) => {
       if (!c) return null;
@@ -496,7 +507,7 @@ export class ServiceLivreurService {
 
     this.http
       .post(`${environment.apiUrl}/livraisons/mission-en-cours/pointer-article/`, {
-        ligne_id: indexArticle + 1,
+        ligne_id: ligneIdReelle,
         est_verifie: nouvelEtat
       })
       .subscribe({
@@ -585,6 +596,13 @@ export class ServiceLivreurService {
   }
 
   validerCode(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
+    if (this.etapeCourse() === 'LIVRE' || !this.courseEnCours()) {
+      return {
+        valide: false,
+        message: 'Cette livraison a déjà été validée et clôturée.'
+      };
+    }
+
     if (codeSaisi.length !== 4) {
       return {
         valide: false,
@@ -592,28 +610,35 @@ export class ServiceLivreurService {
       };
     }
 
-    const payload: any = { code_pin: codeSaisi };
-    if (identifiantCommande) {
-      payload.commande_reference = identifiantCommande;
+    if (!/^\d{4}$/.test(codeSaisi)) {
+      return {
+        valide: false,
+        message: 'Le code de confirmation doit comporter uniquement des chiffres.'
+      };
     }
-
-    this.http
-      .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
-      .subscribe({
-        next: (res) => {
-          this.terminerLivraison(res?.gain_fcfa);
-        },
-        error: () => {}
-      });
 
     const course = this.courseEnCours();
     if (course && course.codeValidation && course.codeValidation === codeSaisi) {
+      const payload: any = { code_pin: codeSaisi };
+      if (identifiantCommande) {
+        payload.commande_reference = identifiantCommande;
+      }
+
+      this.http
+        .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
+        .subscribe({
+          next: (res) => {
+            this.terminerLivraison(res?.gain_fcfa);
+          },
+          error: () => {}
+        });
+
       return { valide: true, message: 'Code validé avec succès.' };
     }
 
     return {
       valide: false,
-      message: 'Code de confirmation incorrect. Demandez le code PIN au client.'
+      message: 'Code de sécurité incorrect. Demandez le code PIN au client.'
     };
   }
 

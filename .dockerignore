@@ -1,0 +1,11 @@
+node_modules
+.angular
+dist
+.git
+.gitignore
+.editorconfig
+.prettierrc
+.vscode
+*.log
+coverage
+.DS_Store
