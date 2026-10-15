@@ -111,10 +111,25 @@ export class ServiceRestaurantCommandesService {
     this.notificationsNonLues().length
   );
 
+  // Indicateur d'état de connectivité réseau
+  readonly estEnLigne = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
   private intervallePolling: any = null;
   private idsCommandesConnues = new Set<string>();
 
   constructor() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        this.estEnLigne.set(true);
+        if (this.estRoleGerant()) {
+          this.chargerCommandesRestaurant(false);
+        }
+      });
+      window.addEventListener('offline', () => {
+        this.estEnLigne.set(false);
+      });
+    }
+
     if (this.estRoleGerant()) {
       this.demarrerEcouteTempsReel(3500);
     }
@@ -146,6 +161,10 @@ export class ServiceRestaurantCommandesService {
     this.chargerCommandesRestaurant(true);
     if (!this.intervallePolling) {
       this.intervallePolling = setInterval(() => {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          this.estEnLigne.set(false);
+          return;
+        }
         this.chargerCommandesRestaurant(false);
       }, intervalleMs);
     }
@@ -196,6 +215,12 @@ export class ServiceRestaurantCommandesService {
   chargerCommandesRestaurant(afficherChargement: boolean = false): void {
     if (!this.estRoleGerant()) {
       this.arreterEcouteTempsReel();
+      if (afficherChargement) this.chargementEnCours.set(false);
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.estEnLigne.set(false);
       if (afficherChargement) this.chargementEnCours.set(false);
       return;
     }
@@ -310,6 +335,7 @@ export class ServiceRestaurantCommandesService {
 
         this.commandesKanban.set(kanban);
         this.historiqueCommandes.set(historique);
+        this.estEnLigne.set(true);
         if (afficherChargement) {
           this.chargementEnCours.set(false);
         }
@@ -318,7 +344,9 @@ export class ServiceRestaurantCommandesService {
         if (afficherChargement) {
           this.chargementEnCours.set(false);
         }
-        if (err?.status === 401 || err?.status === 403) {
+        if (err?.status === 0) {
+          this.estEnLigne.set(false);
+        } else if (err?.status === 401 || err?.status === 403) {
           this.arreterEcouteTempsReel();
         }
       }
