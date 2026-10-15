@@ -113,6 +113,19 @@
   <!-- ========================================================================= -->
   <main class="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-8 flex flex-col justify-center">
 
+    <!-- Bannière d'alerte si erreur serveur -->
+    @if (messageErreur()) {
+      <div class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold flex items-center justify-between shadow-xs animate-shake">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-circle-exclamation text-base text-[#E51824]"></i>
+          <span>{{ messageErreur() }}</span>
+        </div>
+        <button type="button" (click)="messageErreur.set(null)" class="text-red-400 hover:text-red-600 text-xs font-bold cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    }
+
     <!-- CARTE : GAINS DU JOUR (DONNÉES RÉELLES DE LA BD) -->
     <a routerLink="/livreur/gains" class="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm flex items-center justify-between gap-4 hover:border-red-200 transition-colors cursor-pointer group">
       

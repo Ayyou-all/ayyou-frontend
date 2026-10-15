@@ -12,6 +12,7 @@ export type EtapeCourseLivreur =
   | 'LIVRE';
 
 export interface ArticleVerification {
+  id?: number;
   nom: string;
   quantite: number;
   format?: string; // Ex: "Classique", "50cl", "Portion"

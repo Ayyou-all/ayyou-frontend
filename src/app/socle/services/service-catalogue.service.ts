@@ -122,6 +122,7 @@ export class ServiceCatalogueService {
         const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
         return liste.map((pub: any) => this.adapterPublication(pub));
       }),
+      tap((pubs) => this.publicationsFil.set(pubs)),
       catchError(() => of([]))
     );
   }
