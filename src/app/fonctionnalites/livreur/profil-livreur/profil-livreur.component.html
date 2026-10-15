@@ -142,8 +142,16 @@
         <!-- Badges Véhicule & Zone -->
         <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">
-            <i class="fa-solid fa-motorcycle text-red-500"></i>
-            {{ nomVehicule() || typeVehicule() }}
+            @if (typeVehicule() === 'VELO') {
+              <i class="fa-solid fa-bicycle text-red-500"></i>
+              <span>Vélo</span>
+            } @else if (typeVehicule() === 'VOITURE') {
+              <i class="fa-solid fa-car text-red-500"></i>
+              <span>Voiture</span>
+            } @else {
+              <i class="fa-solid fa-motorcycle text-red-500"></i>
+              <span>Moto</span>
+            }
           </span>
 
           @if (immatriculation()) {
@@ -354,7 +362,7 @@
           <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
             Type de véhicule
           </label>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="grid grid-cols-3 gap-3">
             @for (veh of listeTypesVehicule; track veh.valeur) {
               <button
                 type="button"
@@ -371,34 +379,18 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Modèle / Nom du véhicule -->
-          <div class="space-y-1.5">
-            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
-              Modèle du véhicule
-            </label>
-            <input
-              type="text"
-              [ngModel]="nomVehicule()"
-              (ngModelChange)="nomVehicule.set($event)"
-              placeholder="Ex : Yamaha TMAX, Honda PCX..."
-              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
-            />
-          </div>
-
-          <!-- Numéro de plaque d'immatriculation -->
-          <div class="space-y-1.5">
-            <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
-              Numéro d'immatriculation (Plaque)
-            </label>
-            <input
-              type="text"
-              [ngModel]="immatriculation()"
-              (ngModelChange)="immatriculation.set($event)"
-              placeholder="Ex : DK-4582-AZ"
-              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-mono font-bold text-slate-800 uppercase focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
-            />
-          </div>
+        <!-- Numéro de plaque d'immatriculation -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+            Numéro d'immatriculation (Plaque)
+          </label>
+          <input
+            type="text"
+            [ngModel]="immatriculation()"
+            (ngModelChange)="immatriculation.set($event)"
+            placeholder="Ex : DK-4582-AZ"
+            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-mono font-bold text-slate-800 uppercase focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+          />
         </div>
 
         <!-- Zone d'activité principale -->

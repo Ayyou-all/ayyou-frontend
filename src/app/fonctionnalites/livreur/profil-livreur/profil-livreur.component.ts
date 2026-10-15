@@ -48,23 +48,21 @@ export class ProfilLivreurComponent implements OnInit {
   readonly fichierPhoto = signal<File | null>(null);
   readonly apercuPhoto = signal<string | null>(null);
 
-  // Liste des zones de livraison disponibles
+  // Liste des zones de livraison disponibles (rigoureusement identique à l'inscription)
   readonly listeZones: string[] = [
-    'Dakar - Almadies / Ngor / Ouakam',
-    'Dakar - Plateau / Médina / Point E',
-    'Dakar - Mermoz / Sacré-Cœur / Fann',
-    'Dakar - Parcelles Assainies / Grand Yoff',
+    'Dakar - Almadies / Plateau',
+    'Dakar - Point E / Mermoz',
+    'Dakar - Parcelles / Grand Yoff',
     'Pikine / Guédiawaye',
     'Rufisque / Diamniadio',
-    'Thiès Ville',
-    'Mbour / Saly Portudal',
+    'Thiès',
+    'Mbour / Saly',
     'Saint-Louis'
   ];
 
-  // Types de véhicules
+  // Types de véhicules rigoureusement identiques à l'inscription (Moto, Vélo, Voiture)
   readonly listeTypesVehicule = [
     { valeur: 'MOTO', libelle: 'Moto', icone: 'fa-solid fa-motorcycle' },
-    { valeur: 'SCOOTER', libelle: 'Scooter', icone: 'fa-solid fa-moped' },
     { valeur: 'VELO', libelle: 'Vélo', icone: 'fa-solid fa-bicycle' },
     { valeur: 'VOITURE', libelle: 'Voiture', icone: 'fa-solid fa-car' }
   ];
@@ -232,9 +230,11 @@ export class ProfilLivreurComponent implements OnInit {
 
     const formData = new FormData();
     formData.append('type_vehicule', this.typeVehicule());
-    formData.append('nom_vehicule', this.nomVehicule().trim());
     formData.append('immatriculation', this.immatriculation().trim());
     formData.append('zone_principale', this.zonePrincipale().trim());
+    if (this.nomVehicule()) {
+      formData.append('nom_vehicule', this.nomVehicule().trim());
+    }
 
     this.serviceLivreur.mettreAJourProfilLivreur(formData).subscribe({
       next: (res) => {

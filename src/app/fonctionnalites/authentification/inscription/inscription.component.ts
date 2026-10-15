@@ -116,7 +116,6 @@ export class InscriptionComponent {
 
   // Spécifique livreur (Étape 3 Infos Livreur)
   readonly typeVehiculeChoisi = signal<'MOTO' | 'VELO' | 'VOITURE'>('MOTO');
-  readonly nomVehiculeSaisi = signal<string>('');
   readonly numeroPlaqueSaisi = signal<string>('');
   readonly zoneActiviteSaisie = signal<string>('');
   readonly fichierPhotoProfil = signal<File | null>(null);
@@ -136,7 +135,6 @@ export class InscriptionComponent {
   readonly numeroMobileMoneySaisi = signal<string>('');
   readonly operateurPaiementChoisi = signal<'WAVE' | 'ORANGE_MONEY'>('WAVE');
   readonly nomEtablissementSaisi = signal<string>('');
-  readonly typeVehiculeSaisi = signal<'MOTO' | 'VELO' | 'VOITURE' | 'SCOOTER'>('MOTO');
 
   // Messages d'état
   readonly messageErreur = signal<string | null>(null);
@@ -556,7 +554,6 @@ export class InscriptionComponent {
             role: this.roleChoisi() as RoleUtilisateur,
             nomEtablissement: this.roleChoisi() === 'RESTAURANT' ? this.nomRestaurantSaisi().trim() : undefined,
             typeVehicule: this.roleChoisi() === 'LIVREUR' ? (this.typeVehiculeChoisi() as any) : undefined,
-            nomVehicule: this.roleChoisi() === 'LIVREUR' ? this.nomVehiculeSaisi().trim() : undefined,
             immatriculation: this.roleChoisi() === 'LIVREUR' ? this.numeroPlaqueSaisi().trim() : undefined,
             zonePrincipale: this.roleChoisi() === 'LIVREUR' ? this.zoneActiviteSaisie().trim() : undefined,
             photo: this.fichierPhotoProfil(),
