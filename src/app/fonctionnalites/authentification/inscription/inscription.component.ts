@@ -45,10 +45,10 @@ export class InscriptionComponent {
   readonly nomCompletSaisi = signal<string>('');
   readonly prenomSaisi = signal<string>('');
   readonly nomSaisi = signal<string>('');
-  readonly telephoneSaisi = signal<string>('77 000 00 00');
+  readonly telephoneSaisi = signal<string>('');
   readonly indicatifTelephone = signal<string>('+221');
   readonly menuIndicatifsOuvert = signal<boolean>(false);
-  readonly courrielSaisi = signal<string>('fatou.diop@ayyou.sn');
+  readonly courrielSaisi = signal<string>('');
   readonly motDePasseSaisi = signal<string>('');
   readonly confirmationMotDePasseSaisi = signal<string>('');
   readonly motDePasseVisible = signal<boolean>(false);
@@ -61,23 +61,27 @@ export class InscriptionComponent {
   readonly positionEnCours = signal<boolean>(false);
 
   // Vérification de sécurité / Code OTP (Étape 4)
-  readonly chiffresCode = signal<string[]>(['4', '8', '2', '']);
-  readonly secondesRestantes = signal<number>(30);
+  readonly chiffresCode = signal<string[]>(['', '', '', '', '', '']);
+  readonly secondesRestantes = signal<number>(120);
   readonly peutRenvoyerCode = signal<boolean>(false);
   private identifiantMinuteur: any = null;
 
   // Texte du destinataire pour l'étape de vérification (Adresse e-mail)
   readonly destinataireVerification = computed(() => {
-    return this.courrielSaisi() ? this.courrielSaisi().trim() : 'fatou.diop@ayyou.sn';
+    return this.courrielSaisi() ? this.courrielSaisi().trim() : '';
   });
 
   readonly minuteurFormate = computed(() => {
     const s = this.secondesRestantes();
-    return s < 10 ? `00:0${s}` : `00:${s}`;
+    const minutes = Math.floor(s / 60);
+    const secondes = s % 60;
+    const strMin = minutes < 10 ? `0${minutes}` : `${minutes}`;
+    const strSec = secondes < 10 ? `0${secondes}` : `${secondes}`;
+    return `${strMin}:${strSec}`;
   });
 
   // Spécifique restaurant (Étape 3 Infos Restaurant)
-  readonly nomRestaurantSaisi = signal<string>('Le Teranga Food');
+  readonly nomRestaurantSaisi = signal<string>('');
   readonly categorieRestaurantSaisie = signal<string>('Cuisine sénégalaise');
   readonly menuCategoriesOuvert = signal<boolean>(false);
   readonly listeCategories: string[] = [
@@ -88,11 +92,16 @@ export class InscriptionComponent {
     'Plats traditionnels',
     'Jus locaux & Boissons'
   ];
-  readonly adresseCompleteRestaurantSaisie = signal<string>('Almadies, Route de la Corniche Ouest, Dakar');
+  readonly adresseCompleteRestaurantSaisie = signal<string>('');
   readonly tempsPreparationMoyenSaisi = signal<string>('20-30 min');
   readonly logoRestaurantUrl = signal<string | null>(null);
   readonly photoCouvertureRestaurantUrl = signal<string | null>(null);
   readonly documentJustificatifNom = signal<string | null>(null);
+  readonly fichierDocumentJustificatif = signal<File | null>(null);
+  readonly fichierLogo = signal<File | null>(null);
+  readonly fichierCouverture = signal<File | null>(null);
+  readonly fichierPermisRecto = signal<File | null>(null);
+  readonly fichierPermisVerso = signal<File | null>(null);
   readonly heureOuvertureDebut = signal<string>('09:00 AM');
   readonly heureOuvertureFin = signal<string>('10:00 PM');
   readonly joursSemaine = signal<{ code: string; libelle: string; actif: boolean }[]>([
@@ -107,8 +116,9 @@ export class InscriptionComponent {
 
   // Spécifique livreur (Étape 3 Infos Livreur)
   readonly typeVehiculeChoisi = signal<'MOTO' | 'VELO' | 'VOITURE'>('MOTO');
-  readonly numeroPlaqueSaisi = signal<string>('AA-123-BB');
-  readonly zoneActiviteSaisie = signal<string>('Dakar - Almadies / Plateau');
+  readonly numeroPlaqueSaisi = signal<string>('');
+  readonly zoneActiviteSaisie = signal<string>('');
+  readonly fichierPhotoProfil = signal<File | null>(null);
   readonly menuVillesOuvert = signal<boolean>(false);
   readonly listeVilles: string[] = [
     'Dakar - Almadies / Plateau',
@@ -122,10 +132,9 @@ export class InscriptionComponent {
   ];
   readonly permisRectoNom = signal<string | null>(null);
   readonly permisVersoNom = signal<string | null>(null);
-  readonly numeroMobileMoneySaisi = signal<string>('77 000 00 00');
+  readonly numeroMobileMoneySaisi = signal<string>('');
   readonly operateurPaiementChoisi = signal<'WAVE' | 'ORANGE_MONEY'>('WAVE');
-  readonly nomEtablissementSaisi = signal<string>('Le Teranga Food');
-  readonly typeVehiculeSaisi = signal<'MOTO' | 'VELO' | 'VOITURE' | 'SCOOTER'>('MOTO');
+  readonly nomEtablissementSaisi = signal<string>('');
 
   // Messages d'état
   readonly messageErreur = signal<string | null>(null);
@@ -212,6 +221,10 @@ export class InscriptionComponent {
         this.messageErreur.set('Veuillez définir un mot de passe.');
         return;
       }
+      if (this.motDePasseSaisi().trim().length < 6) {
+        this.messageErreur.set('Le mot de passe doit comporter au moins 6 caractères.');
+        return;
+      }
       if (this.motDePasseSaisi() !== this.confirmationMotDePasseSaisi()) {
         this.messageErreur.set('Les mots de passe ne correspondent pas.');
         return;
@@ -292,40 +305,48 @@ export class InscriptionComponent {
   selectionnerPhotoProfil(evenement: Event): void {
     const champFichier = evenement.target as HTMLInputElement;
     if (champFichier.files && champFichier.files[0]) {
+      const fichier = champFichier.files[0];
+      this.fichierPhotoProfil.set(fichier);
       const lecteur = new FileReader();
       lecteur.onload = (e) => {
         this.photoProfilUrl.set(e.target?.result as string);
       };
-      lecteur.readAsDataURL(champFichier.files[0]);
+      lecteur.readAsDataURL(fichier);
     }
   }
 
   selectionnerLogoRestaurant(evenement: Event): void {
     const champFichier = evenement.target as HTMLInputElement;
     if (champFichier.files && champFichier.files[0]) {
+      const fichier = champFichier.files[0];
+      this.fichierLogo.set(fichier);
       const lecteur = new FileReader();
       lecteur.onload = (e) => {
         this.logoRestaurantUrl.set(e.target?.result as string);
       };
-      lecteur.readAsDataURL(champFichier.files[0]);
+      lecteur.readAsDataURL(fichier);
     }
   }
 
   selectionnerPhotoCouvertureRestaurant(evenement: Event): void {
     const champFichier = evenement.target as HTMLInputElement;
     if (champFichier.files && champFichier.files[0]) {
+      const fichier = champFichier.files[0];
+      this.fichierCouverture.set(fichier);
       const lecteur = new FileReader();
       lecteur.onload = (e) => {
         this.photoCouvertureRestaurantUrl.set(e.target?.result as string);
       };
-      lecteur.readAsDataURL(champFichier.files[0]);
+      lecteur.readAsDataURL(fichier);
     }
   }
 
   selectionnerDocumentJustificatif(evenement: Event): void {
     const champFichier = evenement.target as HTMLInputElement;
     if (champFichier.files && champFichier.files[0]) {
-      this.documentJustificatifNom.set(champFichier.files[0].name);
+      const fichier = champFichier.files[0];
+      this.documentJustificatifNom.set(fichier.name);
+      this.fichierDocumentJustificatif.set(fichier);
     }
   }
 
@@ -360,14 +381,18 @@ export class InscriptionComponent {
   selectionnerPermisRecto(evenement: Event): void {
     const champFichier = evenement.target as HTMLInputElement;
     if (champFichier.files && champFichier.files[0]) {
-      this.permisRectoNom.set(champFichier.files[0].name);
+      const fichier = champFichier.files[0];
+      this.permisRectoNom.set(fichier.name);
+      this.fichierPermisRecto.set(fichier);
     }
   }
 
   selectionnerPermisVerso(evenement: Event): void {
     const champFichier = evenement.target as HTMLInputElement;
     if (champFichier.files && champFichier.files[0]) {
-      this.permisVersoNom.set(champFichier.files[0].name);
+      const fichier = champFichier.files[0];
+      this.permisVersoNom.set(fichier.name);
+      this.fichierPermisVerso.set(fichier);
     }
   }
 
@@ -376,21 +401,35 @@ export class InscriptionComponent {
   }
 
   soumettreInscription(): void {
+    const courriel = this.courrielSaisi().trim().toLowerCase();
+    if (!courriel || !courriel.includes('@')) {
+      this.messageErreur.set('Veuillez renseigner une adresse e-mail valide pour recevoir le code de sécurité.');
+      return;
+    }
+
+    this.messageErreur.set(null);
     this.serviceAuthentification.chargementEnCours.set(true);
 
-    setTimeout(() => {
-      this.serviceAuthentification.chargementEnCours.set(false);
-      // Étape 4 : Affichage de la page de Vérification de sécurité
-      this.etapeActuelle.set(4);
-      this.demarrerMinuteurVerification();
-    }, 500);
+    this.serviceAuthentification.envoyerCodeVerification(courriel).subscribe({
+      next: () => {
+        this.serviceAuthentification.chargementEnCours.set(false);
+        this.chiffresCode.set(['', '', '', '', '', '']);
+        this.etapeActuelle.set(4);
+        this.demarrerMinuteurVerification();
+      },
+      error: (err) => {
+        this.serviceAuthentification.chargementEnCours.set(false);
+        const msg = err?.error?.message || err?.error?.detail || "Impossible d'envoyer le code de vérification par e-mail. Veuillez vérifier votre adresse.";
+        this.messageErreur.set(msg);
+      }
+    });
   }
 
   demarrerMinuteurVerification(): void {
     if (this.identifiantMinuteur) {
       clearInterval(this.identifiantMinuteur);
     }
-    this.secondesRestantes.set(30);
+    this.secondesRestantes.set(120);
     this.peutRenvoyerCode.set(false);
 
     this.identifiantMinuteur = setInterval(() => {
@@ -406,8 +445,27 @@ export class InscriptionComponent {
   }
 
   renvoyerCodeVerification(): void {
-    this.demarrerMinuteurVerification();
+    const courriel = this.courrielSaisi().trim().toLowerCase();
+    if (!courriel) {
+      this.messageErreur.set('Adresse e-mail manquante.');
+      return;
+    }
+
     this.messageErreur.set(null);
+    this.serviceAuthentification.chargementEnCours.set(true);
+
+    this.serviceAuthentification.envoyerCodeVerification(courriel).subscribe({
+      next: () => {
+        this.serviceAuthentification.chargementEnCours.set(false);
+        this.chiffresCode.set(['', '', '', '', '', '']);
+        this.demarrerMinuteurVerification();
+      },
+      error: (err) => {
+        this.serviceAuthentification.chargementEnCours.set(false);
+        const msg = err?.error?.message || err?.error?.detail || 'Échec du renvoi du code de vérification.';
+        this.messageErreur.set(msg);
+      }
+    });
   }
 
   saisirChiffre(index: number, evenement: Event, champSuivant?: HTMLInputElement): void {
@@ -436,24 +494,110 @@ export class InscriptionComponent {
   }
 
   validerCodeVerification(): void {
+    this.messageErreur.set(null);
+    const codeSaisi = this.chiffresCode().join('').trim();
+    if (codeSaisi.length !== 6) {
+      this.messageErreur.set('Veuillez renseigner le code complet à 6 chiffres reçu par e-mail.');
+      return;
+    }
+
+    const courriel = this.courrielSaisi().trim().toLowerCase();
+    if (!courriel) {
+      this.messageErreur.set('Adresse e-mail introuvable.');
+      return;
+    }
+
+    let prenom = this.prenomSaisi().trim();
+    let nom = this.nomSaisi().trim();
+    if (!prenom && this.nomCompletSaisi().trim()) {
+      const parties = this.nomCompletSaisi().trim().split(' ');
+      prenom = parties[0];
+      nom = parties.slice(1).join(' ') || parties[0];
+    }
+    if (!nom || !prenom) {
+      this.messageErreur.set('Veuillez renseigner votre prénom et nom.');
+      return;
+    }
+
+    const motDePasse = this.motDePasseSaisi().trim();
+    if (!motDePasse || motDePasse.length < 6) {
+      this.messageErreur.set('Le mot de passe doit comporter au moins 6 caractères.');
+      return;
+    }
+
+    const confirmation = this.confirmationMotDePasseSaisi().trim();
+    if (motDePasse !== confirmation) {
+      this.messageErreur.set('Les mots de passe ne correspondent pas.');
+      return;
+    }
+
+    const tel = `${this.indicatifTelephone()}${this.telephoneSaisi()}`.replace(/\s+/g, '');
+    if (!this.telephoneSaisi().trim()) {
+      this.messageErreur.set('Veuillez renseigner un numéro de téléphone.');
+      return;
+    }
+
     this.serviceAuthentification.chargementEnCours.set(true);
 
-    setTimeout(() => {
-      this.serviceAuthentification.chargementEnCours.set(false);
-      // Étape 5 : Affichage de la page Succès "Compte créé !"
-      this.etapeActuelle.set(5);
-      this.inscriptionReussie.set(true);
-    }, 600);
+    // 1. Vérification réelle du code OTP via l'API SMTP
+    this.serviceAuthentification.verifierCodeVerification(courriel, codeSaisi).subscribe({
+      next: () => {
+        // 2. Inscription réelle de l'utilisateur
+        this.serviceAuthentification
+          .inscrire({
+            prenom,
+            nom,
+            courriel,
+            telephone: tel,
+            motDePasse,
+            confirmationMotDePasse: confirmation,
+            role: this.roleChoisi() as RoleUtilisateur,
+            nomEtablissement: this.roleChoisi() === 'RESTAURANT' ? this.nomRestaurantSaisi().trim() : undefined,
+            typeVehicule: this.roleChoisi() === 'LIVREUR' ? (this.typeVehiculeChoisi() as any) : undefined,
+            immatriculation: this.roleChoisi() === 'LIVREUR' ? this.numeroPlaqueSaisi().trim() : undefined,
+            zonePrincipale: this.roleChoisi() === 'LIVREUR' ? this.zoneActiviteSaisie().trim() : undefined,
+            photo: this.fichierPhotoProfil(),
+            adresse: this.roleChoisi() === 'RESTAURANT' ? this.adresseCompleteRestaurantSaisie().trim() : this.adresseLivraisonSaisie().trim(),
+            conditionsAcceptees: true,
+            documentJustificatif: this.fichierDocumentJustificatif(),
+            logo: this.fichierLogo(),
+            couverture: this.fichierCouverture(),
+            permisRecto: this.fichierPermisRecto(),
+            permisVerso: this.fichierPermisVerso()
+          })
+          .subscribe({
+            next: () => {
+              this.serviceAuthentification.chargementEnCours.set(false);
+              this.etapeActuelle.set(5);
+              this.inscriptionReussie.set(true);
+            },
+            error: (err) => {
+              this.serviceAuthentification.chargementEnCours.set(false);
+              let detailErreur = '';
+              if (err?.error?.mot_de_passe) {
+                const mdpErr = Array.isArray(err.error.mot_de_passe) ? err.error.mot_de_passe.join(' ') : err.error.mot_de_passe;
+                detailErreur = `Mot de passe : ${mdpErr}`;
+              } else if (err?.error?.detail) {
+                detailErreur = err.error.detail;
+              } else if (err?.error?.message) {
+                detailErreur = err.error.message;
+              } else if (typeof err?.error === 'object' && err?.error !== null) {
+                detailErreur = Object.values(err.error).flat().join(' ');
+              }
+              this.messageErreur.set(detailErreur || "Échec de la création du compte. Veuillez vérifier vos informations.");
+            }
+          });
+      },
+      error: (err) => {
+        this.serviceAuthentification.chargementEnCours.set(false);
+        const msg = err?.error?.message || err?.error?.detail || 'Code de vérification incorrect ou expiré. Veuillez vérifier votre boîte e-mail.';
+        this.messageErreur.set(msg);
+      }
+    });
   }
 
   allerVersDecouvrirRestaurants(): void {
-    this.serviceAuthentification
-      .connecterAvecRolePredefini(this.roleChoisi() as RoleUtilisateur)
-      .subscribe({
-        next: () => {
-          this.routeur.navigate(['/accueil']);
-        }
-      });
+    this.routeur.navigate(['/connexion']);
   }
 
   retournerAccueil(): void {

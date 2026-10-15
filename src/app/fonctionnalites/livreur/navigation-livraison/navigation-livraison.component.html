@@ -97,23 +97,23 @@
         <div class="space-y-1 min-w-0 flex-1">
           <!-- Badge numéro de commande -->
           <span class="inline-block px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-extrabold tracking-wider uppercase">
-            COMMANDE #4521
+            COMMANDE #{{ serviceLivreur.courseEnCours()?.identifiantCommande || '...' }}
           </span>
 
           <!-- Titre restaurant -->
           <h3 class="text-xl sm:text-2xl font-black text-slate-900 truncate font-['Outfit']">
-            Le Teranga
+            {{ serviceLivreur.courseEnCours()?.restaurantNom || 'Restaurant Partenaire' }}
           </h3>
 
           <!-- Adresse -->
           <p class="text-xs text-slate-400 truncate font-medium">
-            Plateau, Rue 22 x Avenue Blaise Diagne
+            {{ serviceLivreur.courseEnCours()?.restaurantAdresse || 'Adresse restaurant' }}
           </p>
         </div>
 
         <!-- Bouton d'appel sombre -->
         <a
-          href="tel:+221778214490"
+          [href]="serviceLivreur.courseEnCours()?.restaurantTelephone ? ('tel:' + serviceLivreur.courseEnCours()?.restaurantTelephone) : 'javascript:void(0)'"
           class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-transform active:scale-95 shrink-0"
           title="Appeler le restaurant"
         >

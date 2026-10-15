@@ -41,14 +41,21 @@ export class TrajetClientComponent implements AfterViewInit, OnDestroy {
     if (!conteneur) return;
 
     // Coordonnées réelles à Dakar
-    const coordClient = this.serviceCarteDakar.clientAlmadies; // Almadies, Villa 45 [14.7435, -17.5180]
-    const coordLivreur = this.serviceCarteDakar.livreurVersAlmadies; // Corniche Ouest / VDN [14.7150, -17.4780]
-    const trajet = this.serviceCarteDakar.trajetPlateauAlmadies;
+    const course = this.serviceLivreur.courseEnCours();
+    const coordClient: [number, number] = (course?.clientLatitude && course?.clientLongitude)
+      ? [course.clientLatitude, course.clientLongitude]
+      : this.serviceCarteDakar.clientAlmadies;
+    const coordLivreur: [number, number] = this.serviceCarteDakar.livreurVersAlmadies;
+    const miTrajet: [number, number] = [
+      (coordLivreur[0] + coordClient[0]) / 2,
+      (coordLivreur[1] + coordClient[1]) / 2
+    ];
+    const trajet: [number, number][] = [coordLivreur, miTrajet, coordClient];
 
     this.carteLeaflet = L.map('carte-trajet-client', {
       zoomControl: false,
       attributionControl: false
-    }).setView([14.7280, -17.4950], 13);
+    }).setView(coordLivreur, 13);
 
     // Couche de tuiles réelles de Dakar
     this.coucheActuelle = this.serviceCarteDakar.creerCoucheTuilesVoyager();
@@ -63,15 +70,20 @@ export class TrajetClientComponent implements AfterViewInit, OnDestroy {
       opacity: 0.95
     }).addTo(this.carteLeaflet);
 
-    // Marqueur Maison Client (Almadies)
+    // Marqueur Maison Client
     L.marker(coordClient, {
-      icon: this.serviceCarteDakar.creerIconeClient('Almadies')
+      icon: this.serviceCarteDakar.creerIconeClient(course?.clientNom || 'Client')
     }).addTo(this.carteLeaflet);
 
     // Marqueur Moto Livreur en direct
+    const nomLivreur = this.serviceLivreur.profilLivreur().prenom || 'Vous';
     L.marker(coordLivreur, {
-      icon: this.serviceCarteDakar.creerIconeMotoLivreur('Moussa')
+      icon: this.serviceCarteDakar.creerIconeMotoLivreur(nomLivreur)
     }).addTo(this.carteLeaflet);
+
+    if (this.carteLeaflet) {
+      this.carteLeaflet.fitBounds([coordLivreur, coordClient], { padding: [50, 50], maxZoom: 16 });
+    }
   }
 
   /**

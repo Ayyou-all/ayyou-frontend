@@ -18,7 +18,7 @@
       <div>
         <h1 class="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
           Gestion du Menu
-          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 hidden sm:inline-block">Le Teranga</span>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 hidden sm:inline-block">{{ nomRestaurant() }}</span>
         </h1>
         <p class="text-xs text-gray-500">Mettez à jour la carte, les disponibilités et les prix en temps réel</p>
       </div>
@@ -281,7 +281,7 @@
             </div>
             <div>
               <h3 class="text-lg font-black text-gray-900">Nouveau Plat ou Boisson</h3>
-              <p class="text-xs text-gray-500">Ajoutez une référence à la carte du Teranga</p>
+              <p class="text-xs text-gray-500">Ajoutez une référence à la carte de {{ nomRestaurant() }}</p>
             </div>
           </div>
           <button
@@ -530,7 +530,7 @@
       <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col border border-gray-100 overflow-hidden">
         <div class="p-5 border-b flex items-center justify-between bg-gray-50">
           <div>
-            <h3 class="font-black text-gray-900 text-base">Aperçu Menu Client — Le Teranga</h3>
+            <h3 class="font-black text-gray-900 text-base">Aperçu Menu Client — {{ nomRestaurant() }}</h3>
             <p class="text-xs text-gray-500">Vue exacte telle qu'affichée aux clients de l'application</p>
           </div>
           <button

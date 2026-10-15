@@ -45,11 +45,4 @@ export class ModaleConnexionRequiseComponent {
     this.fermer();
     this.routeur.navigate(['/inscription']);
   }
-
-  /**
-   * Déclenche la connexion rapide en 1 clic pour les démonstrations et tests.
-   */
-  connexionRapideClient(): void {
-    this.serviceAuthentification.connexionRapideClientVisiteur().subscribe();
-  }
 }

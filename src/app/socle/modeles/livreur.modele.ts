@@ -36,15 +36,29 @@ export interface PropositionLivraison {
   codeValidation: string; // Ex: "8245"
   articles: ArticleVerification[];
   photoCommande?: string;
+  restaurantLatitude?: number;
+  restaurantLongitude?: number;
+  clientLatitude?: number;
+  clientLongitude?: number;
 }
 
 export interface LivreurProfil {
-  nomComplet: string; // Ex: "Moussa Diop"
+  nomComplet: string;
   adressePhoto: string;
-  vehicule: string; // Ex: "Yamaha TMAX"
+  vehicule: string;
   estDisponible: boolean;
-  gainsDuJourFcfa: number; // Ex: 12500
-  nombreLivraisonsJour: number; // Ex: 8
+  gainsDuJourFcfa: number;
+  nombreLivraisonsJour: number;
+  prenom?: string;
+  nom?: string;
+  courriel?: string;
+  telephone?: string;
+  adresse?: string;
+  typeVehicule?: string;
+  nomVehicule?: string;
+  immatriculation?: string;
+  zonePrincipale?: string;
+  statutValidation?: string;
 }
 
 export interface ActiviteJourLivreur {

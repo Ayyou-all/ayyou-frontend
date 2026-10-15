@@ -384,11 +384,11 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Documents justificatifs fournis ({{ partenaireSelectionne()!.documentsFournis }}/{{ partenaireSelectionne()!.documentsTotal }})
+              Documents et pièces importés ({{ partenaireSelectionne()!.documentsFournis }}/{{ partenaireSelectionne()!.documentsTotal }})
             </h4>
             <span class="text-[11px] text-red-500 font-bold flex items-center gap-1">
               <i class="fa-solid fa-arrow-pointer text-[10px]"></i>
-              <span>Cliquer pour lire le document</span>
+              <span>Cliquer pour inspecter la pièce</span>
             </span>
           </div>
 
@@ -406,18 +406,28 @@
                     [class]="doc.estValide ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100'"
                     class="w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-colors shadow-2xs shrink-0"
                   >
-                    <i [class]="doc.estValide ? 'fa-solid fa-file-circle-check' : 'fa-solid fa-file-circle-exclamation'"></i>
+                    @if (doc.type === 'PDF') {
+                      <i class="fa-solid fa-file-pdf text-red-500 text-base"></i>
+                    } @else if (doc.type === 'IMAGE') {
+                      <i class="fa-solid fa-file-image text-blue-500 text-base"></i>
+                    } @else {
+                      <i [class]="doc.estValide ? 'fa-solid fa-file-circle-check' : 'fa-solid fa-file-circle-exclamation'"></i>
+                    }
                   </div>
                   <div class="min-w-0">
                     <div class="text-xs sm:text-sm font-extrabold text-slate-900 group-hover:text-red-600 transition-colors flex items-center gap-2 truncate">
                       <span>{{ doc.nom }}</span>
                       <span class="text-[10px] text-red-500 font-semibold bg-red-50 px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity shrink-0 flex items-center gap-1">
                         <i class="fa-solid fa-eye text-[9px]"></i>
-                        <span>Consulter</span>
+                        <span>Inspecter</span>
                       </span>
                     </div>
-                    <div class="text-[11px] text-slate-400 font-medium truncate">
-                      {{ doc.type }} ({{ doc.tailleFichier }}) • Vérifié par le système • N° {{ doc.numeroOfficiel }}
+                    <div class="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1.5 mt-0.5">
+                      <span class="font-mono text-slate-600 font-semibold truncate">{{ doc.nomFichier }}</span>
+                      <span>•</span>
+                      <span class="px-1.5 py-0.2 rounded bg-slate-100 text-[10px] font-bold text-slate-600 uppercase">{{ doc.type }}</span>
+                      <span>•</span>
+                      <span>{{ doc.tailleFichier }}</span>
                     </div>
                   </div>
                 </div>
@@ -434,6 +444,12 @@
                     <i class="fa-solid fa-chevron-right text-[10px]"></i>
                   </div>
                 </div>
+              </div>
+            } @empty {
+              <div class="p-6 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-slate-500 space-y-2">
+                <i class="fa-solid fa-folder-open text-3xl text-slate-300"></i>
+                <p class="text-xs font-semibold">Aucune pièce justificative téléversée par ce partenaire pour le moment.</p>
+                <p class="text-[11px] text-slate-400">Le statut reste « En attente » tant que les documents officiels ne sont pas transmis.</p>
               </div>
             }
           </div>
@@ -464,42 +480,48 @@
   }
 
   <!-- ========================================================================= -->
-  <!-- 7. LECTEUR OFFICIEL DU DOCUMENT : VISUALISATION INTÉGRALE DES TEXTES       -->
+  <!-- 7. LECTEUR OFFICIEL DU DOCUMENT : VISUALISATION DES PIÈCES RÉELLES          -->
   <!-- ========================================================================= -->
   @if (modaleDocumentOuverte() && documentEnConsultation()) {
     <div
-      class="fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-start p-2 sm:p-4 md:p-6 overflow-y-auto animation-apparition"
+      class="fixed inset-0 z-[60] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-start p-2 sm:p-4 md:p-6 overflow-y-auto animation-apparition"
       (click)="fermerApercuDocument()"
     >
       
       <!-- Barre d'outils supérieure flottante -->
       <div
-        class="w-full max-w-4xl bg-slate-900 text-white rounded-2xl p-3 sm:p-4 mb-4 shadow-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0"
+        class="w-full max-w-5xl bg-slate-900 text-white rounded-2xl p-3 sm:p-4 mb-4 shadow-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 sticky top-0 z-20"
         (click)="$event.stopPropagation()"
       >
         <!-- Titre & Info Partenaire -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
           <button
             type="button"
             (click)="fermerApercuDocument()"
-            class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+            class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="Retour au dossier"
           >
             <i class="fa-solid fa-arrow-left text-sm"></i>
           </button>
           
-          <div>
-            <div class="text-xs sm:text-sm font-black text-white flex items-center gap-2">
-              <span>{{ documentEnConsultation()!.nom }}</span>
+          <div class="min-w-0">
+            <div class="text-xs sm:text-sm font-black text-white flex items-center gap-2 truncate">
+              <span class="truncate">{{ documentEnConsultation()!.nom }}</span>
               <span
                 [class]="documentEnConsultation()!.estValide ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'"
-                class="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase"
+                class="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase shrink-0"
               >
                 {{ documentEnConsultation()!.estValide ? 'Conforme' : 'À vérifier' }}
               </span>
             </div>
-            <div class="text-[11px] text-slate-400">
-              Candidat : <span class="text-slate-200 font-bold">{{ partenaireSelectionne()?.nom }}</span> • Document {{ indexDocumentEnCours() + 1 }}/{{ partenaireSelectionne()?.listeDocuments?.length }}
+            <div class="text-[11px] text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+              <span class="text-slate-200 font-bold truncate">{{ partenaireSelectionne()?.nom }}</span>
+              <span>•</span>
+              <span class="font-mono text-slate-300 truncate">{{ documentEnConsultation()!.nomFichier }}</span>
+              <span>•</span>
+              <span class="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] font-bold text-slate-300 uppercase shrink-0">{{ documentEnConsultation()!.type }}</span>
+              <span>•</span>
+              <span class="shrink-0">{{ documentEnConsultation()!.tailleFichier }}</span>
             </div>
           </div>
         </div>
@@ -531,29 +553,50 @@
           </button>
         </div>
 
-        <!-- Outils de zoom & Téléchargement / Impression -->
+        <!-- Outils de zoom & Téléchargement / Impression / Validation -->
         <div class="flex items-center gap-2">
           
-          <!-- Zoom -->
-          <div class="hidden sm:flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs">
-            <button
-              type="button"
-              (click)="ajusterZoom(-10)"
-              class="w-7 h-7 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center cursor-pointer"
-              title="Dézoomer"
-            >
-              <i class="fa-solid fa-minus text-[10px]"></i>
-            </button>
-            <span class="px-1 text-[11px] font-mono text-slate-200">{{ facteurZoom() }}%</span>
-            <button
-              type="button"
-              (click)="ajusterZoom(10)"
-              class="w-7 h-7 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center cursor-pointer"
-              title="Zoomer"
-            >
-              <i class="fa-solid fa-plus text-[10px]"></i>
-            </button>
-          </div>
+          <!-- Zoom pour images -->
+          @if (documentEnConsultation()!.estImage) {
+            <div class="hidden sm:flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs">
+              <button
+                type="button"
+                (click)="ajusterZoom(-10)"
+                class="w-7 h-7 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center cursor-pointer"
+                title="Dézoomer"
+              >
+                <i class="fa-solid fa-minus text-[10px]"></i>
+              </button>
+              <span class="px-1 text-[11px] font-mono text-slate-200">{{ facteurZoom() }}%</span>
+              <button
+                type="button"
+                (click)="ajusterZoom(10)"
+                class="w-7 h-7 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center cursor-pointer"
+                title="Zoomer"
+              >
+                <i class="fa-solid fa-plus text-[10px]"></i>
+              </button>
+              <button
+                type="button"
+                (click)="reinitialiserZoom()"
+                class="px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-colors font-medium cursor-pointer"
+                title="Réinitialiser le zoom"
+              >
+                100%
+              </button>
+            </div>
+          }
+
+          <!-- Ouvrir dans un nouvel onglet -->
+          <button
+            type="button"
+            (click)="ouvrirFichierNouvelOnglet()"
+            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+            title="Ouvrir dans un nouvel onglet"
+          >
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs text-sky-400"></i>
+            <span class="hidden md:inline">Ouvrir</span>
+          </button>
 
           <!-- Télécharger -->
           <button
@@ -562,7 +605,7 @@
             class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
             title="Télécharger l'original"
           >
-            <i class="fa-solid fa-download text-xs"></i>
+            <i class="fa-solid fa-download text-xs text-emerald-400"></i>
             <span class="hidden md:inline">Télécharger</span>
           </button>
 
@@ -585,7 +628,7 @@
               class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
             >
               <i class="fa-solid fa-check text-xs"></i>
-              <span>Valider le document</span>
+              <span>Valider conforme</span>
             </button>
           } @else {
             <button
@@ -594,7 +637,7 @@
               class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
             >
               <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-              <span class="hidden sm:inline">Signaler anomalie</span>
+              <span class="hidden sm:inline">À corriger</span>
             </button>
           }
 
@@ -611,201 +654,120 @@
 
       </div>
 
-      <!-- FEUILLE DE DOCUMENT OFFICIEL FORMAT A4 NUMÉRISÉE -->
+      <!-- =================================================================== -->
+      <!-- ZONE D'AFFICHAGE RÉELLE DU DOCUMENT IMPORTÉ                         -->
+      <!-- =================================================================== -->
       <div
-        class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200/90 relative overflow-hidden text-slate-900 transition-all origin-top my-auto p-6 sm:p-10 md:p-12"
-        [style.transform]="'scale(' + (facteurZoom() / 100) + ')'"
+        class="w-full max-w-5xl bg-slate-900/90 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden text-slate-100 transition-all origin-top my-auto p-4 sm:p-6 flex flex-col items-center justify-center min-h-[520px]"
         (click)="$event.stopPropagation()"
       >
 
-        <!-- Bandeau supérieur aux couleurs nationales du Sénégal (Vert, Jaune avec étoile, Rouge) -->
-        <div class="h-2 w-full absolute top-0 left-0 flex">
-          <div class="h-full w-1/3 bg-[#00853F]"></div>
-          <div class="h-full w-1/3 bg-[#FDEF42] flex items-center justify-center">
-            <span class="text-[7px] text-[#00853F] font-black -mt-0.5">★</span>
+        <!-- CAS 1 : IMAGE (PNG, JPG, WEBP, ETC.) -->
+        @if (documentEnConsultation()!.estImage) {
+          <div class="w-full flex flex-col items-center justify-center overflow-auto max-h-[75vh] p-2 sm:p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+            <img
+              [src]="documentEnConsultation()!.urlFichier"
+              [alt]="documentEnConsultation()!.nom"
+              [style.transform]="'scale(' + (facteurZoom() / 100) + ')'"
+              class="max-w-full max-h-[70vh] object-contain rounded-xl shadow-2xl transition-transform duration-150 select-none border border-slate-800"
+            />
           </div>
-          <div class="h-full w-1/3 bg-[#E31B23]"></div>
-        </div>
+        }
 
-        <!-- Filigrane de sécurité officiel en arrière-plan -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.03] rotate-[-25deg]">
-          <div class="text-6xl sm:text-7xl md:text-8xl font-black uppercase text-slate-950 tracking-widest text-center">
-            RÉPUBLIQUE DU SÉNÉGAL<br>DOCUMENT CERTIFIÉ
+        <!-- CAS 2 : PDF (EMBED DANS IFRAME SÉCURISÉE) -->
+        @else if (documentEnConsultation()!.estPdf) {
+          <div class="w-full h-[75vh] rounded-2xl overflow-hidden border border-slate-700 bg-white shadow-2xl relative flex flex-col">
+            @if (urlDocumentSecurisee()) {
+              <iframe
+                [src]="urlDocumentSecurisee()!"
+                class="w-full h-full border-0"
+                title="Aperçu du document PDF"
+              ></iframe>
+            }
+            <div class="bg-slate-900/95 text-white px-4 py-2 border-t border-slate-800 flex items-center justify-between text-xs">
+              <span class="text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-file-pdf text-red-500"></i>
+                <span class="font-mono font-bold">{{ documentEnConsultation()!.nomFichier }}</span>
+              </span>
+              <a
+                [href]="documentEnConsultation()!.urlFichier"
+                target="_blank"
+                class="text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1.5 transition-colors"
+              >
+                <span>Ouvrir en plein écran</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              </a>
+            </div>
           </div>
-        </div>
+        }
 
-        <!-- =================================================================== -->
-        <!-- EN-TÊTE OFFICIEL DE LA RÉPUBLIQUE DU SÉNÉGAL                        -->
-        <!-- =================================================================== -->
-        <div class="border-b-2 border-slate-900 pb-5 mb-6">
-          <div class="flex flex-col sm:flex-row items-center justify-between text-center sm:text-left gap-4">
-            
-            <!-- Armoiries / Titre Étatique -->
+        <!-- CAS 3 : AUTRE TYPE DE FICHIER (OU TÉLÉCHARGEMENT DIRECT) -->
+        @else {
+          <div class="w-full max-w-lg p-8 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-4 my-auto">
+            <div class="w-20 h-20 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center text-3xl mx-auto shadow-inner">
+              <i class="fa-solid fa-file-arrow-down"></i>
+            </div>
             <div class="space-y-1">
-              <div class="text-xs sm:text-sm font-black text-slate-950 uppercase tracking-wider">
-                RÉPUBLIQUE DU SÉNÉGAL
-              </div>
-              <div class="text-[10px] text-slate-600 italic font-semibold">
-                Un Peuple — Un But — Une Foi
-              </div>
-              <div class="text-[11px] font-bold text-slate-800 uppercase tracking-tight max-w-sm">
-                {{ documentEnConsultation()!.ministere }}
-              </div>
-              <div class="text-[10px] font-extrabold text-[#E51824] uppercase tracking-wide">
-                {{ documentEnConsultation()!.autoriteEmettrice }}
-              </div>
+              <h3 class="text-lg font-black text-white">{{ documentEnConsultation()!.nom }}</h3>
+              <p class="text-xs font-mono text-slate-400 break-all">{{ documentEnConsultation()!.nomFichier }}</p>
+              <p class="text-xs text-slate-500">Taille : {{ documentEnConsultation()!.tailleFichier }} • Type : {{ documentEnConsultation()!.type }}</p>
             </div>
-
-            <!-- Sceau officiel & QR Code de validation administrative -->
-            <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 p-2.5 rounded-xl shrink-0">
-              <!-- QR Code visuel -->
-              <div class="w-16 h-16 bg-white p-1 rounded-lg border border-slate-300 flex flex-col items-center justify-center text-center">
-                <i class="fa-solid fa-qrcode text-3xl text-slate-900"></i>
-                <span class="text-[7px] font-mono font-bold text-slate-500 mt-0.5">VÉRIFIÉ</span>
-              </div>
-              <div class="text-left text-[10px]">
-                <div class="font-black text-slate-900 uppercase">AUTHENTIFICATION</div>
-                <div class="text-slate-500 font-mono text-[9px]">{{ documentEnConsultation()!.numeroSecuriteQr }}</div>
-                <div class="inline-flex items-center gap-1 text-emerald-600 font-extrabold text-[9px] mt-1">
-                  <i class="fa-solid fa-circle-check text-[9px]"></i>
-                  <span>Document Certifié Conforme</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- TITRE OFFICIEL ET NUMÉROTATION DU DOCUMENT                          -->
-        <!-- =================================================================== -->
-        <div class="text-center my-6 space-y-1.5">
-          <div class="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            {{ documentEnConsultation()!.sousTitreOfficiel }}
-          </div>
-          <h2 class="text-base sm:text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight font-['Outfit']">
-            {{ documentEnConsultation()!.titreOfficiel }}
-          </h2>
-          <div class="inline-block px-4 py-1.5 rounded-full bg-slate-100 border border-slate-300 text-xs sm:text-sm font-black font-mono text-slate-900">
-            N° D'ENREGISTREMENT : {{ documentEnConsultation()!.numeroOfficiel }}
-          </div>
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- ENCADRÉ TITULAIRE & OBJET                                           -->
-        <!-- =================================================================== -->
-        <div class="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 sm:p-5 mb-6">
-          <div class="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider mb-1">
-            TITULAIRE DÉCLARÉ / RAISON SOCIALE
-          </div>
-          <div class="text-base sm:text-lg font-black text-slate-950 font-['Outfit']">
-            {{ documentEnConsultation()!.titulaireNom }}
-          </div>
-          <div class="text-xs text-slate-600 mt-1 flex flex-wrap gap-4">
-            <span>Délivré le : <strong class="text-slate-900">{{ documentEnConsultation()!.dateDelivrance }}</strong></span>
-            @if (documentEnConsultation()!.dateExpiration) {
-              <span>Date d'expiration : <strong class="text-slate-900">{{ documentEnConsultation()!.dateExpiration }}</strong></span>
-            }
-            <span>Fait à : <strong class="text-slate-900">{{ documentEnConsultation()!.lieuDelivrance }}</strong></span>
-          </div>
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- TABLEAU DÉTAILLÉ DU CONTENU DU DOCUMENT (CE QUI EST ÉCRIT DEDANS)   -->
-        <!-- =================================================================== -->
-        <div class="border border-slate-200 rounded-2xl overflow-hidden mb-6">
-          <div class="bg-slate-100/80 px-4 py-2.5 border-b border-slate-200 text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
-            <span>Dispositions & Mentions Légales Enregistrées</span>
-            <span class="text-[10px] text-slate-500 font-semibold">Registre Officiel du Sénégal</span>
-          </div>
-          <div class="divide-y divide-slate-100 text-xs">
-            @for (champ of documentEnConsultation()!.detailsChamps; track champ.libelle) {
-              <div class="grid grid-cols-1 sm:grid-cols-3 p-3 sm:px-4 hover:bg-slate-50/60 transition-colors">
-                <span class="font-bold text-slate-500 sm:col-span-1">{{ champ.libelle }}</span>
-                <span class="font-extrabold text-slate-900 sm:col-span-2">{{ champ.valeur }}</span>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Mentions légales & Attestation juridique -->
-        <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-4 mb-8 text-[11px] space-y-1 text-amber-950">
-          <div class="font-black text-amber-900 uppercase flex items-center gap-1.5">
-            <i class="fa-solid fa-scale-balanced text-xs"></i>
-            <span>Certification & Validité Juridique</span>
-          </div>
-          @for (mention of documentEnConsultation()!.mentionsLegales; track mention) {
-            <p class="text-slate-700 leading-relaxed font-medium">
-              {{ mention }}
-            </p>
-          }
-        </div>
-
-        <!-- =================================================================== -->
-        <!-- SIGNATURES, CACHET ADMINISTRATIF & SCEAU ENCREUR                    -->
-        <!-- =================================================================== -->
-        <div class="pt-4 border-t-2 border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
-          
-          <!-- Code-barres de conformité numérique -->
-          <div class="space-y-2">
-            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-              CONTRÔLE ADMINISTRATIF NUMÉRISÉ
-            </div>
-            <!-- Barcode stylisé -->
-            <div class="h-10 w-44 bg-slate-900 p-1 rounded-sm flex items-center justify-between px-2">
-              @for (bar of [2,4,1,3,5,2,1,4,2,3,1,5,3,2,4,1,3]; track $index) {
-                <div class="bg-white h-full" [style.width]="bar + 'px'"></div>
-              }
-            </div>
-            <div class="text-[9px] font-mono text-slate-500">
-              REF-SEC-{{ documentEnConsultation()!.numeroOfficiel }} • DG-SN
+            <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                (click)="telechargerDocumentActuel()"
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-download"></i>
+                <span>Télécharger le fichier</span>
+              </button>
+              <button
+                type="button"
+                (click)="ouvrirFichierNouvelOnglet()"
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
+              >
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                <span>Ouvrir dans le navigateur</span>
+              </button>
             </div>
           </div>
+        }
 
-          <!-- Tampon rond officiel à l'encre rouge & Signature manuscrite -->
-          <div class="flex flex-col items-end text-right relative">
-            <div class="text-[11px] font-bold text-slate-600 mb-1">
-              Pour le Gouvernement du Sénégal,
-            </div>
-            <div class="text-xs font-black text-slate-900">
-              {{ documentEnConsultation()!.signataireFonction }}
-            </div>
-            <div class="text-xs font-extrabold text-blue-900 mt-0.5">
-              {{ documentEnConsultation()!.signataireNom }}
-            </div>
-
-            <!-- Signature manuscrite stylisée -->
-            <div class="h-12 w-32 flex items-center justify-center font-['Outfit'] italic text-blue-800 text-lg font-black tracking-widest my-1 select-none">
-              ~ B. Fall ~
-            </div>
-
-            <!-- Cachet circulaire officiel rouge (encre) -->
-            <div class="w-28 h-28 rounded-full border-4 border-red-600/80 flex flex-col items-center justify-center text-center p-2 text-red-700 font-black uppercase text-[8px] leading-tight rotate-[-6deg] absolute right-8 -bottom-4 bg-red-50/20 pointer-events-none select-none shadow-xs">
-              <span class="text-[7px]">RÉPUBLIQUE DU SÉNÉGAL</span>
-              <span class="text-xs my-0.5">★</span>
-              <span class="text-[7px] font-extrabold leading-2">{{ documentEnConsultation()!.tamponTexte }}</span>
-            </div>
-
+        <!-- BARRE DE MÉTADONNÉES EN BAS DU VISUALISEUR -->
+        <div class="w-full mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1.5 font-medium">
+              <i class="fa-solid fa-paperclip text-slate-500"></i>
+              <strong class="font-mono text-slate-300 font-semibold">{{ documentEnConsultation()!.nomFichier }}</strong>
+            </span>
+            <span>•</span>
+            <span>{{ documentEnConsultation()!.tailleFichier }}</span>
+            <span>•</span>
+            <span class="text-slate-400">Importé le {{ documentEnConsultation()!.dateTeleversement }}</span>
           </div>
 
-        </div>
-
-        <!-- Pied de page officiel sécurisé -->
-        <div class="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-medium">
-          <span>Plateforme AYYOU Administration • Certificat N° {{ documentEnConsultation()!.identifiantDoc }}</span>
-          <span>Dossier vérifiable en ligne via Orbus / Gouv.sn</span>
+          <div class="flex items-center gap-3">
+            <a
+              [href]="documentEnConsultation()!.urlFichier"
+              target="_blank"
+              class="text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              <span>Ouvrir l'original</span>
+            </a>
+          </div>
         </div>
 
       </div>
 
-      <!-- Barre d'aide et validation rapide au bas -->
+      <!-- Barre d'aide et navigation au bas -->
       <div
-        class="w-full max-w-4xl mt-4 bg-slate-900/90 text-white rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 border border-slate-800"
+        class="w-full max-w-5xl mt-4 bg-slate-900/90 text-white rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 border border-slate-800"
         (click)="$event.stopPropagation()"
       >
         <div class="flex items-center gap-2 text-xs">
-          <i class="fa-solid fa-circle-info text-sky-400"></i>
-          <span>Vous examinez le document officiel du dossier de candidature.</span>
+          <i class="fa-solid fa-circle-check text-emerald-400"></i>
+          <span>Vous examinez la pièce authentique téléversée par le candidat.</span>
         </div>
 
         <div class="flex items-center gap-3">

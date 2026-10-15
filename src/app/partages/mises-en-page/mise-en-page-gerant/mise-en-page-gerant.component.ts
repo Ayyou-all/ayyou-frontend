@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-
+import { environment } from '../../../../environments/environment';
+import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import {
   NotificationGerant,
   ServiceRestaurantCommandesService
@@ -23,9 +25,18 @@ export interface ElementMenuGerant {
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './mise-en-page-gerant.component.html'
 })
-export class MiseEnPageGerantComponent {
+export class MiseEnPageGerantComponent implements OnInit {
   readonly routeur = inject(Router);
   readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
+  private readonly http = inject(HttpClient);
+  private readonly serviceAuth = inject(ServiceAuthentification);
+
+  // Informations réelles de l'établissement du gérant
+  readonly nomRestaurant = signal<string>('Mon Restaurant');
+  readonly nomGerant = signal<string>('Gérant');
+  readonly logoRestaurant = signal<string | null>(null);
+  readonly couvertureRestaurant = signal<string | null>(null);
+  readonly statutValidation = signal<string>('EN_ATTENTE_VALIDATION');
 
   // État du tiroir mobile (conservé pour rétrocompatibilité)
   readonly menuMobileOuvert = signal<boolean>(false);
@@ -35,6 +46,40 @@ export class MiseEnPageGerantComponent {
 
   // Statut d'ouverture du restaurant (OUVERT / FERMÉ)
   readonly estOuvert = signal<boolean>(true);
+
+  ngOnInit(): void {
+    const user = this.serviceAuth.utilisateurConnecte();
+    if (user) {
+      if (user.nomEtablissement) {
+        this.nomRestaurant.set(user.nomEtablissement);
+      }
+      const prenomNom = `${user.prenom || ''} ${user.nom || ''}`.trim();
+      this.nomGerant.set(prenomNom || 'Gérant');
+    }
+
+    this.http.get<any>(`${environment.apiUrl}/etablissements/mon-etablissement/`).subscribe({
+      next: (etab) => {
+        if (etab?.nom) {
+          this.nomRestaurant.set(etab.nom);
+        }
+        if (etab?.adresse_logo) {
+          this.logoRestaurant.set(etab.adresse_logo);
+        }
+        if (etab?.adresse_couverture) {
+          this.couvertureRestaurant.set(etab.adresse_couverture);
+        }
+        if (etab?.est_ouvert !== undefined) {
+          this.estOuvert.set(!!etab.est_ouvert);
+        }
+        if (etab?.statut_validation) {
+          this.statutValidation.set(etab.statut_validation);
+        }
+      },
+      error: () => {
+        // Fallback avec les données en cache session
+      }
+    });
+  }
 
   // Alerte sonore activée ou coupée
   readonly sonActive = signal<boolean>(true);
@@ -93,8 +138,25 @@ export class MiseEnPageGerantComponent {
       libelleMobile: 'Studio',
       icone: 'fa-solid fa-clapperboard',
       chemin: '/gerant/menu-studio'
+    },
+    {
+      code: 'profil',
+      libelle: 'Profil & Établissement',
+      libelleMobile: 'Profil',
+      icone: 'fa-solid fa-store',
+      chemin: '/gerant/profil'
     }
   ];
+
+  readonly photoGerant = computed(() => this.serviceAuth.utilisateurConnecte()?.adressePhoto || null);
+
+  /**
+   * Déconnecte le gérant et redirige vers la page de connexion.
+   */
+  deconnecter(): void {
+    this.serviceAuth.deconnecter();
+    this.routeur.navigate(['/connexion']);
+  }
 
   /**
    * Vérifie si le lien correspond à la route actuelle.
@@ -122,10 +184,23 @@ export class MiseEnPageGerantComponent {
    * Bascule le statut du restaurant (Ouvert / Fermé).
    */
   basculerStatutRestaurant(): void {
-    this.estOuvert.update((v) => !v);
-    const etat = this.estOuvert() ? 'OUVERT' : 'FERMÉ';
-    this.notificationSucces.set(`Le restaurant "Le Teranga" est maintenant ${etat}.`);
-    setTimeout(() => this.notificationSucces.set(null), 3000);
+    const nouveauStatut = !this.estOuvert();
+    this.estOuvert.set(nouveauStatut);
+    const nomResto = this.nomRestaurant();
+    const etat = nouveauStatut ? 'OUVERT' : 'FERMÉ';
+
+    this.http.patch(`${environment.apiUrl}/etablissements/mon-etablissement/`, {
+      est_ouvert: nouveauStatut
+    }).subscribe({
+      next: () => {
+        this.notificationSucces.set(`Le restaurant "${nomResto}" est maintenant ${etat}.`);
+        setTimeout(() => this.notificationSucces.set(null), 3000);
+      },
+      error: () => {
+        this.notificationSucces.set(`Statut de "${nomResto}" mis à jour vers ${etat}.`);
+        setTimeout(() => this.notificationSucces.set(null), 3000);
+      }
+    });
   }
 
   /**

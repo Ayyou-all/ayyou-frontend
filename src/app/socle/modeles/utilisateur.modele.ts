@@ -23,6 +23,9 @@ export interface Utilisateur {
   adressePhoto?: string;
   nomEtablissement?: string;
   typeVehicule?: 'MOTO' | 'VELO' | 'VOITURE' | 'SCOOTER';
+  nomVehicule?: string;
+  immatriculation?: string;
+  zonePrincipale?: string;
   adresse?: string;
   estActif: boolean;
   dateCreation: string;
@@ -44,8 +47,18 @@ export interface FormulaireInscription {
   role: RoleUtilisateur;
   nomEtablissement?: string;
   typeVehicule?: 'MOTO' | 'VELO' | 'VOITURE' | 'SCOOTER';
+  nomVehicule?: string;
+  immatriculation?: string;
+  zonePrincipale?: string;
+  photo?: File | null;
   adresse?: string;
   conditionsAcceptees: boolean;
+  documentJustificatif?: File | null;
+  documentType?: string;
+  logo?: File | null;
+  couverture?: File | null;
+  permisRecto?: File | null;
+  permisVerso?: File | null;
 }
 
 export interface ReponseAuthentification {
