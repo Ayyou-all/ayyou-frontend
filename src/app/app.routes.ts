@@ -2,7 +2,8 @@ import { Routes } from '@angular/router';
 import {
   gardeAdministration,
   gardeGerant,
-  gardeLivreur
+  gardeLivreur,
+  gardeProfilRedirection
 } from './socle/gardes/authentification.guard';
 
 export const routes: Routes = [
@@ -316,6 +317,7 @@ export const routes: Routes = [
       },
       {
         path: 'profil',
+        canActivate: [gardeProfilRedirection],
         loadComponent: () =>
           import('./fonctionnalites/profil/profil.component').then(
             (m) => m.ProfilComponent

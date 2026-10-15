@@ -89,11 +89,11 @@ export class ServiceLivreurService {
   }
 
   /**
-   * Charge le profil réel du livreur et ses gains depuis Django REST Framework.
+   * Récupère le profil réel du livreur et ses gains depuis Django REST Framework (retourne l'Observable).
    */
-  chargerProfilLivreur(): void {
-    this.http.get<any>(`${environment.apiUrl}/livraisons/profil/`).subscribe({
-      next: (data) => {
+  recupererProfilLivreur(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/livraisons/profil/`).pipe(
+      tap((data) => {
         if (data) {
           const nomCompletCalcule =
             data.nom_complet ||
@@ -137,7 +137,16 @@ export class ServiceLivreurService {
             this.detailsQuotidiens.set(data.details_quotidiens);
           }
         }
-      },
+      })
+    );
+  }
+
+  /**
+   * Charge le profil réel du livreur et ses gains depuis Django REST Framework.
+   */
+  chargerProfilLivreur(): void {
+    this.recupererProfilLivreur().subscribe({
+      next: () => {},
       error: () => {}
     });
   }

@@ -68,8 +68,22 @@ export class ProfilLivreurComponent implements OnInit {
   readonly messageErreur = signal<string | null>(null);
 
   ngOnInit(): void {
+    // 1. Initialisation immédiate depuis les données en cache pour affichage instantané
     this.synchroniserDonneesProfil();
-    this.serviceLivreur.chargerProfilLivreur();
+
+    // 2. Chargement des données fraîches depuis l'API Django
+    this.chargement.set(true);
+    this.serviceLivreur.recupererProfilLivreur().subscribe({
+      next: (data) => {
+        this.chargement.set(false);
+        if (data) {
+          this.appliquerDonneesProfil(data);
+        }
+      },
+      error: () => {
+        this.chargement.set(false);
+      }
+    });
   }
 
   synchroniserDonneesProfil(): void {
@@ -91,6 +105,40 @@ export class ProfilLivreurComponent implements OnInit {
       this.apercuPhoto.set(profil.adressePhoto);
     } else if (user?.adressePhoto) {
       this.apercuPhoto.set(user.adressePhoto);
+    }
+  }
+
+  private appliquerDonneesProfil(data: any): void {
+    const user = this.serviceAuth.utilisateurConnecte();
+    if (data.prenom || user?.prenom) {
+      this.prenom.set(data.prenom || user?.prenom || '');
+    }
+    if (data.nom || user?.nom) {
+      this.nom.set(data.nom || user?.nom || '');
+    }
+    if (data.courriel || user?.courriel) {
+      this.courriel.set(data.courriel || user?.courriel || '');
+    }
+    if (data.telephone || user?.telephone) {
+      this.telephone.set(data.telephone || user?.telephone || '');
+    }
+    if (data.adresse || user?.adresse) {
+      this.adresse.set(data.adresse || user?.adresse || '');
+    }
+    if (data.type_vehicule) {
+      this.typeVehicule.set(data.type_vehicule);
+    }
+    if (data.nom_vehicule) {
+      this.nomVehicule.set(data.nom_vehicule);
+    }
+    if (data.immatriculation) {
+      this.immatriculation.set(data.immatriculation);
+    }
+    if (data.zone_principale) {
+      this.zonePrincipale.set(data.zone_principale);
+    }
+    if (data.adresse_photo || user?.adressePhoto) {
+      this.apercuPhoto.set(data.adresse_photo || user?.adressePhoto || null);
     }
   }
 

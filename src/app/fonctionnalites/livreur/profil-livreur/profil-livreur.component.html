@@ -1,38 +1,79 @@
 <div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-['Plus_Jakarta_Sans',sans-serif]">
 
   <!-- ========================================================================= -->
-  <!-- 1. EN-TÊTE : RETOUR + TITRE + DÉCONNEXION                                  -->
+  <!-- 1. EN-TÊTE : PROFIL LIVREUR (DESKTOP & MOBILE)                            -->
   <!-- ========================================================================= -->
-  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40 shadow-2xs">
-    <div class="max-w-2xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-3">
+  <header class="w-full bg-white border-b border-slate-100 px-4 sm:px-8 py-3.5 sticky top-0 z-40 shadow-xs">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Gauche : Bouton retour mobile + Logo + Badge Espace Livreur -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Bouton retour arrière -->
         <a
           routerLink="/livreur"
-          class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+          class="w-9 h-9 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
           aria-label="Retour à l'accueil"
+          title="Retour à l'accueil"
         >
-          <i class="fa-solid fa-arrow-left text-sm"></i>
+          <i class="fa-solid fa-arrow-left text-xs"></i>
         </a>
-        <div>
-          <h1 class="text-lg sm:text-xl font-black text-slate-900 leading-tight font-['Outfit']">
-            Mon Profil Livreur
-          </h1>
-          <span class="text-xs text-slate-400 font-medium">
-            Gérez vos informations d'inscription et votre véhicule
+
+        <a routerLink="/livreur" class="flex items-center gap-2 group cursor-pointer">
+          <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+          <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-[#E51824] text-[11px] font-black uppercase tracking-wider hidden sm:inline-flex items-center gap-1 border border-red-100">
+            <i class="fa-solid fa-motorcycle text-[10px]"></i>
+            Livreur
           </span>
-        </div>
+        </a>
+
+        <!-- Liens de navigation Desktop -->
+        <nav class="hidden md:flex items-center gap-1 pl-4 border-l border-slate-100">
+          <a
+            routerLink="/livreur"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer"
+          >
+            <i class="fa-solid fa-house text-xs"></i>
+            <span>Accueil</span>
+          </a>
+
+          <a
+            routerLink="/livreur/gains"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer"
+          >
+            <i class="fa-solid fa-wallet text-xs"></i>
+            <span>Mes Gains</span>
+          </a>
+
+          <a
+            routerLink="/livreur/profil"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-red-50 text-[#E51824] transition-colors flex items-center gap-2 cursor-pointer"
+          >
+            <i class="fa-solid fa-user text-xs"></i>
+            <span>Mon Profil</span>
+          </a>
+        </nav>
       </div>
 
-      <!-- Bouton Déconnexion -->
-      <button
-        type="button"
-        (click)="seDeconnecter()"
-        class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-[#E51824] text-xs font-black transition-colors cursor-pointer"
-        title="Se déconnecter"
-      >
-        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-        <span class="hidden sm:inline">Quitter</span>
-      </button>
+      <!-- Droite : Statut actif + Bouton Déconnexion -->
+      <div class="flex items-center gap-3">
+        <!-- Badge Desktop -->
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Espace Chauffeur</span>
+        </div>
+
+        <!-- Bouton Déconnexion -->
+        <button
+          type="button"
+          (click)="seDeconnecter()"
+          class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-[#E51824] text-xs font-black transition-colors cursor-pointer border border-rose-100 shadow-2xs"
+          title="Se déconnecter"
+        >
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>Déconnexion</span>
+        </button>
+      </div>
+
     </div>
   </header>
 

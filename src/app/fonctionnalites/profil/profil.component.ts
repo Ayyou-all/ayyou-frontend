@@ -90,7 +90,7 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
           <!-- Accès 2 : Espace Livreur (Exclusivement pour LIVREUR) -->
           @if (serviceAuthentification.estLivreur()) {
             <a
-              routerLink="/livreur"
+              routerLink="/livreur/profil"
               class="w-full p-3.5 rounded-2xl text-left text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer border border-blue-200/60 bg-blue-50/20"
             >
               <div class="flex items-center gap-3">
@@ -98,8 +98,8 @@ import { ServiceAuthentification } from '../../socle/services/service-authentifi
                   <i class="fa-solid fa-motorcycle"></i>
                 </div>
                 <div>
-                  <span class="block text-slate-900">Espace Livreur</span>
-                  <span class="block text-xs font-normal text-slate-500">Gérer mes courses et mes gains</span>
+                  <span class="block text-slate-900">Mon Profil & Espace Livreur</span>
+                  <span class="block text-xs font-normal text-slate-500">Modifier mes informations, véhicule et gains</span>
                 </div>
               </div>
               <i class="fa-solid fa-chevron-right text-xs text-blue-500"></i>

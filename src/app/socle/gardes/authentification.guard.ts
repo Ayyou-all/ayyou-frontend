@@ -52,3 +52,29 @@ export const gardeLivreur: CanActivateFn = (route, state) => {
     queryParams: { redirection: state.url }
   });
 };
+
+/**
+ * Garde de redirection automatique pour la route profil générique (/profil).
+ * Si l'utilisateur connecté est un Livreur, le redirige immédiatement vers /livreur/profil.
+ * Si c'est un Gérant de restaurant, le redirige vers /gerant/profil.
+ * Si c'est un Administrateur, le redirige vers /administration.
+ * Sinon (Client simple ou Visiteur), laisse passer vers /profil.
+ */
+export const gardeProfilRedirection: CanActivateFn = () => {
+  const serviceAuth = inject(ServiceAuthentification);
+  const routeur = inject(Router);
+
+  if (serviceAuth.estAuthentifie()) {
+    if (serviceAuth.estLivreur()) {
+      return routeur.createUrlTree(['/livreur/profil']);
+    }
+    if (serviceAuth.estGerant()) {
+      return routeur.createUrlTree(['/gerant/profil']);
+    }
+    if (serviceAuth.estAdministrateur()) {
+      return routeur.createUrlTree(['/administration']);
+    }
+  }
+
+  return true;
+};
