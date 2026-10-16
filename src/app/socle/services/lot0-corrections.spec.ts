@@ -208,6 +208,7 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
         etape_suivi: 'PREPARATION',
         code_livraison_pin: '4821',
         total_fcfa: 9500,
+        est_en_cours: true, // champ toujours renvoyé par SerializerCommandeClient
         articles: [
           { nom_plat: 'Thieboudienne Penda Mbaye', quantite: 2, total_ligne_fcfa: 7000 },
           { nom_plat: 'Jus de Bissap', quantite: 1, total_ligne_fcfa: 2500 }

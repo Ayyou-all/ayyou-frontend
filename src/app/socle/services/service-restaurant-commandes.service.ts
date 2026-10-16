@@ -382,7 +382,7 @@ export class ServiceRestaurantCommandesService {
 
     this.http
       .post(`${environment.apiUrl}/commandes/${idCommande}/accepter/`, {
-        delai_preparation_estime_minutes: delaiMinutes
+        delai_minutes: delaiMinutes
       })
       .subscribe({
         next: () => {
@@ -416,7 +416,7 @@ export class ServiceRestaurantCommandesService {
     const idCommande = cmd.idInterne || cmd.numero.replace('#', '');
     this.http
       .post(`${environment.apiUrl}/commandes/${idCommande}/refuser/`, {
-        motif_refus: motif
+        motif: motif
       })
       .subscribe({
         next: () => {

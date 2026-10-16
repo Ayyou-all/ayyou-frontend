@@ -95,6 +95,13 @@
     <!-- ========================================================================= -->
     <!-- 3. CONTENU : ONGLET 'EN COURS' (COMMANDES ACTIVES + RÉCENTS)              -->
     <!-- ========================================================================= -->
+    @if (serviceCommandes.messageErreur()) {
+      <div class="mb-4 p-3 rounded-2xl bg-red-50 border border-red-100 text-sm font-semibold text-red-700 flex items-center justify-between gap-3">
+        <span>{{ serviceCommandes.messageErreur() }}</span>
+        <button type="button" (click)="serviceCommandes.chargerCommandes()" class="underline cursor-pointer">Réessayer</button>
+      </div>
+    }
+
     @if (ongletActif() === 'EN_COURS') {
       <div class="space-y-6">
 
@@ -296,6 +303,16 @@
               Commander
             </button>
           </div>
+        }
+        @if (serviceCommandes.urlPageSuivante()) {
+          <button
+            type="button"
+            (click)="serviceCommandes.chargerPlusDeCommandes()"
+            [disabled]="serviceCommandes.chargementEnCours()"
+            class="w-full py-3 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            Voir plus de commandes
+          </button>
         }
       </div>
     }

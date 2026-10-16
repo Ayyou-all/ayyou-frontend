@@ -176,6 +176,15 @@ export class ServiceAuthentification {
       if (formulaire.couverture) formData.append('couverture', formulaire.couverture);
       if (formulaire.permisRecto) formData.append('permis_recto', formulaire.permisRecto);
       if (formulaire.permisVerso) formData.append('permis_verso', formulaire.permisVerso);
+      if (formulaire.latitude != null) formData.append('latitude', String(formulaire.latitude));
+      if (formulaire.longitude != null) formData.append('longitude', String(formulaire.longitude));
+      if (formulaire.specialite) formData.append('specialite', formulaire.specialite);
+      if (formulaire.heureOuverture) formData.append('heure_ouverture', formulaire.heureOuverture);
+      if (formulaire.heureFermeture) formData.append('heure_fermeture', formulaire.heureFermeture);
+      if (formulaire.joursOuverture) formData.append('jours_ouverture', formulaire.joursOuverture);
+      if (formulaire.delaiLivraisonTexte) formData.append('delai_livraison_texte', formulaire.delaiLivraisonTexte);
+      if (formulaire.numeroReversement) formData.append('numero_reversement', formulaire.numeroReversement);
+      if (formulaire.operateurReversement) formData.append('operateur_reversement', formulaire.operateurReversement);
       corpsRequete = formData;
     } else {
       corpsRequete = {
@@ -389,7 +398,7 @@ export class ServiceAuthentification {
         icone: 'fa-solid fa-heart',
         couleurIcone: 'text-rose-500',
         classeFondIcone: 'bg-rose-50 ring-rose-100',
-        texteBoutonAction: 'Ajouter aux favoris'
+        texteBoutonAction: 'Se connecter pour aimer'
       },
       ABONNEMENT: {
         type: 'ABONNEMENT',

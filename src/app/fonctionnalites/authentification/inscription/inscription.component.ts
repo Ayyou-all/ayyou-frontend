@@ -102,8 +102,11 @@ export class InscriptionComponent {
   readonly fichierCouverture = signal<File | null>(null);
   readonly fichierPermisRecto = signal<File | null>(null);
   readonly fichierPermisVerso = signal<File | null>(null);
-  readonly heureOuvertureDebut = signal<string>('09:00 AM');
-  readonly heureOuvertureFin = signal<string>('10:00 PM');
+  readonly heureOuvertureDebut = signal<string>('09:00'); // format HH:MM (champ <input type="time">)
+  readonly heureOuvertureFin = signal<string>('22:00');
+  // Position GPS réelle du restaurant (obligatoire : frais de livraison et dispatch des livreurs)
+  readonly latitudeRestaurant = signal<number | null>(null);
+  readonly longitudeRestaurant = signal<number | null>(null);
   readonly joursSemaine = signal<{ code: string; libelle: string; actif: boolean }[]>([
     { code: 'L', libelle: 'Lundi', actif: true },
     { code: 'M', libelle: 'Mardi', actif: true },
@@ -249,6 +252,14 @@ export class InscriptionComponent {
           this.messageErreur.set("Veuillez renseigner l'adresse complète de votre restaurant.");
           return;
         }
+        if (this.latitudeRestaurant() === null || this.longitudeRestaurant() === null) {
+          this.messageErreur.set('Touchez « Localiser » pour enregistrer la position GPS de votre restaurant.');
+          return;
+        }
+        if (!this.joursOuvertureEnTexte()) {
+          this.messageErreur.set("Sélectionnez au moins un jour d'ouverture.");
+          return;
+        }
       } else if (this.roleChoisi() === 'LIVREUR') {
         if (this.typeVehiculeChoisi() !== 'VELO' && !this.numeroPlaqueSaisi().trim()) {
           this.messageErreur.set('Veuillez renseigner le numéro de plaque de votre véhicule.');
@@ -283,23 +294,57 @@ export class InscriptionComponent {
     }
   }
 
+  /**
+   * Adresse du client à partir de sa position GPS réelle (géocodage inverse OpenStreetMap).
+   * Si la position n'est pas disponible, le client saisit son adresse à la main.
+   */
   utiliserMaPositionActuelle(): void {
-    this.positionEnCours.set(true);
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          this.positionEnCours.set(false);
-          this.adresseLivraisonSaisie.set('Almadies, Dakar, Sénégal (Position GPS)');
-        },
-        () => {
-          this.positionEnCours.set(false);
-          this.adresseLivraisonSaisie.set('Plateau, Dakar, Sénégal');
-        }
-      );
-    } else {
-      this.positionEnCours.set(false);
-      this.adresseLivraisonSaisie.set('Point E, Dakar, Sénégal');
+    this.localiserAppareil((adresse) => this.adresseLivraisonSaisie.set(adresse));
+  }
+
+  /** Position GPS réelle du restaurant (le gérant doit être sur place pendant l'inscription). */
+  localiserRestaurant(): void {
+    this.localiserAppareil((adresse, latitude, longitude) => {
+      this.latitudeRestaurant.set(latitude);
+      this.longitudeRestaurant.set(longitude);
+      if (!this.adresseCompleteRestaurantSaisie().trim()) this.adresseCompleteRestaurantSaisie.set(adresse);
+    });
+  }
+
+  private localiserAppareil(surPosition: (adresse: string, latitude: number, longitude: number) => void): void {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.messageErreur.set("La géolocalisation n'est pas disponible sur cet appareil.");
+      return;
     }
+    this.positionEnCours.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = Number(position.coords.latitude.toFixed(6));
+        const longitude = Number(position.coords.longitude.toFixed(6));
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+          .then((reponse) => reponse.json())
+          .then((donnees) => {
+            const a = donnees.address || {};
+            const adresse = [a.road, a.suburb || a.neighbourhood, a.city || a.town].filter(Boolean).join(', ');
+            surPosition(adresse, latitude, longitude);
+          })
+          .catch(() => surPosition('', latitude, longitude))
+          .finally(() => this.positionEnCours.set(false));
+      },
+      () => {
+        this.positionEnCours.set(false);
+        this.messageErreur.set("Impossible d'obtenir votre position. Autorisez la localisation puis réessayez.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  /** Jours actifs au format attendu par le serveur : "0,1,2" (0 = lundi). */
+  private joursOuvertureEnTexte(): string {
+    return this.joursSemaine()
+      .map((jour, index) => (jour.actif ? String(index) : null))
+      .filter((jour) => jour !== null)
+      .join(',');
   }
 
   selectionnerPhotoProfil(evenement: Event): void {
@@ -563,7 +608,24 @@ export class InscriptionComponent {
             logo: this.fichierLogo(),
             couverture: this.fichierCouverture(),
             permisRecto: this.fichierPermisRecto(),
-            permisVerso: this.fichierPermisVerso()
+            permisVerso: this.fichierPermisVerso(),
+            ...(this.roleChoisi() === 'RESTAURANT'
+              ? {
+                  latitude: this.latitudeRestaurant(),
+                  longitude: this.longitudeRestaurant(),
+                  specialite: this.categorieRestaurantSaisie(),
+                  heureOuverture: this.heureOuvertureDebut(),
+                  heureFermeture: this.heureOuvertureFin(),
+                  joursOuverture: this.joursOuvertureEnTexte(),
+                  delaiLivraisonTexte: this.tempsPreparationMoyenSaisi().trim()
+                }
+              : {}),
+            ...(this.roleChoisi() === 'LIVREUR'
+              ? {
+                  numeroReversement: this.numeroMobileMoneySaisi().replace(/\s+/g, ''),
+                  operateurReversement: this.operateurPaiementChoisi()
+                }
+              : {})
           })
           .subscribe({
             next: () => {

@@ -21,7 +21,7 @@ export interface LivreurAdministration {
   libelleStatut: string;
   couleurPastille: string;
   couleurTexteStatut: string;
-  note: number;
+  livraisonsAujourdhui: number;
   nombreLivraisons: string;
   zonePrincipale: string;
   dateInscription: string;
@@ -74,18 +74,14 @@ export class LivreursAdminComponent implements OnInit {
     const nbEnLigne = coursiers.filter((c) => c.statut === 'EN_LIGNE').length;
     const nbEnLivraison = coursiers.filter((c) => c.statut === 'OCCUPE').length;
     const total = coursiers.length;
-    const pctEnLigne = total > 0 ? `${Math.round((nbEnLigne / total) * 100)}%` : '100%';
-
-    const notes = coursiers.map((c) => c.note).filter((n) => n > 0);
-    const moyenne = notes.length > 0 ? (notes.reduce((a, b) => a + b, 0) / notes.length).toFixed(1) : '4.9';
-
-    const livrTotal = coursiers.reduce((acc, c) => acc + (parseInt(c.nombreLivraisons, 10) || 0), 0);
+    const pctEnLigne = total > 0 ? `${Math.round((nbEnLigne / total) * 100)}%` : '0%';
+    const livrAujourdhui = coursiers.reduce((acc, c) => acc + c.livraisonsAujourdhui, 0);
 
     return {
       enLigne: { valeur: nbEnLigne, evolution: pctEnLigne },
       enLivraison: { valeur: nbEnLivraison, evolution: 'Actif' },
-      noteMoyenne: { valeur: `${moyenne}/5`, evolution: '+0.1' },
-      livrAujourdhui: { valeur: livrTotal }
+      totalLivreurs: { valeur: total },
+      livrAujourdhui: { valeur: livrAujourdhui }
     };
   });
 
@@ -127,19 +123,19 @@ export class LivreursAdminComponent implements OnInit {
 
           return {
             identifiant: String(l.id),
-            nom: l.nomComplet || 'Coursier AYYOU',
+            nom: l.nomComplet || '',
             telephone: l.telephone || '',
-            photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-            vehiculeNom: l.nom_vehicule || l.type_vehicule || 'Deux-roues',
+            photoUrl: l.photo || '',
+            vehiculeNom: l.nom_vehicule || l.type_vehicule || '',
             vehiculeType: typeVehicule,
             iconeVehicule: icone,
             statut: statut,
             libelleStatut: libelle,
             couleurPastille: pastille,
             couleurTexteStatut: texte,
-            note: Number(l.noteMoyenne) || 4.9,
             nombreLivraisons: String(l.totalLivraisons || 0),
-            zonePrincipale: l.zone_principale || 'Dakar',
+            livraisonsAujourdhui: Number(l.livraisonsAujourdhui || 0),
+            zonePrincipale: l.zone_principale || '',
             dateInscription: l.dateInscription
               ? new Date(l.dateInscription).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
               : 'Récent'

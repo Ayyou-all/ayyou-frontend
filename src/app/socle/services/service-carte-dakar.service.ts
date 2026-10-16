@@ -1,6 +1,6 @@
 /**
  * Service fournissant les coordonnées GPS réelles et les utilitaires Leaflet pour Dakar.
- * Gère les positions réelles de Dakar : Plateau, Médina, Corniche Ouest, VDN et Almadies.
+ * Les positions affichées viennent toujours de l'API (restaurant, client, livreur).
  */
 
 import { Injectable } from '@angular/core';
@@ -15,34 +15,9 @@ export interface PositionGpsDakar {
   providedIn: 'root'
 })
 export class ServiceCarteDakarService {
-  // Coordonnées réelles de référence à Dakar
-  readonly restaurantTeranga: [number, number] = [14.6710, -17.4320]; // Plateau, Dakar
-  readonly clientMedina: [number, number] = [14.6855, -17.4490];      // Rue 22 x Blaise Diagne, Médina
-  readonly clientAlmadies: [number, number] = [14.7435, -17.5180];    // Almadies, Villa 45
-  readonly livreurVersRestaurant: [number, number] = [14.6780, -17.4420]; // En route vers le Plateau
-  readonly livreurVersAlmadies: [number, number] = [14.7150, -17.4780];   // Sur la Corniche Ouest / VDN
-
-  // Trajet routier réel Dakar Plateau -> Médina
-  readonly trajetPlateauMedina: [number, number][] = [
-    [14.6710, -17.4320], // Plateau - Restaurant
-    [14.6738, -17.4365], // Place de l'Indépendance
-    [14.6772, -17.4412], // Avenue Lamine Gueye
-    [14.6805, -17.4448], // Rond-point Poste Médina
-    [14.6830, -17.4468], // Avenue Blaise Diagne
-    [14.6855, -17.4490]  // Rue 22 - Client Médina
-  ];
-
-  // Trajet routier réel Dakar Plateau -> Almadies (Corniche Ouest & VDN)
-  readonly trajetPlateauAlmadies: [number, number][] = [
-    [14.6710, -17.4320], // Plateau
-    [14.6780, -17.4420], // Boulevard de la République
-    [14.6880, -17.4600], // Corniche Ouest
-    [14.6980, -17.4670], // Place du Souvenir Africain
-    [14.7150, -17.4780], // Mermoz / VDN
-    [14.7260, -17.4880], // Monument de la Renaissance / Ouakam
-    [14.7360, -17.5020], // Ngor
-    [14.7435, -17.5180]  // Route des Almadies - Villa 45
-  ];
+  // Centre de Dakar : sert UNIQUEMENT à centrer une carte avant de connaître une vraie position.
+  // Ce n'est jamais une position de restaurant, de client ou de livreur.
+  readonly centreDakar: [number, number] = [14.7167, -17.4677];
 
   /**
    * Crée la couche de tuiles OpenStreetMap officielle (100% gratuite, sans clé API).

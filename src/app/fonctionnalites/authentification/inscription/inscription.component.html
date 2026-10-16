@@ -821,6 +821,17 @@
                   required
                 />
               </div>
+              <button
+                type="button"
+                (click)="localiserRestaurant()"
+                class="mt-1.5 text-[11px] font-bold text-[#E51824] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <i [class]="positionEnCours() ? 'fa-solid fa-circle-notch fa-spin' : 'fa-solid fa-location-crosshairs'"></i>
+                <span>Localiser mon restaurant (être sur place)</span>
+              </button>
+              @if (latitudeRestaurant() !== null) {
+                <span class="block text-[11px] font-semibold text-emerald-600">Position GPS du restaurant enregistrée.</span>
+              }
             </div>
 
             <!-- Ligne 5 : Horaires d'ouverture -->
@@ -829,7 +840,7 @@
               <div class="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-3">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
-                    @for (jour of joursSemaine().slice(0, 5); track jour.code; let idx = $index) {
+                    @for (jour of joursSemaine(); track $index; let idx = $index) {
                       <button
                         type="button"
                         (click)="basculerJourSemaine(idx)"
@@ -842,13 +853,13 @@
                       </button>
                     }
                   </div>
-                  <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">LUN - VEN</span>
+                  <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">LUN - DIM</span>
                 </div>
 
                 <div class="flex items-center gap-2">
                   <div class="flex-1 flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-xs font-semibold text-slate-800">
                     <input
-                      type="text"
+                      type="time"
                       [ngModel]="heureOuvertureDebut()"
                       (ngModelChange)="heureOuvertureDebut.set($event)"
                       class="w-16 bg-transparent focus:outline-none text-xs font-bold text-slate-900"
@@ -858,7 +869,7 @@
                   <span class="text-xs text-slate-400 font-medium">à</span>
                   <div class="flex-1 flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2 text-xs font-semibold text-slate-800">
                     <input
-                      type="text"
+                      type="time"
                       [ngModel]="heureOuvertureFin()"
                       (ngModelChange)="heureOuvertureFin.set($event)"
                       class="w-16 bg-transparent focus:outline-none text-xs font-bold text-slate-900"
@@ -1592,6 +1603,17 @@
                         required
                       />
                     </div>
+              <button
+                type="button"
+                (click)="localiserRestaurant()"
+                class="mt-1.5 text-[11px] font-bold text-[#E51824] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <i [class]="positionEnCours() ? 'fa-solid fa-circle-notch fa-spin' : 'fa-solid fa-location-crosshairs'"></i>
+                <span>Localiser mon restaurant (être sur place)</span>
+              </button>
+              @if (latitudeRestaurant() !== null) {
+                <span class="block text-[11px] font-semibold text-emerald-600">Position GPS du restaurant enregistrée.</span>
+              }
                   </div>
                 </div>
 
@@ -1620,7 +1642,7 @@
                 <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-3 flex items-center justify-between gap-3">
                   <!-- Jours de la semaine L M M J V S D -->
                   <div class="flex items-center gap-1.5">
-                    @for (jour of joursSemaine(); track jour.code; let idx = $index) {
+                    @for (jour of joursSemaine(); track $index; let idx = $index) {
                       <button
                         type="button"
                         (click)="basculerJourSemaine(idx)"
@@ -1640,7 +1662,7 @@
                     <span>DE</span>
                     <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-bold">
                       <input
-                        type="text"
+                        type="time"
                         [ngModel]="heureOuvertureDebut()"
                         (ngModelChange)="heureOuvertureDebut.set($event)"
                         class="w-16 bg-transparent focus:outline-none text-xs"
@@ -1651,7 +1673,7 @@
                     <span>À</span>
                     <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-900 font-bold">
                       <input
-                        type="text"
+                        type="time"
                         [ngModel]="heureOuvertureFin()"
                         (ngModelChange)="heureOuvertureFin.set($event)"
                         class="w-16 bg-transparent focus:outline-none text-xs"
