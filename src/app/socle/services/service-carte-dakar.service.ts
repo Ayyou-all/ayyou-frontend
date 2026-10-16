@@ -158,6 +158,63 @@ export class ServiceCarteDakarService {
   }
 
   /**
+   * Calcule la distance orthodromique (Haversine) à vol d'oiseau entre deux points en kilomètres.
+   */
+  calculerDistanceVolOiseauKm(depart: [number, number], arrivee: [number, number]): number {
+    const R = 6371; // Rayon Terre en km
+    const dLat = (arrivee[0] - depart[0]) * (Math.PI / 180);
+    const dLon = (arrivee[1] - depart[1]) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(depart[0] * (Math.PI / 180)) *
+        Math.cos(arrivee[0] * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Number((R * c).toFixed(1));
+  }
+
+  /**
+   * Calcule l'itinéraire routier réel via le moteur de routage OSRM.
+   * Retourne les points GPS, la distance en km, la durée estimée et le statut de routage.
+   */
+  async obtenirItineraireDetaille(
+    depart: [number, number],
+    arrivee: [number, number]
+  ): Promise<{ points: [number, number][]; distanceKm: number; dureeMinutes: number; succesRoutage: boolean }> {
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${depart[1]},${depart[0]};${arrivee[1]},${arrivee[0]}?overview=full&geometries=geojson`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.routes && data.routes.length > 0 && data.routes[0].geometry?.coordinates) {
+          const points = data.routes[0].geometry.coordinates.map((pt: [number, number]) => [pt[1], pt[0]] as [number, number]);
+          const distanceKm = Number((data.routes[0].distance / 1000).toFixed(1));
+          const dureeMinutes = Math.max(1, Math.round(data.routes[0].duration / 60));
+          return {
+            points,
+            distanceKm,
+            dureeMinutes,
+            succesRoutage: true
+          };
+        }
+      }
+    } catch {
+      // Échec de connexion réseau ou OSRM temporairement inaccessible
+    }
+
+    // Repli de sécurité avec distance orthodromique et vitesse moyenne Dakar (25 km/h)
+    const distanceKm = this.calculerDistanceVolOiseauKm(depart, arrivee);
+    const dureeMinutes = Math.max(1, Math.round((distanceKm / 25) * 60));
+    return {
+      points: [depart, arrivee],
+      distanceKm,
+      dureeMinutes,
+      succesRoutage: false
+    };
+  }
+
+  /**
    * Calcule l'itinéraire routier réel via le moteur de routage public OSRM.
    * Retourne la liste des coordonnées GPS pour tracer une polyligne routière précise.
    */
@@ -165,18 +222,7 @@ export class ServiceCarteDakarService {
     depart: [number, number],
     arrivee: [number, number]
   ): Promise<[number, number][]> {
-    try {
-      const url = `https://router.project-osrm.org/route/v1/driving/${depart[1]},${depart[0]};${arrivee[1]},${arrivee[0]}?overview=full&geometries=geojson`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.routes && data.routes.length > 0 && data.routes[0].geometry?.coordinates) {
-          return data.routes[0].geometry.coordinates.map((pt: [number, number]) => [pt[1], pt[0]]);
-        }
-      }
-    } catch {
-      // Repli direct
-    }
-    return [depart, arrivee];
+    const res = await this.obtenirItineraireDetaille(depart, arrivee);
+    return res.points;
   }
 }

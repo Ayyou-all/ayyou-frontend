@@ -62,7 +62,7 @@ export class ServiceCommandesService {
     else if (c.etape_suivi === 'LIVREE') etapeSuivi = 'LIVREE';
     else if (c.etape_suivi === 'EN_ROUTE') etapeSuivi = 'EN_ROUTE';
 
-    let codePin: [number, number, number, number] = [0, 0, 0, 0];
+    let codePin: [number, number, number, number] | undefined = undefined;
     if (Array.isArray(c.code_livraison) && c.code_livraison.length === 4) {
       codePin = [Number(c.code_livraison[0]), Number(c.code_livraison[1]), Number(c.code_livraison[2]), Number(c.code_livraison[3])];
     } else if (typeof c.code_livraison_pin === 'string' && c.code_livraison_pin.length === 4) {
@@ -92,8 +92,9 @@ export class ServiceCommandesService {
         vehicule: c.livreur.vehicule || 'Moto',
         adressePhoto: c.livreur.adressePhoto || c.livreur.adresse_photo || '',
         numeroTelephone: c.livreur.numeroTelephone || c.livreur.telephone || '',
-        latitude: Number(c.livreur.latitude || 14.6928),
-        longitude: Number(c.livreur.longitude || -17.4467)
+        latitude: c.livreur.latitude !== null && c.livreur.latitude !== undefined ? Number(c.livreur.latitude) : null,
+        longitude: c.livreur.longitude !== null && c.livreur.longitude !== undefined ? Number(c.livreur.longitude) : null,
+        dateDernierePosition: c.livreur.dateDernierePosition || c.livreur.date_derniere_position || null,
       } : undefined,
       articles: (c.articles || []).map((art: any) => ({
         nomPlat: art.nom_plat || art.nomPlat || 'Plat',
@@ -107,7 +108,12 @@ export class ServiceCommandesService {
       latitudeLivraison: c.latitude_livraison ? Number(c.latitude_livraison) : undefined,
       longitudeLivraison: c.longitude_livraison ? Number(c.longitude_livraison) : undefined,
       restaurantLatitude: c.restaurant_latitude ? Number(c.restaurant_latitude) : undefined,
-      restaurantLongitude: c.restaurant_longitude ? Number(c.restaurant_longitude) : undefined
+      restaurantLongitude: c.restaurant_longitude ? Number(c.restaurant_longitude) : undefined,
+      heureDebutPreparation: c.heure_debut_preparation || null,
+      heureFinPreparation: c.heure_fin_preparation || null,
+      heureDepartLivraison: c.heure_depart_livraison || null,
+      heureLivraisonEffective: c.heure_livraison_effective || null,
+      dateCreation: c.date_creation || null
     };
   }
 
@@ -134,18 +140,19 @@ export class ServiceCommandesService {
 
   /**
    * Récupère une commande par son identifiant (en mémoire ou via l'API).
+   * Vérifie à la fois la référence (ORD-XXXX) et l'identifiant numérique.
    */
   trouverCommandeParId(identifiant: string): CommandeClient | undefined {
-    const commandeTrouvee = this.listeCommandes().find((c) => c.identifiant === identifiant);
+    const idNettoye = String(identifiant || '').trim();
+    if (!idNettoye) return undefined;
+
+    const commandeTrouvee = this.listeCommandes().find((c) =>
+      c.identifiant === idNettoye ||
+      (c.idNumerique !== undefined && String(c.idNumerique) === idNettoye)
+    );
     if (!commandeTrouvee) {
       // Recharger la commande directement depuis l'endpoint détail
-      this.http.get<any>(`${environment.apiUrl}/commandes/${identifiant}/`).subscribe({
-        next: (c) => {
-          const adaptee = this.adapterCommande(c);
-          this.ajouterCommande(adaptee);
-        },
-        error: () => {}
-      });
+      this.rechargerCommande(idNettoye);
     }
     return commandeTrouvee;
   }
@@ -159,13 +166,18 @@ export class ServiceCommandesService {
   }
 
   /**
-   * Ajoute une nouvelle commande dans la liste des commandes du client.
+   * Ajoute ou fusionne une commande dans la liste des commandes du client.
    */
   ajouterCommande(commande: CommandeClient): void {
     this.listeCommandes.update((cmds) => {
-      const existe = cmds.some((c) => c.identifiant === commande.identifiant);
-      if (existe) {
-        return cmds.map((c) => (c.identifiant === commande.identifiant ? commande : c));
+      const index = cmds.findIndex((c) =>
+        c.identifiant === commande.identifiant ||
+        (c.idNumerique !== undefined && commande.idNumerique !== undefined && c.idNumerique === commande.idNumerique)
+      );
+      if (index !== -1) {
+        const copie = [...cmds];
+        copie[index] = { ...copie[index], ...commande };
+        return copie;
       }
       return [commande, ...cmds];
     });
