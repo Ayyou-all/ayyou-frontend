@@ -78,6 +78,10 @@ export class ServiceCommandesService {
       statut,
       delaiOuRemarque: c.statut === 'EN_ATTENTE_PAIEMENT' ? 'Paiement en attente' : (c.delai_ou_remarque || c.delaiOuRemarque || '20-30 min'),
       montantTotalFcfa: Number(c.montant_total_fcfa || c.total_fcfa || c.montantTotalFcfa || 0),
+      sousTotalFcfa: Number(c.sous_total_fcfa || 0),
+      fraisLivraisonFcfa: Number(c.frais_livraison_fcfa || 0),
+      statutPaiement: c.statut_paiement || (c.statut === 'EN_ATTENTE_PAIEMENT' ? 'EN_ATTENTE' : 'PAYE'),
+      modePaiement: c.mode_paiement || 'WAVE',
       codeLivraison: codePin,
       etapeSuivi,
       heureArriveeEstimee: c.heure_arrivee_estimee || c.heureArriveeEstimee || '',
@@ -94,6 +98,7 @@ export class ServiceCommandesService {
       articles: (c.articles || []).map((art: any) => ({
         nomPlat: art.nom_plat || art.nomPlat || 'Plat',
         quantite: Number(art.quantite || 1),
+        prixUnitaireFcfa: Number(art.prix_unitaire_fcfa || (art.total_ligne_fcfa && art.quantite ? Math.round(art.total_ligne_fcfa / art.quantite) : 0)),
         prixTotalFcfa: Number(art.total_ligne_fcfa || art.prixTotalFcfa || (art.prix_unitaire_fcfa * art.quantite) || 0)
       })),
       statutBrut: c.statut || '',
@@ -146,23 +151,11 @@ export class ServiceCommandesService {
   }
 
   /**
-   * Valide la livraison de la commande en cours.
+   * Actualise l'état de la commande depuis le backend (la livraison ne peut être
+   * clôturée que par la validation du PIN par le coursier côté serveur).
    */
   validerLivraison(identifiant: string): void {
-    this.listeCommandes.update((cmds) =>
-      cmds.map((c) => {
-        if (c.identifiant === identifiant) {
-          return {
-            ...c,
-            statut: 'LIVRE',
-            etapeSuivi: 'LIVREE',
-            estEnCours: false
-          };
-        }
-        return c;
-      })
-    );
-    this.livraisonValidee.set(true);
+    this.rechargerCommande(identifiant);
   }
 
   /**

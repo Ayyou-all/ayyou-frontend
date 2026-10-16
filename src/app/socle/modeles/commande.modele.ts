@@ -21,6 +21,7 @@ export interface ArticleCommande {
   nomPlat: string;
   quantite: number;
   prixTotalFcfa: number;
+  prixUnitaireFcfa?: number;
 }
 
 export interface LivreurCommande {
@@ -41,6 +42,10 @@ export interface CommandeClient {
   statut: StatutCommande;
   delaiOuRemarque?: string; // Ex: "15-20 min", "Rupture de stock", "Attente livreur"
   montantTotalFcfa: number;
+  sousTotalFcfa?: number;
+  fraisLivraisonFcfa?: number;
+  statutPaiement?: string;
+  modePaiement?: string;
   codeLivraison: [number, number, number, number]; // Ex: [4, 8, 2, 5]
   livreur?: LivreurCommande;
   etapeSuivi: EtapeSuiviLivraison;
