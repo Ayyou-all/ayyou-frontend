@@ -84,7 +84,9 @@
           <div class="col-span-2 sm:col-span-1 bg-white/10 backdrop-blur-xs rounded-xl p-2.5 flex items-center justify-between">
             <div>
               <span class="text-[10px] text-emerald-200 block uppercase font-bold">PIN de sécurité</span>
-              <span class="text-xs sm:text-sm font-black tracking-widest font-['Outfit'] text-amber-300">{{ commande().codeLivraison.join('') }}</span>
+              <span class="text-xs sm:text-sm font-black tracking-widest font-['Outfit'] text-amber-300">
+                {{ commande().codeLivraison ? commande().codeLivraison!.join('') : '----' }}
+              </span>
             </div>
             <i class="fa-solid fa-shield-halved text-emerald-200 text-sm"></i>
           </div>
@@ -260,11 +262,38 @@
           <!-- Conteneur Leaflet de la carte réelle de Dakar -->
           <div id="carte-suivi-commande" class="w-full h-full z-0"></div>
 
-          <!-- Badge supérieur : Dakar en direct -->
+          <!-- Badge supérieur : État GPS en direct -->
           <div class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border border-slate-100 flex items-center gap-2 text-slate-800 text-xs font-black">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Dakar en direct</span>
+            <span
+              class="w-2.5 h-2.5 rounded-full"
+              [class.bg-emerald-500]="statutGpsLivreur().niveau === 'direct'"
+              [class.animate-pulse]="statutGpsLivreur().niveau === 'direct'"
+              [class.bg-amber-500]="statutGpsLivreur().niveau === 'recent'"
+              [class.bg-rose-500]="statutGpsLivreur().niveau === 'obsolete'"
+              [class.bg-slate-400]="statutGpsLivreur().niveau === 'sans_gps' || statutGpsLivreur().niveau === 'non_assigne'"
+            ></span>
+            <span>{{ statutGpsLivreur().texte }}</span>
           </div>
+
+          <!-- Badge inférieur : Télémétrie en temps réel (distance et temps restant calculés via OSRM) -->
+          @if (distanceRestanteKm() !== null) {
+            <div class="absolute bottom-3 left-3 z-20 px-3.5 py-2 rounded-2xl bg-slate-900/90 backdrop-blur-md text-white shadow-lg flex items-center gap-3 text-xs font-bold border border-white/10">
+              <div class="flex items-center gap-1.5 text-rose-400">
+                <i class="fa-solid fa-route"></i>
+                <span class="font-['Outfit']">{{ distanceRestanteKm() }} km</span>
+              </div>
+              @if (tempsRestantMinutes() !== null) {
+                <div class="w-1 h-1 rounded-full bg-white/40"></div>
+                <div class="flex items-center gap-1.5 text-amber-300">
+                  <i class="fa-solid fa-clock"></i>
+                  <span class="font-['Outfit']">~{{ tempsRestantMinutes() }} min</span>
+                </div>
+              }
+              @if (!routageDisponible()) {
+                <span class="text-[10px] text-slate-400 font-normal">(direct)</span>
+              }
+            </div>
+          }
 
           <!-- Bouton flottant : Recentre sur le livreur / trajet -->
           <div class="absolute top-3 right-3 z-20 flex flex-col gap-2">
@@ -284,6 +313,77 @@
             >
               <i class="fa-solid fa-crosshairs text-sm"></i>
             </button>
+          </div>
+        </div>
+
+        <!-- TIMELINE DÉTAILLÉE DU PARCOURS DE LIVRAISON (100% HORODATAGES RÉELS BACKEND) -->
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-xs space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-rose-50 text-[#E51824] flex items-center justify-center text-xs">
+                <i class="fa-solid fa-timeline"></i>
+              </div>
+              <h3 class="text-sm font-extrabold text-slate-900 font-['Outfit']">
+                Progression de la livraison
+              </h3>
+            </div>
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              En direct
+            </span>
+          </div>
+
+          <div class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-100">
+            @for (etape of timeline(); track etape.titre) {
+              <div class="relative flex items-start justify-between gap-3 group">
+                <!-- Puce d'étape -->
+                <div
+                  class="absolute -left-6 top-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] border-2 border-white shadow-xs transition-colors"
+                  [class.bg-[#E51824]]="etape.etat === 'termine'"
+                  [class.text-white]="etape.etat === 'termine'"
+                  [class.bg-rose-500]="etape.etat === 'en_cours'"
+                  [class.text-white]="etape.etat === 'en_cours'"
+                  [class.ring-4]="etape.etat === 'en_cours'"
+                  [class.ring-rose-100]="etape.etat === 'en_cours'"
+                  [class.animate-pulse]="etape.etat === 'en_cours'"
+                  [class.bg-slate-200]="etape.etat === 'a_venir'"
+                  [class.text-slate-400]="etape.etat === 'a_venir'"
+                >
+                  @if (etape.etat === 'termine') {
+                    <i class="fa-solid fa-check text-[9px]"></i>
+                  } @else if (etape.etat === 'en_cours') {
+                    <i [class]="etape.icone + ' text-[9px]'"></i>
+                  } @else {
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                  }
+                </div>
+
+                <!-- Contenu étape -->
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <h4
+                      class="text-xs sm:text-sm font-bold font-['Outfit']"
+                      [class.text-slate-900]="etape.etat === 'termine' || etape.etat === 'en_cours'"
+                      [class.text-[#E51824]]="etape.etat === 'en_cours'"
+                      [class.text-slate-400]="etape.etat === 'a_venir'"
+                    >
+                      {{ etape.titre }}
+                    </h4>
+                    @if (etape.heure) {
+                      <span class="text-[11px] font-extrabold text-slate-500 shrink-0 font-['Outfit']">
+                        {{ etape.heure }}
+                      </span>
+                    }
+                  </div>
+                  <p
+                    class="text-[11px] sm:text-xs mt-0.5 leading-relaxed"
+                    [class.text-slate-600]="etape.etat === 'en_cours' || etape.etat === 'termine'"
+                    [class.text-slate-400]="etape.etat === 'a_venir'"
+                  >
+                    {{ etape.description }}
+                  </p>
+                </div>
+              </div>
+            }
           </div>
         </div>
 
@@ -307,12 +407,20 @@
             </p>
           </div>
 
-          <!-- 4 Cases numériques avec bordure rouge (4 8 2 5) -->
+          <!-- 4 Cases numériques du code PIN (chiffres réels ou cases d'attente) -->
           <div class="flex items-center gap-2 shrink-0">
-            @for (chiffre of commande().codeLivraison; track $index) {
-              <div class="w-10 h-12 rounded-2xl bg-white border-2 border-[#E51824] text-[#E51824] font-black text-xl flex items-center justify-center font-['Outfit'] shadow-2xs">
-                {{ chiffre }}
-              </div>
+            @if (commande().codeLivraison && commande().codeLivraison!.length === 4) {
+              @for (chiffre of commande().codeLivraison; track $index) {
+                <div class="w-10 h-12 rounded-2xl bg-white border-2 border-[#E51824] text-[#E51824] font-black text-xl flex items-center justify-center font-['Outfit'] shadow-2xs">
+                  {{ chiffre }}
+                </div>
+              }
+            } @else {
+              @for (_ of [1, 2, 3, 4]; track $index) {
+                <div class="w-10 h-12 rounded-2xl bg-slate-100 border-2 border-slate-200 text-slate-300 font-black text-xl flex items-center justify-center font-['Outfit']">
+                  •
+                </div>
+              }
             }
           </div>
 
@@ -457,7 +565,7 @@
                 <div class="flex items-center justify-between">
                   <span class="text-slate-500">Frais de livraison (Région Dakar)</span>
                   <span class="font-bold text-slate-700 font-['Outfit']">
-                    {{ (commande().fraisLivraisonFcfa || 0) | number }} FCFA
+                    {{ commande().fraisLivraisonFcfa ? (commande().fraisLivraisonFcfa | number) + ' FCFA' : 'Calcul en cours...' }}
                   </span>
                 </div>
                 <div class="flex items-center justify-between">

@@ -29,8 +29,9 @@ export interface LivreurCommande {
   vehicule: string; // Ex: "Yamaha TMAX"
   adressePhoto: string;
   numeroTelephone: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  dateDernierePosition?: string | null;
 }
 
 export interface CommandeClient {
@@ -46,7 +47,7 @@ export interface CommandeClient {
   fraisLivraisonFcfa?: number;
   statutPaiement?: string;
   modePaiement?: string;
-  codeLivraison: [number, number, number, number]; // Ex: [4, 8, 2, 5]
+  codeLivraison?: [number, number, number, number]; // Ex: [4, 8, 2, 5]
   livreur?: LivreurCommande;
   etapeSuivi: EtapeSuiviLivraison;
   heureArriveeEstimee: string; // Ex: "13:45"
@@ -61,4 +62,9 @@ export interface CommandeClient {
   longitudeLivraison?: number;
   restaurantLatitude?: number;
   restaurantLongitude?: number;
+  heureDebutPreparation?: string | null;
+  heureFinPreparation?: string | null;
+  heureDepartLivraison?: string | null;
+  heureLivraisonEffective?: string | null;
+  dateCreation?: string | null;
 }

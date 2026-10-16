@@ -76,8 +76,15 @@ export class ServiceLivreurService {
   // Indicateur d'état de connectivité réseau
   readonly estEnLigne = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
+  // Suivi de géolocalisation réelle du coursier
+  readonly positionGpsActuelle = signal<{ latitude: number; longitude: number } | null>(null);
+  readonly statutTransmissionGps = signal<'ACTIF' | 'EN_PAUSE' | 'ERREUR' | 'INACTIF'>('INACTIF');
+  readonly messageErreurGps = signal<string | null>(null);
+  readonly dateDernierePositionGps = signal<Date | null>(null);
+
   private intervalleCompteARebours?: any;
   private intervalleEcouteTempsReel?: any;
+  private intervalleEnvoiPosition?: any;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -281,6 +288,7 @@ export class ServiceLivreurService {
             this.verifierNouvellesPropositions();
           } else {
             this.arreterEcouteTempsReel();
+            this.arreterSuiviGpsLivreur();
           }
         },
         error: () => {}
@@ -438,6 +446,8 @@ export class ServiceLivreurService {
             this.etapeCourse.set('ARRIVE_RESTAURANT');
           else if (l.etape === 'VERS_CLIENT') this.etapeCourse.set('VERS_CLIENT');
           else if (l.etape === 'ARRIVE_CLIENT') this.etapeCourse.set('ARRIVE_CLIENT');
+
+          this.demarrerSuiviGpsLivreur();
         }
       },
       error: (err: any) => {
@@ -493,6 +503,7 @@ export class ServiceLivreurService {
             this.courseEnCours.set(prop);
             this.propositionActive.set(null);
             this.etapeCourse.set('VERS_RESTAURANT');
+            this.demarrerSuiviGpsLivreur();
             if (surSucces) {
               surSucces();
             }
@@ -513,6 +524,7 @@ export class ServiceLivreurService {
 
   refuserCourse(): void {
     this.arreterCompteARebours();
+    this.arreterSuiviGpsLivreur();
     this.propositionActive.set(null);
   }
 
@@ -710,6 +722,7 @@ export class ServiceLivreurService {
   }
 
   terminerLivraison(gainRecu?: number): void {
+    this.arreterSuiviGpsLivreur();
     const course = this.courseEnCours();
     const gain = gainRecu ?? course?.gainFcfa ?? 1000;
 
@@ -725,7 +738,92 @@ export class ServiceLivreurService {
   }
 
   recommencerMission(): void {
+    this.arreterSuiviGpsLivreur();
     this.etapeCourse.set('VERS_RESTAURANT');
     this.courseEnCours.set(null);
+  }
+
+  /**
+   * Démarre la transmission périodique et sécurisée de la position GPS réelle du coursier vers le backend Django.
+   */
+  demarrerSuiviGpsLivreur(): void {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.statutTransmissionGps.set('ERREUR');
+      this.messageErreurGps.set("La géolocalisation n'est pas supportée par cet appareil.");
+      return;
+    }
+
+    this.arreterSuiviGpsLivreur();
+    this.statutTransmissionGps.set('ACTIF');
+    this.messageErreurGps.set(null);
+
+    const envoyerPosition = (coords: GeolocationCoordinates) => {
+      const lat = coords.latitude;
+      const lng = coords.longitude;
+      this.positionGpsActuelle.set({ latitude: lat, longitude: lng });
+      this.dateDernierePositionGps.set(new Date());
+
+      this.http
+        .patch(`${environment.apiUrl}/livraisons/position/`, {
+          latitude: lat,
+          longitude: lng
+        })
+        .subscribe({
+          next: () => {
+            this.statutTransmissionGps.set('ACTIF');
+            this.messageErreurGps.set(null);
+          },
+          error: (err) => {
+            if (err?.status === 401 || err?.status === 403) {
+              this.arreterSuiviGpsLivreur();
+            }
+          }
+        });
+    };
+
+    // Première lecture immédiate
+    navigator.geolocation.getCurrentPosition(
+      (pos) => envoyerPosition(pos.coords),
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          this.statutTransmissionGps.set('ERREUR');
+          this.messageErreurGps.set("Veuillez autoriser l'accès à votre position GPS pour que le client suive la livraison.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+
+    // Émission périodique toutes les 8 secondes pendant la mission active
+    this.intervalleEnvoiPosition = setInterval(() => {
+      if (!this.courseEnCours()) {
+        this.arreterSuiviGpsLivreur();
+        return;
+      }
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        this.statutTransmissionGps.set('EN_PAUSE');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => envoyerPosition(pos.coords),
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            this.statutTransmissionGps.set('ERREUR');
+            this.messageErreurGps.set('Accès GPS refusé.');
+          }
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 4000 }
+      );
+    }, 8000);
+  }
+
+  /**
+   * Arrête le suivi GPS dès que la course est terminée, annulée ou que le livreur se déconnecte.
+   */
+  arreterSuiviGpsLivreur(): void {
+    if (this.intervalleEnvoiPosition) {
+      clearInterval(this.intervalleEnvoiPosition);
+      this.intervalleEnvoiPosition = undefined;
+    }
+    this.statutTransmissionGps.set('INACTIF');
   }
 }
