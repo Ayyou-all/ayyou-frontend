@@ -318,69 +318,32 @@ export class ServiceLivreurService {
           );
           this.secondesRestantes.set(tempsRestant);
 
+          // Proposition telle que renvoyée par le serveur : aucune valeur inventée,
+          // et aucune donnée du client avant acceptation de la course.
           this.propositionActive.set({
-            identifiantCommande: String(
-              premiere.identifiantCommande ??
-                premiere.commande_id ??
-                premiere.id ??
-                premiere.reference ??
-                ''
-            ),
-            restaurantNom:
-              premiere.restaurantNom ??
-              premiere.restaurant_nom ??
-              premiere.etablissement_nom ??
-              'Restaurant Partenaire',
-            restaurantAdresse:
-              premiere.restaurantAdresse ??
-              premiere.restaurant_adresse ??
-              'Dakar',
-            restaurantTelephone:
-              premiere.restaurantTelephone ??
-              premiere.restaurant_telephone ??
-              '',
-            comptoirRetrait: 'Comptoir de retrait AYYOU',
-            clientNom:
-              premiere.clientNom ?? premiere.client_nom ?? 'Client',
-            clientTelephone:
-              premiere.clientTelephone ??
-              premiere.client_telephone ??
-              '',
-            clientAdresse:
-              premiere.clientAdresse ??
-              premiere.client_adresse ??
-              'Adresse client',
-            clientInstructions:
-              premiere.clientInstructions ??
-              premiere.instructions_client ??
-              premiere.instructions ??
-              '',
-            distanceKm: Number(
-              premiere.distanceKm ?? premiere.distance_km ?? 2.5
-            ),
-            gainFcfa: Number(
-              premiere.gainFcfa ?? premiere.gain_livreur_fcfa ?? 1000
-            ),
+            identifiantCommande: String(premiere.commande_id ?? premiere.identifiantCommande ?? ''),
+            restaurantNom: premiere.restaurant_nom ?? '',
+            restaurantAdresse: premiere.restaurant_adresse ?? '',
+            restaurantTelephone: premiere.restaurant_telephone ?? '',
+            comptoirRetrait: '',
+            clientNom: '',
+            clientTelephone: '',
+            clientAdresse: '',
+            clientInstructions: '',
+            distanceKm: premiere.distance_km ?? null,
+            gainFcfa: Number(premiere.gain_livreur_fcfa ?? 0),
             tempsRestantSec: tempsRestant,
-            tempsTrajetMin: Number(
-              premiere.tempsTrajetMin ?? premiere.temps_trajet_minutes ?? 10
-            ),
+            tempsTrajetMin: 0,
             codeValidation: '',
-            restaurantLatitude: Number(premiere.restaurantLatitude ?? premiere.restaurant_latitude ?? 14.6710),
-            restaurantLongitude: Number(premiere.restaurantLongitude ?? premiere.restaurant_longitude ?? -17.4320),
-            clientLatitude: Number(premiere.clientLatitude ?? premiere.client_latitude ?? 14.6850),
-            clientLongitude: Number(premiere.clientLongitude ?? premiere.client_longitude ?? -17.4520),
+            restaurantLatitude: premiere.restaurant_latitude ?? undefined,
+            restaurantLongitude: premiere.restaurant_longitude ?? undefined,
             articles: (premiere.articles || []).map((art: any) => ({
               id: art.id ? Number(art.id) : undefined,
-              nom: art.nom ?? art.nom_plat ?? 'Article',
+              nom: art.nom_plat ?? art.nom ?? '',
               quantite: Number(art.quantite || 1),
-              format: art.format || 'Standard',
-              instructions: art.instructions || '',
+              instructions: art.instructions_speciales || '',
               estVerifie: false
-            })),
-            photoCommande:
-              premiere.photoCommande ||
-              'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
+            }))
           });
 
           this.jouerAlerteSonore();

@@ -662,11 +662,15 @@
         (click)="$event.stopPropagation()"
       >
 
+        @if (erreurChargementDocument()) {
+          <p class="mb-3 text-sm font-semibold text-red-300">{{ erreurChargementDocument() }}</p>
+        }
+
         <!-- CAS 1 : IMAGE (PNG, JPG, WEBP, ETC.) -->
         @if (documentEnConsultation()!.estImage) {
           <div class="w-full flex flex-col items-center justify-center overflow-auto max-h-[75vh] p-2 sm:p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80">
             <img
-              [src]="documentEnConsultation()!.urlFichier"
+              [src]="urlFichierLocal() || ''"
               [alt]="documentEnConsultation()!.nom"
               [style.transform]="'scale(' + (facteurZoom() / 100) + ')'"
               class="max-w-full max-h-[70vh] object-contain rounded-xl shadow-2xl transition-transform duration-150 select-none border border-slate-800"
@@ -690,7 +694,7 @@
                 <span class="font-mono font-bold">{{ documentEnConsultation()!.nomFichier }}</span>
               </span>
               <a
-                [href]="documentEnConsultation()!.urlFichier"
+                [href]="urlFichierLocal() || ''"
                 target="_blank"
                 class="text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1.5 transition-colors"
               >
@@ -748,7 +752,7 @@
 
           <div class="flex items-center gap-3">
             <a
-              [href]="documentEnConsultation()!.urlFichier"
+              [href]="urlFichierLocal() || ''"
               target="_blank"
               class="text-sky-400 hover:text-sky-300 font-bold flex items-center gap-1.5 transition-colors"
             >
