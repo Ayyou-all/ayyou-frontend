@@ -32,6 +32,11 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   // Modal de contact téléphonique du livreur
   readonly modalAppelLivreur = signal<boolean>(false);
 
+  // Télémétrie en temps réel calculée depuis la position GPS réelle
+  readonly distanceRestanteKm = signal<number | null>(null);
+  readonly tempsRestantMinutes = signal<number | null>(null);
+  readonly routageDisponible = signal<boolean>(true);
+
   // Identifiant de la commande sélectionnée dans la route
   readonly identifiantCommande = computed(() => {
     return this.route.snapshot.paramMap.get('idCommande') || '';
@@ -41,7 +46,12 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   readonly commande = computed<CommandeClient>(() => {
     const id = this.identifiantCommande();
     const liste = this.serviceCommandes.listeCommandes();
-    const commandeTrouvee = liste.find((c) => c.identifiant === id || String(c.identifiant) === String(id));
+    const commandeTrouvee = liste.find(
+      (c) =>
+        c.identifiant === id ||
+        String(c.identifiant) === String(id) ||
+        (c.idNumerique !== undefined && String(c.idNumerique) === String(id))
+    );
     if (commandeTrouvee) return commandeTrouvee;
 
     return (
@@ -51,9 +61,8 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
         adresseImageRestaurant: '',
         dateHeureTexte: "Aujourd'hui",
         statut: 'PREPARATION',
-        delaiOuRemarque: 'Connexion au serveur...',
+        delaiOuRemarque: 'Chargement des détails...',
         montantTotalFcfa: 0,
-        codeLivraison: [0, 0, 0, 0],
         etapeSuivi: 'ACCEPTEE',
         heureArriveeEstimee: '',
         messageProximite: 'TRAITEMENT EN COURS',
@@ -61,6 +70,118 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
         articles: []
       }
     );
+  });
+
+  // Indicateur de fraîcheur de la position GPS du livreur
+  readonly statutGpsLivreur = computed(() => {
+    const l = this.commande().livreur;
+    if (!l) {
+      return { niveau: 'non_assigne', texte: 'Livreur en cours d\'attribution' };
+    }
+    if (l.latitude === null || l.latitude === undefined || l.longitude === null || l.longitude === undefined) {
+      return { niveau: 'sans_gps', texte: 'En attente du signal GPS' };
+    }
+    if (!l.dateDernierePosition) {
+      return { niveau: 'direct', texte: 'Position GPS en direct' };
+    }
+
+    try {
+      const timestamp = new Date(l.dateDernierePosition).getTime();
+      const ecartSec = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+      if (ecartSec < 60) {
+        return { niveau: 'direct', texte: `En direct (il y a ${ecartSec}s)` };
+      } else if (ecartSec < 300) {
+        const min = Math.round(ecartSec / 60);
+        return { niveau: 'recent', texte: `Actualisé il y a ${min} min` };
+      } else {
+        const dateObj = new Date(timestamp);
+        const heureStr = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        return { niveau: 'obsolete', texte: `Signal GPS obsolète (${heureStr})` };
+      }
+    } catch {
+      return { niveau: 'direct', texte: 'Position GPS reçue' };
+    }
+  });
+
+  // Timeline des étapes réelles alimentée par les statuts et horodatages de la base de données
+  readonly timeline = computed(() => {
+    const cmd = this.commande();
+    const s = cmd.statutBrut || '';
+
+    const formatHeure = (dateStr?: string | null) => {
+      if (!dateStr) return '';
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return '';
+      }
+    };
+
+    const heureCreation = formatHeure(cmd.dateCreation) || (cmd.dateHeureTexte ? cmd.dateHeureTexte.split(',')[1]?.trim() || '' : '');
+    const heureDebutPrep = formatHeure(cmd.heureDebutPreparation);
+    const heureFinPrep = formatHeure(cmd.heureFinPreparation);
+    const heureDepart = formatHeure(cmd.heureDepartLivraison);
+    const heureLivraison = formatHeure(cmd.heureLivraisonEffective);
+
+    const ordre = [
+      'EN_ATTENTE_PAIEMENT',
+      'CREEE_EN_ATTENTE',
+      'EN_PREPARATION',
+      'PRETE_POUR_RETRAIT',
+      'COURSE_ASSIGNEE',
+      'EN_VERIFICATION',
+      'EN_LIVRAISON',
+      'ARRIVE_CLIENT',
+      'LIVREE'
+    ];
+    const idxActuel = ordre.indexOf(s);
+    const atteint = (cle: string) => idxActuel >= ordre.indexOf(cle);
+
+    return [
+      {
+        titre: 'Commande enregistrée',
+        description: s === 'EN_ATTENTE_PAIEMENT' ? 'En attente de règlement PayTech' : 'Commande confirmée et transmise au restaurant',
+        heure: heureCreation,
+        icone: 'fa-solid fa-receipt',
+        etat: s === 'EN_ATTENTE_PAIEMENT' ? 'en_cours' : (idxActuel >= 1 ? 'termine' : 'a_venir')
+      },
+      {
+        titre: 'Préparation en cuisine',
+        description: atteint('EN_PREPARATION') ? (heureDebutPrep ? `Cuisine démarrée à ${heureDebutPrep}` : 'Le restaurant prépare vos plats') : 'En attente de prise en charge par le restaurant',
+        heure: heureDebutPrep,
+        icone: 'fa-solid fa-fire-burner',
+        etat: atteint('PRETE_POUR_RETRAIT') ? 'termine' : (s === 'EN_PREPARATION' ? 'en_cours' : 'a_venir')
+      },
+      {
+        titre: 'Commande prête au comptoir',
+        description: atteint('PRETE_POUR_RETRAIT') ? (heureFinPrep ? `Prête pour retrait à ${heureFinPrep}` : 'Emballée et prête au comptoir') : 'Préparation en cours',
+        heure: heureFinPrep,
+        icone: 'fa-solid fa-box-open',
+        etat: atteint('COURSE_ASSIGNEE') || atteint('EN_VERIFICATION') || atteint('EN_LIVRAISON') ? 'termine' : (s === 'PRETE_POUR_RETRAIT' ? 'en_cours' : 'a_venir')
+      },
+      {
+        titre: 'Livreur affecté',
+        description: cmd.livreur ? `${cmd.livreur.nom} est en route vers le restaurant` : 'Recherche d\'un coursier à proximité',
+        heure: '',
+        icone: 'fa-solid fa-motorcycle',
+        etat: atteint('EN_LIVRAISON') ? 'termine' : (['COURSE_ASSIGNEE', 'EN_VERIFICATION'].includes(s) ? 'en_cours' : 'a_venir')
+      },
+      {
+        titre: 'Colis récupéré & en route vers vous',
+        description: atteint('EN_LIVRAISON') ? (heureDepart ? `En livraison depuis ${heureDepart}` : 'Le coursier est en route vers votre adresse') : 'Prise en charge à venir',
+        heure: heureDepart,
+        icone: 'fa-solid fa-route',
+        etat: atteint('LIVREE') ? 'termine' : (['EN_LIVRAISON', 'ARRIVE_CLIENT'].includes(s) ? 'en_cours' : 'a_venir')
+      },
+      {
+        titre: 'Commande livrée et validée',
+        description: s === 'LIVREE' ? (heureLivraison ? `Livraison confirmée à ${heureLivraison}` : 'Livrée et validée par le code PIN') : 'Donnez le code PIN au livreur pour clôturer la livraison',
+        heure: heureLivraison,
+        icone: 'fa-solid fa-circle-check',
+        etat: s === 'LIVREE' ? 'termine' : 'a_venir'
+      }
+    ];
   });
 
   constructor() {
@@ -79,11 +200,13 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   readonly pourcentageProgression = computed<number>(() => {
     const s = this.commande().statutBrut || '';
     if (s === 'EN_ATTENTE_PAIEMENT') return 0;
-    if (s === 'CREEE_EN_ATTENTE') return 25;
-    if (s === 'EN_PREPARATION' || s === 'PRETE_POUR_RETRAIT') return 50;
-    if (['COURSE_ASSIGNEE', 'EN_VERIFICATION', 'EN_LIVRAISON', 'ARRIVE_CLIENT'].includes(s)) return 75;
+    if (s === 'CREEE_EN_ATTENTE') return 20;
+    if (s === 'EN_PREPARATION') return 40;
+    if (s === 'PRETE_POUR_RETRAIT') return 60;
+    if (s === 'COURSE_ASSIGNEE' || s === 'EN_VERIFICATION') return 75;
+    if (s === 'EN_LIVRAISON' || s === 'ARRIVE_CLIENT') return 88;
     if (s === 'LIVREE') return 100;
-    return 25;
+    return 20;
   });
 
   readonly estEnAttentePaiement = computed<boolean>(() => {
@@ -287,28 +410,57 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
       this.marqueurClient.setLatLng(coordClient);
     }
 
-    // Tracé de l'itinéraire routier réel via OSRM
-    this.serviceCarteDakar.obtenirItineraireRoutier(coordRestaurant, coordClient).then((pointsRoute) => {
+    // Détermination dynamique des points de départ et d'arrivée du tracé routier
+    let pointDepart: [number, number] = coordRestaurant;
+    let pointArrivee: [number, number] = coordClient;
+
+    const s = cmd.statutBrut || '';
+    const livreurGpsValide = Boolean(
+      cmd.livreur &&
+      cmd.livreur.latitude !== null && cmd.livreur.latitude !== undefined &&
+      cmd.livreur.longitude !== null && cmd.livreur.longitude !== undefined
+    );
+
+    if (livreurGpsValide) {
+      const coordLivreur: [number, number] = [cmd.livreur!.latitude!, cmd.livreur!.longitude!];
+      pointDepart = coordLivreur;
+
+      if (['COURSE_ASSIGNEE', 'EN_VERIFICATION'].includes(s)) {
+        // En route vers le restaurant
+        pointArrivee = coordRestaurant;
+      } else {
+        // En route vers le client ou arrivé au pied du domicile
+        pointArrivee = coordClient;
+      }
+    }
+
+    // Calcul de l'itinéraire routier via OSRM et recalcul de la distance / durée restante
+    this.serviceCarteDakar.obtenirItineraireDetaille(pointDepart, pointArrivee).then((detail) => {
       if (!this.carteLeaflet) return;
+      this.distanceRestanteKm.set(detail.distanceKm);
+      this.tempsRestantMinutes.set(detail.dureeMinutes);
+      this.routageDisponible.set(detail.succesRoutage);
+
       if (!this.traceItineraire) {
-        this.traceItineraire = L.polyline(pointsRoute, {
+        this.traceItineraire = L.polyline(detail.points, {
           color: '#E51824',
           weight: 4,
           opacity: 0.85
         }).addTo(this.carteLeaflet);
       } else {
-        this.traceItineraire.setLatLngs(pointsRoute);
+        this.traceItineraire.setLatLngs(detail.points);
       }
     });
 
-    // Marqueur Livreur : affiché et repositionné UNIQUEMENT si assigné en DB
-    if (cmd.livreur && cmd.livreur.latitude && cmd.livreur.longitude) {
+    // Marqueur Livreur : affiché et repositionné dynamiquement UNIQUEMENT si assigné avec coordonnées GPS
+    if (livreurGpsValide) {
+      const coordLivreur: [number, number] = [cmd.livreur!.latitude!, cmd.livreur!.longitude!];
       if (!this.marqueurLivreur) {
-        this.marqueurLivreur = L.marker([cmd.livreur.latitude, cmd.livreur.longitude], {
-          icon: this.serviceCarteDakar.creerIconeMotoLivreur(cmd.livreur.nom)
+        this.marqueurLivreur = L.marker(coordLivreur, {
+          icon: this.serviceCarteDakar.creerIconeMotoLivreur(cmd.livreur!.nom)
         }).addTo(this.carteLeaflet);
       } else {
-        this.marqueurLivreur.setLatLng([cmd.livreur.latitude, cmd.livreur.longitude]);
+        this.marqueurLivreur.setLatLng(coordLivreur);
       }
     } else if (this.marqueurLivreur) {
       this.marqueurLivreur.remove();
