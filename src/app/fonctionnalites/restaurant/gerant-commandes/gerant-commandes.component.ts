@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { Observable } from 'rxjs';
 import {
   ColonneKanbanGerant,
   CommandeKanban,
@@ -38,65 +39,71 @@ export class GerantCommandesComponent {
   readonly commandesPreparation = computed(() => this.serviceRestaurant.commandesPreparation());
   readonly commandesPretes = computed(() => this.serviceRestaurant.commandesPretes());
 
-  /**
-   * Accepte une nouvelle commande : bascule directement en préparation (sans étape de détails).
-   */
-  accepterCommande(numero: string): void {
-    this.serviceRestaurant.accepterCommande(numero);
-    this.notificationSucces.set(`Commande ${numero} acceptée ! Préparation en cours.`);
-    setTimeout(() => this.notificationSucces.set(null), 3000);
+  // Temps de préparation proposés au gérant, et choix fait pour chaque commande
+  readonly delaisPossibles = [10, 15, 20, 25, 30, 45, 60];
+  readonly delaiParCommande = signal<Record<string, number>>({});
+  readonly actionEnCours = signal<string | null>(null);
+
+  delaiChoisi(numero: string): number {
+    return this.delaiParCommande()[numero] ?? 20;
   }
 
-  /**
-   * Ouvre la modale pour refuser une commande.
-   */
+  choisirDelai(numero: string, minutes: number): void {
+    this.delaiParCommande.update((delais) => ({ ...delais, [numero]: Number(minutes) }));
+  }
+
+  /** Affiche un succès seulement après la réponse du serveur, sinon l'erreur réelle. */
+  private executer(numero: string, action: Observable<any>, messageSucces: string): void {
+    this.actionEnCours.set(numero);
+    action.subscribe({
+      next: () => {
+        this.actionEnCours.set(null);
+        this.afficherMessage(messageSucces);
+      },
+      error: (erreur) => {
+        this.actionEnCours.set(null);
+        this.afficherMessage(erreur?.error?.message || 'Action impossible. Vérifiez votre connexion et réessayez.');
+      }
+    });
+  }
+
+  private afficherMessage(message: string): void {
+    this.notificationSucces.set(message);
+    setTimeout(() => this.notificationSucces.set(null), 3500);
+  }
+
+  accepterCommande(numero: string): void {
+    const delai = this.delaiChoisi(numero);
+    this.executer(numero, this.serviceRestaurant.accepterCommande(numero, delai), `Commande ${numero} acceptée (${delai} min).`);
+  }
+
   ouvrirRefus(commande: CommandeKanban): void {
     this.commandeARefuser.set(commande);
     this.modaleRefusOuverte.set(true);
   }
 
-  /**
-   * Confirme le refus : la commande est retirée et envoyée DIRECTEMENT dans les historiques en ANNULÉE.
-   */
   confirmerRefus(): void {
-    const cmd = this.commandeARefuser();
-    if (!cmd) return;
-
-    this.serviceRestaurant.refuserCommande(cmd.numero, this.motifRefus());
-
-    this.notificationSucces.set(`Commande ${cmd.numero} refusée et archivée dans l'historique.`);
+    const commande = this.commandeARefuser();
+    if (!commande) return;
     this.modaleRefusOuverte.set(false);
     this.commandeARefuser.set(null);
-    setTimeout(() => this.notificationSucces.set(null), 3000);
-  }
-
-  /**
-   * Marque la commande comme prête : bascule directement en colonne Prêtes.
-   */
-  marquerCommePrete(numero: string): void {
-    this.serviceRestaurant.marquerCommePrete(numero);
-    this.notificationSucces.set(`Commande ${numero} prête ! Livreur notifié.`);
-    setTimeout(() => this.notificationSucces.set(null), 3000);
-  }
-
-  /**
-   * Remet le colis au livreur : la commande passe en cours d'acheminement vers le client.
-   */
-  remettreAuLivreur(numero: string): void {
-    this.serviceRestaurant.remettreAuLivreur(numero);
-    this.notificationSucces.set(
-      `Commande ${numero} remise au livreur : livraison en cours vers le client.`
+    this.executer(
+      commande.numero,
+      this.serviceRestaurant.refuserCommande(commande.numero, this.motifRefus()),
+      `Commande ${commande.numero} refusée : le client est remboursé.`
     );
-    setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
-  /**
-   * Recharge les commandes en direct depuis la base de données Django.
-   */
+  marquerCommePrete(numero: string): void {
+    this.executer(numero, this.serviceRestaurant.marquerCommePrete(numero), `Commande ${numero} prête : recherche d'un livreur.`);
+  }
+
+  remettreAuLivreur(numero: string): void {
+    this.executer(numero, this.serviceRestaurant.remettreAuLivreur(numero), `Commande ${numero} remise au livreur.`);
+  }
+
   rafraichirCommandes(): void {
-    this.serviceRestaurant.chargerCommandesRestaurant();
-    this.notificationSucces.set('Commandes synchronisées en direct avec la base de données.');
-    setTimeout(() => this.notificationSucces.set(null), 2500);
+    this.serviceRestaurant.chargerCommandesRestaurant(true);
   }
 
   /**

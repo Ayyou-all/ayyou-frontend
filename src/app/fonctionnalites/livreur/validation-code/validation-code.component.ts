@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
-import { ServiceRestaurantCommandesService } from '../../../socle/services/service-restaurant-commandes.service';
 
 @Component({
   selector: 'app-validation-code',
@@ -12,7 +11,6 @@ import { ServiceRestaurantCommandesService } from '../../../socle/services/servi
 })
 export class ValidationCodeComponent {
   readonly serviceLivreur = inject(ServiceLivreurService);
-  private readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
   readonly routeur = inject(Router);
 
   // Chiffres saisis par le livreur
@@ -108,11 +106,6 @@ export class ValidationCodeComponent {
             this.messageErreur.set(verification.message);
             return;
           }
-
-          // Propagation du statut LIVRÉE à l'historique restaurant si applicable
-          this.serviceRestaurant.marquerCommandeLivreeParLivreur(
-            courseActive.identifiantCommande
-          );
 
           // Affichage visuel du succès puis transition maîtrisée
           this.livraisonReussie.set(true);
