@@ -73,10 +73,26 @@ export class ServiceLivreurService {
   // Compte à rebours de la proposition en secondes
   readonly secondesRestantes = signal<number>(30);
 
+  // Indicateur d'état de connectivité réseau
+  readonly estEnLigne = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
   private intervalleCompteARebours?: any;
   private intervalleEcouteTempsReel?: any;
 
   constructor() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        this.estEnLigne.set(true);
+        if (this.profilLivreur().estDisponible) {
+          this.chargerMissionEnCours();
+          this.verifierNouvellesPropositions();
+        }
+      });
+      window.addEventListener('offline', () => {
+        this.estEnLigne.set(false);
+      });
+    }
+
     this.initialiserDonneesLivreur();
     this.demarrerEcouteTempsReel();
   }
@@ -191,6 +207,10 @@ export class ServiceLivreurService {
   demarrerEcouteTempsReel(): void {
     this.arreterEcouteTempsReel();
     this.intervalleEcouteTempsReel = setInterval(() => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        this.estEnLigne.set(false);
+        return;
+      }
       if (this.profilLivreur().estDisponible && !this.courseEnCours() && !this.propositionActive()) {
         this.verifierNouvellesPropositions();
       }
@@ -271,12 +291,18 @@ export class ServiceLivreurService {
    * Vérifie si des courses sont disponibles pour le livreur et affiche la modale en temps réel.
    */
   verifierNouvellesPropositions(): void {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.estEnLigne.set(false);
+      return;
+    }
+
     if (!this.profilLivreur().estDisponible || this.courseEnCours() || this.propositionActive()) {
       return;
     }
 
     this.http.get<any[]>(`${environment.apiUrl}/livraisons/propositions/`).subscribe({
       next: (propositions) => {
+        this.estEnLigne.set(true);
         if (propositions && propositions.length > 0) {
           const premiere = propositions[0];
           const tempsRestant = Number(
@@ -353,7 +379,13 @@ export class ServiceLivreurService {
           this.demarrerCompteARebours();
         }
       },
-      error: () => {}
+      error: (err: any) => {
+        if (err?.status === 0) {
+          this.estEnLigne.set(false);
+        } else if (err?.status === 401 || err?.status === 403) {
+          this.arreterEcouteTempsReel();
+        }
+      }
     });
   }
 
@@ -361,8 +393,13 @@ export class ServiceLivreurService {
    * Charge la mission active depuis l'API Django.
    */
   chargerMissionEnCours(): void {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.estEnLigne.set(false);
+      return;
+    }
     this.http.get<any>(`${environment.apiUrl}/livraisons/mission-en-cours/`).subscribe({
       next: (reponse) => {
+        this.estEnLigne.set(true);
         if (reponse?.mission_active && reponse?.livraison) {
           const l = reponse.livraison;
           this.courseEnCours.set({
@@ -403,7 +440,11 @@ export class ServiceLivreurService {
           else if (l.etape === 'ARRIVE_CLIENT') this.etapeCourse.set('ARRIVE_CLIENT');
         }
       },
-      error: () => {}
+      error: (err: any) => {
+        if (err?.status === 0) {
+          this.estEnLigne.set(false);
+        }
+      }
     });
   }
 
@@ -553,13 +594,28 @@ export class ServiceLivreurService {
   }
 
   /**
-   * Valide le code PIN à 4 chiffres fourni par le client auprès de Django.
+   * Valide le code PIN à 4 chiffres fourni par le client auprès de Django REST Framework.
+   * C'est la méthode de référence asynchrone sécurisée pour la clôture de course en direct.
    */
   validerCodeAsync(codeSaisi: string, identifiantCommande?: string): Observable<ResultatValidationCode> {
+    if (this.etapeCourse() === 'LIVRE' || !this.courseEnCours()) {
+      return of({
+        valide: false,
+        message: 'Cette livraison a déjà été validée et clôturée.'
+      });
+    }
+
     if (!codeSaisi || codeSaisi.length !== 4) {
       return of({
         valide: false,
         message: 'Veuillez saisir un code PIN à 4 chiffres.'
+      });
+    }
+
+    if (!/^\d{4}$/.test(codeSaisi)) {
+      return of({
+        valide: false,
+        message: 'Le code de confirmation doit comporter uniquement des chiffres.'
       });
     }
 
@@ -591,10 +647,17 @@ export class ServiceLivreurService {
       );
   }
 
+  /**
+   * Méthode de validation synchrone pour les tests unitaires et les scénarios avec PIN en mémoire.
+   * Pour l'application en ligne, utiliser impérativement validerCodeAsync().
+   */
   verifierCodeValidation(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
     return this.validerCode(codeSaisi, identifiantCommande);
   }
 
+  /**
+   * Valide localement le code saisi et déclenche la synchronisation serveur si possible.
+   */
   validerCode(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
     if (this.etapeCourse() === 'LIVRE' || !this.courseEnCours()) {
       return {
@@ -603,7 +666,7 @@ export class ServiceLivreurService {
       };
     }
 
-    if (codeSaisi.length !== 4) {
+    if (!codeSaisi || codeSaisi.length !== 4) {
       return {
         valide: false,
         message: 'Veuillez saisir un code à 4 chiffres.'

@@ -6,7 +6,6 @@ import { ServiceRestaurantCommandesService } from './service-restaurant-commande
 import { ServiceLivreurService } from './service-livreur.service';
 import { ServiceCommandesService } from './service-commandes.service';
 import { ServicePanierService } from './service-panier.service';
-import { ServiceOrchestrateurCommandesService } from './service-orchestrateur-commandes.service';
 import {
   gardeAdministration,
   gardeGerant,
@@ -28,7 +27,6 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
         ServiceLivreurService,
         ServiceCommandesService,
         ServicePanierService,
-        ServiceOrchestrateurCommandesService,
         {
           provide: Router,
           useValue: {
@@ -199,59 +197,57 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
     });
   });
 
-  describe('E. Orchestration centralisée de commande (Lot 1 & Lot 2)', () => {
-    it('doit propager une commande panier vers le client, le restaurant et le livreur avec code PIN synchronisé', () => {
-      const orchestrateur = TestBed.inject(ServiceOrchestrateurCommandesService);
+  describe('E. Intégration des commandes et sécurisation du code PIN (Django DRF)', () => {
+    it('doit adapter fidèlement les commandes retournées par Django REST Framework', () => {
       const serviceCommandes = TestBed.inject(ServiceCommandesService);
-
-      const panierMock: any = {
-        identifiantRestaurant: 'resto-le-teranga',
-        nomRestaurant: 'Le Teranga',
-        adresseLogoRestaurant: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150',
-        delaiLivraison: '25-35 min',
-        adresseLivraison: 'Plateau, Rue Carnot',
-        methodePaiement: 'WAVE',
-        lignes: [
-          {
-            plat: {
-              identifiant: 'plat-thieb-royal',
-              identifiantRestaurant: 'resto-le-teranga',
-              nomRestaurant: 'Le Teranga',
-              nom: 'Thieboudienne Royal',
-              description: 'Riz rouge traditionnel au poisson',
-              prixFcfa: 3500,
-              adresseImage: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-              categorie: 'Plats',
-              statut: 'DISPONIBLE'
-            },
-            quantite: 2
-          }
-        ],
-        sousTotalFcfa: 7000,
-        fraisLivraisonFcfa: 1000,
-        totalFcfa: 8000
+      const commandeDjango = {
+        id: 42,
+        reference: 'CMD-42-TEST',
+        etablissement: { nom: 'Le Teranga', logo: 'https://example.com/logo.jpg' },
+        statut: 'EN_PREPARATION',
+        etape_suivi: 'PREPARATION',
+        code_livraison_pin: '4821',
+        total_fcfa: 9500,
+        articles: [
+          { nom_plat: 'Thieboudienne Penda Mbaye', quantite: 2, total_ligne_fcfa: 7000 },
+          { nom_plat: 'Jus de Bissap', quantite: 1, total_ligne_fcfa: 2500 }
+        ]
       };
 
-      const commandeCreee = orchestrateur.creerCommandeDepuisPanier(panierMock, 'Sans piment svp');
+      const adaptee = serviceCommandes.adapterCommande(commandeDjango);
+      expect(adaptee.identifiant).toBe('CMD-42-TEST');
+      expect(adaptee.statut).toBe('PREPARATION');
+      expect(adaptee.codeLivraison).toEqual([4, 8, 2, 1]);
+      expect(adaptee.montantTotalFcfa).toBe(9500);
+      expect(adaptee.articles.length).toBe(2);
+      expect(adaptee.estEnCours).toBe(true);
+    });
 
-      // 1. Client
-      expect(commandeCreee).toBeDefined();
-      expect(commandeCreee.identifiant).toContain('ORD-');
-      const trouvee = serviceCommandes.trouverCommandeParId(commandeCreee.identifiant);
-      expect(trouvee).toBeDefined();
+    it('doit rejeter de manière asynchrone un code PIN mal formé ou hors chiffres', async () => {
+      const serviceLivreurTest = TestBed.inject(ServiceLivreurService);
+      serviceLivreurTest.courseEnCours.set({
+        identifiantCommande: '42',
+        restaurantNom: 'Le Teranga',
+        restaurantAdresse: 'Plateau',
+        restaurantTelephone: '+221 33 000 00 00',
+        comptoirRetrait: 'Comptoir 1',
+        clientNom: 'Moussa',
+        clientTelephone: '+221 77 000 00 00',
+        clientAdresse: 'Almadies',
+        distanceKm: 2,
+        gainFcfa: 1500,
+        tempsRestantSec: 30,
+        tempsTrajetMin: 10,
+        articles: []
+      });
+      serviceLivreurTest.etapeCourse.set('VALIDATION_CODE');
 
-      // 2. Restaurant Kanban
-      const numeroKanban = `#${commandeCreee.identifiant.replace('ORD-', '')}`;
-      const cmdKanban = serviceRestaurant.commandesKanban().find((c) => c.numero === numeroKanban);
-      expect(cmdKanban).toBeDefined();
-      expect(cmdKanban?.statut).toBe('NOUVELLES');
-      expect(cmdKanban?.remarqueClient).toBe('Sans piment svp');
+      const resCourt = await firstValueFrom(serviceLivreurTest.validerCodeAsync('12'));
+      expect(resCourt.valide).toBe(false);
 
-      // 3. Livreur code PIN synchronisé
-      const courseLivreur = serviceLivreur.courseEnCours();
-      expect(courseLivreur).toBeDefined();
-      const codePinClient = commandeCreee.codeLivraison.join('');
-      expect(courseLivreur?.codeValidation).toBe(codePinClient);
+      const resAlpha = await firstValueFrom(serviceLivreurTest.validerCodeAsync('abcd'));
+      expect(resAlpha.valide).toBe(false);
+      expect(resAlpha.message).toContain('chiffres');
     });
   });
 
@@ -281,6 +277,53 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
 
       const res = TestBed.runInInjectionContext(() => gardeGerant(routeMock, stateMock));
       expect(res).toBe(true);
+    });
+  });
+
+  describe('G. Fiabilité Session & Rafraîchissement automatique des tokens', () => {
+    it('doit récupérer les jetons d accès et rafraîchissement depuis le stockage', () => {
+      localStorage.setItem('ayyou_jeton_acces', 'mon-token-acces');
+      localStorage.setItem('ayyou_jeton_rafraichissement', 'mon-token-refresh');
+
+      expect(serviceAuth.obtenirJetonAcces()).toBe('mon-token-acces');
+      expect(serviceAuth.obtenirJetonRafraichissement()).toBe('mon-token-refresh');
+    });
+
+    it('doit déclencher une déconnexion immédiate si aucun jeton de rafraîchissement n est disponible', async () => {
+      localStorage.removeItem('ayyou_jeton_rafraichissement');
+
+      try {
+        await firstValueFrom(serviceAuth.rafraichirJetonAcces());
+        expect.unreachable('Devrait échouer car pas de refresh token');
+      } catch (err: any) {
+        expect(err.message).toContain('Aucun jeton de rafraîchissement');
+        expect(serviceAuth.utilisateurConnecte()).toBeNull();
+      }
+    });
+
+    it('doit empêcher une commande remise au livreur de réapparaître dans le Kanban', () => {
+      serviceRestaurant.commandesKanban.set([
+        {
+          idInterne: 101,
+          numero: '#CMD-101',
+          clientNom: 'Fatou',
+          totalMontant: '5 000 FCFA',
+          totalValeurNumerique: 5000,
+          typeLivraison: 'LIVRAISON',
+          statut: 'PRETES',
+          articles: [{ nom: 'Thiéboudienne', quantite: 1 }]
+        }
+      ]);
+
+      expect(serviceRestaurant.commandesPretes().length).toBe(1);
+
+      // Le gérant remet le colis au coursier
+      serviceRestaurant.remettreAuLivreur('#CMD-101');
+
+      expect(serviceRestaurant.commandesPretes().length).toBe(0);
+      expect(serviceRestaurant.historiqueCommandes().length).toBe(1);
+      expect(serviceRestaurant.historiqueCommandes()[0].numero).toBe('#CMD-101');
+      expect(serviceRestaurant.historiqueCommandes()[0].statut).toBe('EN_COURS');
     });
   });
 });
