@@ -416,9 +416,16 @@
                     <span class="w-6 h-6 rounded-md bg-rose-50 border border-rose-100 text-[#E51824] font-extrabold text-[11px] flex items-center justify-center shrink-0">
                       {{ art.quantite }}x
                     </span>
-                    <span class="font-bold text-slate-700 truncate">
-                      {{ art.nomPlat }}
-                    </span>
+                    <div class="min-w-0">
+                      <span class="font-bold text-slate-700 truncate block">
+                        {{ art.nomPlat }}
+                      </span>
+                      @if (art.prixUnitaireFcfa) {
+                        <span class="text-[10px] text-slate-400">
+                          {{ art.prixUnitaireFcfa | number }} FCFA / unité
+                        </span>
+                      }
+                    </div>
                   </div>
 
                   <span class="font-extrabold text-slate-900 shrink-0 font-['Outfit']">
@@ -439,9 +446,32 @@
                 </div>
               }
 
+              <!-- Décomposition transparente des montants (Sous-total & Livraison) -->
+              <div class="pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
+                @if (commande().sousTotalFcfa) {
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Sous-total articles</span>
+                    <span class="font-bold text-slate-700 font-['Outfit']">{{ commande().sousTotalFcfa | number }} FCFA</span>
+                  </div>
+                }
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500">Frais de livraison (Région Dakar)</span>
+                  <span class="font-bold text-slate-700 font-['Outfit']">
+                    {{ (commande().fraisLivraisonFcfa || 0) | number }} FCFA
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500">Paiement</span>
+                  <span class="inline-flex items-center gap-1 font-bold text-xs" [class.text-emerald-600]="commande().statutPaiement === 'PAYE'" [class.text-amber-600]="commande().statutPaiement === 'EN_ATTENTE'">
+                    <i class="fa-solid" [class.fa-circle-check]="commande().statutPaiement === 'PAYE'" [class.fa-clock]="commande().statutPaiement === 'EN_ATTENTE'"></i>
+                    {{ commande().statutPaiement === 'PAYE' ? 'Payé (' + (commande().modePaiement || 'Mobile Money') + ')' : 'En attente de paiement' }}
+                  </span>
+                </div>
+              </div>
+
               <!-- Ligne de total en rouge (conforme à l'Image 1) -->
               <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-base font-extrabold">
-                <span class="text-slate-900">Total</span>
+                <span class="text-slate-900">Total payé</span>
                 <span class="text-[#E51824] font-black font-['Outfit'] text-lg">
                   {{ commande().montantTotalFcfa | number }} FCFA
                 </span>

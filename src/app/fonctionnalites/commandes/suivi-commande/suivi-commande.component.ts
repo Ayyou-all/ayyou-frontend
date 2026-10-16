@@ -287,17 +287,19 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
       this.marqueurClient.setLatLng(coordClient);
     }
 
-    // Tracé de l'itinéraire
-    if (!this.traceItineraire) {
-      this.traceItineraire = L.polyline([coordRestaurant, coordClient], {
-        color: '#E51824',
-        weight: 4,
-        dashArray: '6, 6',
-        opacity: 0.85
-      }).addTo(this.carteLeaflet);
-    } else {
-      this.traceItineraire.setLatLngs([coordRestaurant, coordClient]);
-    }
+    // Tracé de l'itinéraire routier réel via OSRM
+    this.serviceCarteDakar.obtenirItineraireRoutier(coordRestaurant, coordClient).then((pointsRoute) => {
+      if (!this.carteLeaflet) return;
+      if (!this.traceItineraire) {
+        this.traceItineraire = L.polyline(pointsRoute, {
+          color: '#E51824',
+          weight: 4,
+          opacity: 0.85
+        }).addTo(this.carteLeaflet);
+      } else {
+        this.traceItineraire.setLatLngs(pointsRoute);
+      }
+    });
 
     // Marqueur Livreur : affiché et repositionné UNIQUEMENT si assigné en DB
     if (cmd.livreur && cmd.livreur.latitude && cmd.livreur.longitude) {
@@ -356,10 +358,10 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   /**
-   * Simule la complétion de livraison et ouvre l'écran "Commande livrée !" (Image 2).
+   * Actualise la commande depuis le serveur (le statut LIVREE provient uniquement du backend).
    */
   confirmerLivraison(): void {
-    this.serviceCommandes.validerLivraison(this.commande().identifiant);
+    this.serviceCommandes.rechargerCommande(this.commande().identifiant);
   }
 
   /**
