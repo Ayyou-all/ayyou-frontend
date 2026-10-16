@@ -72,63 +72,41 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
     });
   });
 
-  describe('B. Cycle de vie des commandes — Remise au livreur', () => {
-    beforeEach(() => {
-      serviceRestaurant.commandesKanban.set([
-        {
-          numero: '#1240',
-          clientNom: 'Amadou Diallo',
-          totalMontant: '12 500 FCFA',
-          totalValeurNumerique: 12500,
-          typeLivraison: 'LIVRAISON',
-          statut: 'PRETES',
-          articles: [{ nom: 'Thieboudienne Penda Mbaye', quantite: 2 }]
-        },
-        {
-          numero: '#1239',
-          clientNom: 'Fatou Sow',
-          totalMontant: '6 000 FCFA',
-          totalValeurNumerique: 6000,
-          typeLivraison: 'A_EMPORTER',
-          statut: 'PRETES',
-          articles: [{ nom: 'Yassa Poulet', quantite: 1 }]
-        }
+  describe('B. Tableau de cuisine — répartition des commandes renvoyées par le serveur', () => {
+    const commandeServeur = (reference: string, statut: string, autres: object = {}) => ({
+      id: 1,
+      reference,
+      statut,
+      client_nom: 'Amadou Diallo',
+      total_fcfa: 12500,
+      date_creation: '2026-10-16T12:30:00Z',
+      articles: [{ nom_plat: 'Thieboudienne', quantite: 2 }],
+      ...autres
+    });
+
+    it('garde une commande prête dans la colonne « Prêtes » tant que la remise n est pas confirmée', () => {
+      serviceRestaurant.appliquerCommandesServeur([
+        commandeServeur('ORD-1', 'COURSE_ASSIGNEE', { remise_confirmee: false, livreur: { nom: 'Moussa' } })
       ]);
-      serviceRestaurant.historiqueCommandes.set([]);
+      const commande = serviceRestaurant.commandesPretes()[0];
+      expect(commande.numero).toBe('ORD-1');
+      expect(commande.livreurAssigne).toBe(true);
     });
 
-    it('ne doit PAS marquer une commande de livraison comme LIVRÉE lors de la remise au livreur', () => {
-      // #1240 est une commande de type LIVRAISON
-      const cmdAvant = serviceRestaurant.commandesKanban().find((c) => c.numero === '#1240');
-      expect(cmdAvant).toBeDefined();
-      expect(cmdAvant?.typeLivraison).toBe('LIVRAISON');
-
-      serviceRestaurant.remettreAuLivreur('#1240');
-
-      // Doit quitter le Kanban
-      const cmdKanbanApres = serviceRestaurant.commandesKanban().find((c) => c.numero === '#1240');
-      expect(cmdKanbanApres).toBeUndefined();
-
-      // Doit être dans l'historique avec le statut EN_COURS (acheminement en cours)
-      const cmdHist = serviceRestaurant.historiqueCommandes().find((c) => c.numero === '#1240');
-      expect(cmdHist).toBeDefined();
-      expect(cmdHist?.statut).toBe('EN_COURS');
+    it('passe la commande dans l historique « en cours » une fois la remise confirmée par le serveur', () => {
+      serviceRestaurant.appliquerCommandesServeur([commandeServeur('ORD-2', 'EN_VERIFICATION', { remise_confirmee: true })]);
+      expect(serviceRestaurant.commandesPretes().length).toBe(0);
+      expect(serviceRestaurant.historiqueCommandes()[0].statut).toBe('EN_COURS');
     });
 
-    it('doit marquer une commande emportée directement comme LIVRÉE lors de la remise client', () => {
-      // #1239 est une commande A_EMPORTER
-      serviceRestaurant.remettreAuLivreur('#1239');
-      const cmdHist = serviceRestaurant.historiqueCommandes().find((c) => c.numero === '#1239');
-      expect(cmdHist).toBeDefined();
-      expect(cmdHist?.statut).toBe('LIVRÉE');
-    });
-
-    it('doit basculer une commande en cours de livraison à LIVRÉE après validation coursier', () => {
-      serviceRestaurant.remettreAuLivreur('#1240');
-      serviceRestaurant.marquerCommandeLivreeParLivreur('1240');
-
-      const cmdHist = serviceRestaurant.historiqueCommandes().find((c) => c.numero === '#1240');
-      expect(cmdHist?.statut).toBe('LIVRÉE');
+    it('classe les commandes livrées et annulées dans l historique', () => {
+      serviceRestaurant.appliquerCommandesServeur([
+        commandeServeur('ORD-3', 'LIVREE'),
+        commandeServeur('ORD-4', 'ECHEC_LIVRAISON')
+      ]);
+      const statuts = serviceRestaurant.historiqueCommandes().map((h) => h.statut);
+      expect(statuts).toEqual(['LIVRÉE', 'ANNULÉE']);
+      expect(serviceRestaurant.chiffreAffairesJour()).toBe(12500);
     });
   });
 
@@ -301,30 +279,6 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
         expect(serviceAuth.utilisateurConnecte()).toBeNull();
       }
     });
-
-    it('doit empêcher une commande remise au livreur de réapparaître dans le Kanban', () => {
-      serviceRestaurant.commandesKanban.set([
-        {
-          idInterne: 101,
-          numero: '#CMD-101',
-          clientNom: 'Fatou',
-          totalMontant: '5 000 FCFA',
-          totalValeurNumerique: 5000,
-          typeLivraison: 'LIVRAISON',
-          statut: 'PRETES',
-          articles: [{ nom: 'Thiéboudienne', quantite: 1 }]
-        }
-      ]);
-
-      expect(serviceRestaurant.commandesPretes().length).toBe(1);
-
-      // Le gérant remet le colis au coursier
-      serviceRestaurant.remettreAuLivreur('#CMD-101');
-
-      expect(serviceRestaurant.commandesPretes().length).toBe(0);
-      expect(serviceRestaurant.historiqueCommandes().length).toBe(1);
-      expect(serviceRestaurant.historiqueCommandes()[0].numero).toBe('#CMD-101');
-      expect(serviceRestaurant.historiqueCommandes()[0].statut).toBe('EN_COURS');
-    });
+    // La remise au livreur est désormais confirmée par le serveur : voir la section B.
   });
 });
