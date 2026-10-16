@@ -82,20 +82,17 @@
       </div>
     </div>
 
-    <!-- 3. Note Moyenne -->
+    <!-- 3. Nombre total de livreurs inscrits -->
     <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shadow-2xs">
-          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-users"></i>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-600 border border-amber-100">
-          {{ statsKpi().noteMoyenne.evolution }}
-        </span>
       </div>
       <div>
-        <div class="text-xs font-semibold text-slate-400">Note Moyenne</div>
+        <div class="text-xs font-semibold text-slate-400">Livreurs inscrits</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi().noteMoyenne.valeur }}
+          {{ statsKpi().totalLivreurs.valeur }}
         </div>
       </div>
     </div>
@@ -202,7 +199,6 @@
             <th class="py-3.5 px-6 font-bold">NOM & CONTACT</th>
             <th class="py-3.5 px-6 font-bold">VÉHICULE</th>
             <th class="py-3.5 px-6 font-bold">STATUT ACTUEL</th>
-            <th class="py-3.5 px-6 font-bold">NOTE</th>
             <th class="py-3.5 px-6 font-bold">LIVRAISONS</th>
             <th class="py-3.5 px-6 font-bold text-right">ACTIONS</th>
           </tr>
@@ -214,7 +210,11 @@
               <!-- 1. AVATAR -->
               <td class="py-4 px-6">
                 <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                  <img [src]="livreur.photoUrl" [alt]="livreur.nom" class="w-full h-full object-cover" />
+                  @if (livreur.photoUrl) {
+                    <img [src]="livreur.photoUrl" [alt]="livreur.nom" class="w-full h-full object-cover" />
+                  } @else {
+                    <i class="fa-solid fa-user text-slate-400 m-auto"></i>
+                  }
                 </div>
               </td>
 
@@ -243,14 +243,6 @@
                 <div class="flex items-center gap-2 text-xs font-bold" [class]="livreur.couleurTexteStatut">
                   <span class="w-2 h-2 rounded-full" [class]="livreur.couleurPastille"></span>
                   <span>{{ livreur.libelleStatut }}</span>
-                </div>
-              </td>
-
-              <!-- 5. NOTE (Étoile orange ★) -->
-              <td class="py-4 px-6">
-                <div class="flex items-center gap-1 text-xs font-black text-amber-500">
-                  <i class="fa-solid fa-star text-xs"></i>
-                  <span class="text-slate-800">{{ livreur.note }}</span>
                 </div>
               </td>
 
@@ -412,7 +404,11 @@
 
         <div class="flex items-center gap-3.5">
           <div class="w-12 h-12 rounded-full overflow-hidden border border-slate-200 shrink-0">
-            <img [src]="livreurHistorique()!.photoUrl" [alt]="livreurHistorique()!.nom" class="w-full h-full object-cover" />
+            @if (livreurHistorique()!.photoUrl) {
+                    <img [src]="livreurHistorique()!.photoUrl" [alt]="livreurHistorique()!.nom" class="w-full h-full object-cover" />
+                  } @else {
+                    <i class="fa-solid fa-user text-slate-400 m-auto"></i>
+                  }
           </div>
           <div>
             <h3 class="text-xl font-black text-slate-900 font-['Outfit']">
@@ -432,10 +428,6 @@
           <div class="flex items-center justify-between">
             <span class="text-slate-500">Membre depuis :</span>
             <span class="font-bold text-slate-900">{{ livreurHistorique()!.dateInscription }}</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-slate-500">Satisfaction client :</span>
-            <span class="font-black text-amber-500">★ {{ livreurHistorique()!.note }}/5</span>
           </div>
         </div>
 

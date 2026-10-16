@@ -59,6 +59,17 @@ export interface FormulaireInscription {
   couverture?: File | null;
   permisRecto?: File | null;
   permisVerso?: File | null;
+  // Restaurant : position réelle, horaires et délai annoncé
+  latitude?: number | null;
+  longitude?: number | null;
+  specialite?: string;
+  heureOuverture?: string; // "HH:MM"
+  heureFermeture?: string; // "HH:MM"
+  joursOuverture?: string; // ex : "0,1,2,3,4" (0 = lundi)
+  delaiLivraisonTexte?: string;
+  // Où le partenaire reçoit ses reversements
+  numeroReversement?: string;
+  operateurReversement?: 'WAVE' | 'ORANGE_MONEY';
 }
 
 export interface ReponseAuthentification {

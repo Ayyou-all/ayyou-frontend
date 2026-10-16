@@ -26,8 +26,7 @@ export interface RestaurantAdministration {
   codeId: string; // ex: 'ID: REST-2'
   categorie: string; // ex: 'Cuisine Sénégalaise', 'Fast Food', etc.
   tagCategorieFiltre: 'FAST_FOOD' | 'LOCAL' | 'ASIATIQUE' | 'DESSERTS' | 'AUTRE';
-  localisation: string; // ex: 'Plateau, Dakar'
-  note: number; // ex: 4.8
+  localisation: string; // ex: 'Plateau, Dakar' // ex: 4.8
   statut: StatutRestaurantAdmin;
   logoIcone: string;
   fondLogo: string;
@@ -86,14 +85,11 @@ export class RestaurantsAdminComponent implements OnInit {
     const nbEnAttente = restos.filter((r) => r.statut === 'EN_ATTENTE').length;
     const nbInactifs = restos.filter((r) => r.statut === 'INACTIF').length;
 
-    const notes = restos.map((r) => r.note).filter((n) => n > 0);
-    const moyenne = notes.length > 0 ? (notes.reduce((a, b) => a + b, 0) / notes.length).toFixed(1) : '4.8';
-
     return {
       actifs: { valeur: nbActifs, evolution: `+${nbActifs}` },
       enAttente: { valeur: nbEnAttente, evolution: nbEnAttente > 0 ? 'Nouveau' : '0' },
       inactifs: { valeur: nbInactifs < 10 ? `0${nbInactifs}` : `${nbInactifs}`, evolution: '-0' },
-      moyenneNotes: { valeur: `${moyenne}/5`, evolution: 'Top' }
+      commandesTotales: { valeur: restos.reduce((total, r) => total + (r.totalCommandes ?? 0), 0) }
     };
   });
 
@@ -133,8 +129,7 @@ export class RestaurantsAdminComponent implements OnInit {
             codeId: `ID: REST-${e.id}`,
             categorie: cat,
             tagCategorieFiltre: tag,
-            localisation: e.quartier_ville || e.adresse || 'Dakar',
-            note: Number(e.noteMoyenne) || 4.8,
+            localisation: e.quartier_ville || e.adresse || '',
             statut: statut,
             logoIcone: 'fa-solid fa-utensils',
             fondLogo: statut === 'ACTIF' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600',
@@ -142,9 +137,7 @@ export class RestaurantsAdminComponent implements OnInit {
             adresseLogo: e.adresse_logo || e.logo || null,
             adresseCouverture: e.adresse_couverture || e.couverture || null,
             totalCommandes: e.totalCommandes || 0,
-            platsMenu: (e.platsMenu && e.platsMenu.length > 0) ? e.platsMenu : [
-              { nom: 'Plat Signature Maison', description: 'Préparé à base d’ingrédients frais locaux', prix: 4500 }
-            ]
+            platsMenu: e.platsMenu || []
           };
         });
 
