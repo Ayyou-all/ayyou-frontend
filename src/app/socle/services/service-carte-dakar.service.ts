@@ -156,4 +156,27 @@ export class ServiceCarteDakarService {
       iconAnchor: [24, 60]
     });
   }
+
+  /**
+   * Calcule l'itinéraire routier réel via le moteur de routage public OSRM.
+   * Retourne la liste des coordonnées GPS pour tracer une polyligne routière précise.
+   */
+  async obtenirItineraireRoutier(
+    depart: [number, number],
+    arrivee: [number, number]
+  ): Promise<[number, number][]> {
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${depart[1]},${depart[0]};${arrivee[1]},${arrivee[0]}?overview=full&geometries=geojson`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.routes && data.routes.length > 0 && data.routes[0].geometry?.coordinates) {
+          return data.routes[0].geometry.coordinates.map((pt: [number, number]) => [pt[1], pt[0]]);
+        }
+      }
+    } catch {
+      // Repli direct
+    }
+    return [depart, arrivee];
+  }
 }
