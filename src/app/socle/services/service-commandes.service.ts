@@ -271,6 +271,17 @@ export class ServiceCommandesService {
   }
 
   /**
+   * Annule la commande (autorisé par le serveur seulement avant l'acceptation du restaurant).
+   * Si elle était payée, le serveur demande aussi le remboursement à PayTech.
+   */
+  annulerCommande(identifiant: string | number, motif: string = ''): Observable<CommandeClient> {
+    return this.http.post<any>(`${environment.apiUrl}/commandes/${identifiant}/annuler/`, { motif }).pipe(
+      map((reponse) => this.adapterCommande(reponse)),
+      tap((commande) => this.ajouterCommande(commande))
+    );
+  }
+
+  /**
    * Démarre la session de paiement PayTech sécurisée pour la commande.
    */
   initierPaiementPayTech(commandeId: number | string): Observable<any> {
