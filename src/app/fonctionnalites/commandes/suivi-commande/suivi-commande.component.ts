@@ -200,6 +200,17 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
 
       // Écoute temps réel : actualisation de la commande depuis la base toutes les 4 secondes
       this.intervallePolling = setInterval(() => {
+        const cmdCourante = this.commande();
+        if (cmdCourante.statutBrut === 'LIVREE' || cmdCourante.statutBrut === 'REFUSEE_ANNULEE') {
+          if (this.intervallePolling) {
+            clearInterval(this.intervallePolling);
+            this.intervallePolling = null;
+          }
+          return;
+        }
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          return;
+        }
         this.serviceCommandes.rechargerCommande(id);
       }, 4000);
     }
