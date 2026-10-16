@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -118,11 +118,38 @@ export class ValidationsComponent implements OnInit {
 
   private readonly sanitizer = inject(DomSanitizer);
 
+  /**
+   * Les pièces justificatives sont privées : leur URL d'API exige le jeton JWT.
+   * Une balise <img> ou <iframe> ne peut pas l'envoyer, donc on télécharge le fichier
+   * avec HttpClient (l'intercepteur ajoute le jeton) puis on l'affiche via une URL locale « blob: ».
+   */
+  readonly urlFichierLocal = signal<string | null>(null);
+  readonly erreurChargementDocument = signal<string | null>(null);
+
   readonly urlDocumentSecurisee = computed<SafeResourceUrl | null>(() => {
-    const doc = this.documentEnConsultation();
-    if (!doc || !doc.urlFichier) return null;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(doc.urlFichier);
+    const url = this.urlFichierLocal();
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
   });
+
+  constructor() {
+    effect(() => {
+      const doc = this.documentEnConsultation();
+      untracked(() => this.chargerFichierProtege(doc));
+    });
+  }
+
+  private chargerFichierProtege(doc: DocumentPartenaire | null): void {
+    const ancienneUrl = this.urlFichierLocal();
+    if (ancienneUrl) URL.revokeObjectURL(ancienneUrl);
+    this.urlFichierLocal.set(null);
+    this.erreurChargementDocument.set(null);
+    if (!doc || !doc.urlFichier) return;
+
+    this.http.get(doc.urlFichier, { responseType: 'blob' }).subscribe({
+      next: (fichier) => this.urlFichierLocal.set(URL.createObjectURL(fichier)),
+      error: () => this.erreurChargementDocument.set("Impossible d'ouvrir ce document. Vérifiez votre connexion.")
+    });
+  }
 
   ngOnInit(): void {
     this.chargerPartenaires();
@@ -620,9 +647,10 @@ export class ValidationsComponent implements OnInit {
 
   telechargerDocumentActuel(): void {
     const doc = this.documentEnConsultation();
-    if (!doc || !doc.urlFichier) return;
+    const url = this.urlFichierLocal();
+    if (!doc || !url) return;
     const a = document.createElement('a');
-    a.href = doc.urlFichier;
+    a.href = url;
     a.target = '_blank';
     a.download = doc.nomFichier || doc.nom || 'document_ayyou';
     document.body.appendChild(a);
@@ -633,16 +661,16 @@ export class ValidationsComponent implements OnInit {
   }
 
   ouvrirFichierNouvelOnglet(): void {
-    const doc = this.documentEnConsultation();
-    if (!doc || !doc.urlFichier) return;
-    window.open(doc.urlFichier, '_blank');
+    const url = this.urlFichierLocal();
+    if (url) window.open(url, '_blank');
   }
 
   imprimerDocumentActuel(): void {
     const doc = this.documentEnConsultation();
-    if (!doc || !doc.urlFichier) return;
+    const url = this.urlFichierLocal();
+    if (!doc || !url) return;
     if (doc.type === 'PDF') {
-      window.open(doc.urlFichier, '_blank');
+      window.open(url, '_blank');
     } else {
       const fenetre = window.open('', '_blank');
       if (fenetre) {
@@ -657,7 +685,7 @@ export class ValidationsComponent implements OnInit {
               </style>
             </head>
             <body>
-              <img src="${doc.urlFichier}" onload="window.print(); window.close();" />
+              <img src="${url}" onload="window.print(); window.close();" />
             </body>
           </html>
         `);

@@ -30,7 +30,7 @@ export interface PropositionLivraison {
   clientTelephone: string; // Ex: "+221 77 821 44 90"
   clientAdresse: string; // Ex: "Almadies, Villa 45"
   clientInstructions?: string; // Ex: "Sonner à l'entrée, 2ème étage à droite."
-  distanceKm: number; // Ex: 3.2
+  distanceKm: number | null; // Distance restaurant → client (null si une position manque)
   gainFcfa: number; // Ex: 1500
   tempsRestantSec: number; // Ex: 22
   tempsTrajetMin: number; // Ex: 6
