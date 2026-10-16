@@ -279,4 +279,51 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       expect(res).toBe(true);
     });
   });
+
+  describe('G. Fiabilité Session & Rafraîchissement automatique des tokens', () => {
+    it('doit récupérer les jetons d accès et rafraîchissement depuis le stockage', () => {
+      localStorage.setItem('ayyou_jeton_acces', 'mon-token-acces');
+      localStorage.setItem('ayyou_jeton_rafraichissement', 'mon-token-refresh');
+
+      expect(serviceAuth.obtenirJetonAcces()).toBe('mon-token-acces');
+      expect(serviceAuth.obtenirJetonRafraichissement()).toBe('mon-token-refresh');
+    });
+
+    it('doit déclencher une déconnexion immédiate si aucun jeton de rafraîchissement n est disponible', async () => {
+      localStorage.removeItem('ayyou_jeton_rafraichissement');
+
+      try {
+        await firstValueFrom(serviceAuth.rafraichirJetonAcces());
+        expect.unreachable('Devrait échouer car pas de refresh token');
+      } catch (err: any) {
+        expect(err.message).toContain('Aucun jeton de rafraîchissement');
+        expect(serviceAuth.utilisateurConnecte()).toBeNull();
+      }
+    });
+
+    it('doit empêcher une commande remise au livreur de réapparaître dans le Kanban', () => {
+      serviceRestaurant.commandesKanban.set([
+        {
+          idInterne: 101,
+          numero: '#CMD-101',
+          clientNom: 'Fatou',
+          totalMontant: '5 000 FCFA',
+          totalValeurNumerique: 5000,
+          typeLivraison: 'LIVRAISON',
+          statut: 'PRETES',
+          articles: [{ nom: 'Thiéboudienne', quantite: 1 }]
+        }
+      ]);
+
+      expect(serviceRestaurant.commandesPretes().length).toBe(1);
+
+      // Le gérant remet le colis au coursier
+      serviceRestaurant.remettreAuLivreur('#CMD-101');
+
+      expect(serviceRestaurant.commandesPretes().length).toBe(0);
+      expect(serviceRestaurant.historiqueCommandes().length).toBe(1);
+      expect(serviceRestaurant.historiqueCommandes()[0].numero).toBe('#CMD-101');
+      expect(serviceRestaurant.historiqueCommandes()[0].statut).toBe('EN_COURS');
+    });
+  });
 });

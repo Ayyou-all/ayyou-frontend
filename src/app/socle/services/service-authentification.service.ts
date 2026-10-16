@@ -285,6 +285,62 @@ export class ServiceAuthentification {
   }
 
   /**
+   * Retourne le jeton d'accès actuel depuis le stockage local.
+   */
+  obtenirJetonAcces(): string | null {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem(CLE_STOCKAGE_JETON);
+    }
+    return null;
+  }
+
+  /**
+   * Retourne le jeton de rafraîchissement depuis le stockage local.
+   */
+  obtenirJetonRafraichissement(): string | null {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem(CLE_STOCKAGE_RAFRAICHISSEMENT);
+    }
+    return null;
+  }
+
+  /**
+   * Rafraîchit le jeton d'accès expiré auprès de Django REST Framework (/api/authentification/rafraichir/).
+   * Sauvegarde le nouveau jeton d'accès et fait la rotation du jeton de rafraîchissement.
+   */
+  rafraichirJetonAcces(): Observable<string> {
+    const jetonRafraichissement = this.obtenirJetonRafraichissement();
+    if (!jetonRafraichissement) {
+      this.deconnecter();
+      return throwError(() => new Error('Aucun jeton de rafraîchissement disponible.'));
+    }
+
+    return this.http
+      .post<{ jeton_acces: string; jeton_rafraichissement?: string }>(
+        `${environment.apiUrl}/authentification/rafraichir/`,
+        { jeton_rafraichissement: jetonRafraichissement }
+      )
+      .pipe(
+        map((reponse) => {
+          if (!reponse?.jeton_acces) {
+            throw new Error('Jeton d\'accès absent de la réponse du serveur.');
+          }
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem(CLE_STOCKAGE_JETON, reponse.jeton_acces);
+            if (reponse.jeton_rafraichissement) {
+              localStorage.setItem(CLE_STOCKAGE_RAFRAICHISSEMENT, reponse.jeton_rafraichissement);
+            }
+          }
+          return reponse.jeton_acces;
+        }),
+        catchError((erreur) => {
+          this.deconnecter();
+          return throwError(() => erreur);
+        })
+      );
+  }
+
+  /**
    * Sauvegarde les informations de session dans le stockage local.
    */
   sauvegarderSession(reponse: ReponseAuthentification): void {

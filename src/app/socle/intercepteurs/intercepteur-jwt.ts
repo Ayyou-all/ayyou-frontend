@@ -1,43 +1,96 @@
 /**
- * Intercepteur HTTP pour l'injection du jeton JWT d'accès Django REST Framework.
+ * Intercepteur HTTP pour l'injection du jeton JWT d'accès Django REST Framework
+ * et renouvellement automatique silencieux en cas d'expiration (401).
  * Tous les termes sont rédigés en français selon les standards du projet AYYOU.
  */
 
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, filter, switchMap, take, throwError } from 'rxjs';
+import { ServiceAuthentification } from '../services/service-authentification.service';
 
-const CLE_STOCKAGE_JETON = 'ayyou_jeton_acces';
-const CLE_STOCKAGE_UTILISATEUR = 'ayyou_utilisateur_connecte';
+let estEnCoursDeRafraichissement = false;
+const jetonRafraichi$ = new BehaviorSubject<string | null>(null);
 
-export const intercepteurJwt: HttpInterceptorFn = (requete, suivant) => {
-  const routeur = inject(Router);
+function clonerRequeteAvecJeton(requete: HttpRequest<unknown>, jeton: string): HttpRequest<unknown> {
+  return requete.clone({
+    setHeaders: {
+      Authorization: `Bearer ${jeton}`
+    }
+  });
+}
 
-  let jetonAcces: string | null = null;
-  if (typeof window !== 'undefined' && window.localStorage) {
-    jetonAcces = localStorage.getItem(CLE_STOCKAGE_JETON);
+function gererErreur401(
+  requete: HttpRequest<unknown>,
+  suivant: HttpHandlerFn,
+  serviceAuth: ServiceAuthentification
+) {
+  // S'il n'y a pas de jeton de rafraîchissement en stock, déconnexion immédiate
+  if (!serviceAuth.obtenirJetonRafraichissement()) {
+    serviceAuth.deconnecter();
+    return throwError(() => new Error('Session expirée (aucun jeton de rafraîchissement).'));
   }
 
-  // Injecter le Bearer token si présent et non déjà renseigné
+  if (!estEnCoursDeRafraichissement) {
+    estEnCoursDeRafraichissement = true;
+    jetonRafraichi$.next(null);
+
+    return serviceAuth.rafraichirJetonAcces().pipe(
+      switchMap((nouveauJeton: string) => {
+        estEnCoursDeRafraichissement = false;
+        jetonRafraichi$.next(nouveauJeton);
+        return suivant(clonerRequeteAvecJeton(requete, nouveauJeton));
+      }),
+      catchError((erreurRafraichissement) => {
+        estEnCoursDeRafraichissement = false;
+        jetonRafraichi$.next(null);
+        serviceAuth.deconnecter();
+        return throwError(() => erreurRafraichissement);
+      })
+    );
+  }
+
+  // Si un rafraîchissement est déjà en cours par une autre requête concurrente,
+  // on attend que le nouveau jeton soit émis puis on rejoue la requête
+  return jetonRafraichi$.pipe(
+    filter((jeton): jeton is string => jeton !== null),
+    take(1),
+    switchMap((nouveauJeton) => suivant(clonerRequeteAvecJeton(requete, nouveauJeton)))
+  );
+}
+
+export const intercepteurJwt: HttpInterceptorFn = (requete, suivant) => {
+  const serviceAuth = inject(ServiceAuthentification);
+
+  // Pour l'appel de rafraîchissement ou de connexion, on n'ajoute pas de Bearer expiré
+  const estRequeteRafraichissement = requete.url.includes('/authentification/rafraichir/');
+  const estRequeteConnexion = requete.url.includes('/authentification/connexion/');
+  const estRequeteInscription = requete.url.includes('/authentification/inscription/');
+
+  const jetonAcces = serviceAuth.obtenirJetonAcces();
+
   let requeteModifiee = requete;
-  if (jetonAcces && !requete.headers.has('Authorization')) {
-    requeteModifiee = requete.clone({
-      setHeaders: {
-        Authorization: `Bearer ${jetonAcces}`
-      }
-    });
+  if (jetonAcces && !requete.headers.has('Authorization') && !estRequeteRafraichissement) {
+    requeteModifiee = clonerRequeteAvecJeton(requete, jetonAcces);
   }
 
   return suivant(requeteModifiee).pipe(
     catchError((erreur: HttpErrorResponse) => {
-      // Si session expirée ou invalide sur une route protégée (401 non-connexion)
-      if (erreur.status === 401 && !requete.url.includes('/authentification/connexion/')) {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.removeItem(CLE_STOCKAGE_JETON);
-          localStorage.removeItem(CLE_STOCKAGE_UTILISATEUR);
-        }
+      // Si l'erreur est un 401 sur une requête normale (hors auth initiale / refresh)
+      if (
+        erreur.status === 401 &&
+        !estRequeteConnexion &&
+        !estRequeteInscription &&
+        !estRequeteRafraichissement
+      ) {
+        return gererErreur401(requete, suivant, serviceAuth);
       }
+
+      // Si le refresh lui-même renvoie une erreur (401 ou 400), on déconnecte
+      if (estRequeteRafraichissement && (erreur.status === 401 || erreur.status === 400)) {
+        serviceAuth.deconnecter();
+      }
+
       return throwError(() => erreur);
     })
   );

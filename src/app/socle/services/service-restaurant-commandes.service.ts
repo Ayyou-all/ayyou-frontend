@@ -116,6 +116,7 @@ export class ServiceRestaurantCommandesService {
 
   private intervallePolling: any = null;
   private idsCommandesConnues = new Set<string>();
+  private readonly idsCommandesRemises = new Set<string>();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -284,20 +285,35 @@ export class ServiceRestaurantCommandesService {
               bordureActive: true
             });
           } else if (c.statut === 'PRETE_POUR_RETRAIT' || c.statut === 'COURSE_ASSIGNEE' || c.statut === 'EN_VERIFICATION') {
-            kanban.push({
-              idInterne: c.id,
-              numero: numeroAffiche,
-              clientNom,
-              totalMontant: `${montant.toLocaleString('fr-FR')} FCFA`,
-              totalValeurNumerique: montant,
-              typeLivraison: 'LIVRAISON',
-              statut: 'PRETES',
-              articles,
-              coursierNom: c.livreur?.nom || 'Coursier en cours d\'assignation',
-              coursierVehicule: c.livreur?.vehicule || 'Livraison AYYOU Express',
-              coursierPhoto: c.livreur?.adressePhoto || ''
-            });
+            if (this.idsCommandesRemises.has(numeroAffiche)) {
+              // Déjà remise par le restaurant au comptoir : maintenue dans l'historique en cours
+              historique.push({
+                numero: numeroAffiche,
+                heure: heureStr,
+                clientNom,
+                type: 'LIVRAISON',
+                articlesResume,
+                statut: 'EN_COURS',
+                montantTotal: montant
+              });
+            } else {
+              kanban.push({
+                idInterne: c.id,
+                numero: numeroAffiche,
+                clientNom,
+                totalMontant: `${montant.toLocaleString('fr-FR')} FCFA`,
+                totalValeurNumerique: montant,
+                typeLivraison: 'LIVRAISON',
+                statut: 'PRETES',
+                articles,
+                coursierNom: c.livreur?.nom || 'Coursier en cours d\'assignation',
+                coursierVehicule: c.livreur?.vehicule || 'Livraison AYYOU Express',
+                coursierPhoto: c.livreur?.adressePhoto || ''
+              });
+            }
           } else {
+            // Le serveur confirme le départ en livraison ou la livraison finale
+            this.idsCommandesRemises.delete(numeroAffiche);
             // Historique
             const statutHist: StatutHistorique =
               c.statut === 'LIVREE' ? 'LIVRÉE' : c.statut === 'REFUSEE_ANNULEE' ? 'ANNULÉE' : 'EN_COURS';
@@ -477,6 +493,7 @@ export class ServiceRestaurantCommandesService {
     const cmd = this.commandesKanban().find((c) => c.numero === numero);
     if (!cmd) return;
 
+    this.idsCommandesRemises.add(numero);
     this.commandesKanban.update((liste) => liste.filter((c) => c.numero !== numero));
 
     const dateNow = new Date();
