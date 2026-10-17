@@ -30,14 +30,14 @@
       </div>
 
       <!-- Bouton rouge + Nouveau Livreur -->
-      <button
-        type="button"
-        (click)="ouvrirNouveauLivreur()"
-        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
+      <!-- Les partenaires s'inscrivent eux-mêmes ; l'admin valide leurs documents -->
+      <a
+        routerLink="/administration/validations"
+        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-2"
       >
-        <i class="fa-solid fa-plus text-xs"></i>
-        <span>Nouveau Livreur</span>
-      </button>
+        <i class="fa-solid fa-user-check text-xs"></i>
+        <span>Livreurs à valider</span>
+      </a>
     </div>
   </div>
 
@@ -52,9 +52,11 @@
         <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm shadow-2xs">
           <i class="fa-solid fa-signal"></i>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
+        @if (statsKpi().enLigne.evolution) {
+          <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
           {{ statsKpi().enLigne.evolution }}
         </span>
+        }
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En ligne</div>
@@ -70,9 +72,11 @@
         <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm shadow-2xs">
           <i class="fa-solid fa-truck-fast"></i>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-sky-50 text-sky-600 border border-sky-100">
+        @if (statsKpi().enLivraison.evolution) {
+          <span class="px-2.5 py-1 rounded-full text-xs font-black bg-sky-50 text-sky-600 border border-sky-100">
           {{ statsKpi().enLivraison.evolution }}
         </span>
+        }
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En livraison</div>
@@ -529,92 +533,6 @@
     </div>
   }
 
-  <!-- ========================================================================= -->
-  <!-- 9. MODALE AJOUT 'NOUVEAU LIVREUR'                                         -->
-  <!-- ========================================================================= -->
-  @if (modaleAjoutOuverte()) {
-    <div
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animation-apparition"
-      (click)="fermerNouveauLivreur()"
-    >
-      <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 relative"
-        (click)="$event.stopPropagation()"
-      >
-        <button
-          type="button"
-          (click)="fermerNouveauLivreur()"
-          class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
-        >
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
 
-        <h3 class="text-xl font-black text-slate-900 font-['Outfit']">
-          Ajouter un coursier à la flotte
-        </h3>
-
-        <div class="space-y-3.5 text-xs">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Nom complet</label>
-            <input
-              type="text"
-              [(ngModel)]="nouveauNom"
-              placeholder="Ex: Oumar Ndiaye"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
-            />
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Téléphone mobile</label>
-            <input
-              type="text"
-              [(ngModel)]="nouveauTelephone"
-              placeholder="+221 77 123 45 67"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
-            />
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Type de véhicule</label>
-            <select
-              [(ngModel)]="nouveauTypeVehicule"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 focus:outline-none focus:border-red-500"
-            >
-              <option value="MOTO">Moto / Scooter</option>
-              <option value="VELO">Vélo classique ou électrique</option>
-              <option value="VOITURE">Voiture légère</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Modèle / Marque du véhicule</label>
-            <input
-              type="text"
-              [(ngModel)]="nouveauVehicule"
-              placeholder="Ex: Yamaha Crypton 115"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
-            />
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            (click)="fermerNouveauLivreur()"
-            class="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs"
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            (click)="creerNouveauLivreur()"
-            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md"
-          >
-            Enregistrer le coursier
-          </button>
-        </div>
-      </div>
-    </div>
-  }
 
 </div>
