@@ -113,6 +113,24 @@
   <!-- ========================================================================= -->
   <main class="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-8 flex flex-col justify-center">
 
+    <!-- Sans GPS, aucune course ne peut être proposée : on le dit clairement -->
+    @if (serviceLivreur.messageErreurGps()) {
+      <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-semibold flex items-center gap-2">
+        <i class="fa-solid fa-location-crosshairs"></i>
+        <span>{{ serviceLivreur.messageErreurGps() }}</span>
+      </div>
+    }
+    @if (serviceLivreur.messageErreur()) {
+      <div class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">
+        {{ serviceLivreur.messageErreur() }}
+      </div>
+    }
+    @if (!serviceLivreur.estEnLigne()) {
+      <div class="p-4 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 text-sm font-semibold">
+        Connexion perdue. Les courses s'afficheront dès le retour du réseau.
+      </div>
+    }
+
     <!-- Bannière d'alerte si erreur serveur -->
     @if (messageErreur()) {
       <div class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold flex items-center justify-between shadow-xs animate-shake">

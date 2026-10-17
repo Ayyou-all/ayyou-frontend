@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, effect, inject, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
 import { ServiceCarteDakarService } from '../../../socle/services/service-carte-dakar.service';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
+import { SignalerProblemeComponent } from '../signaler-probleme/signaler-probleme.component';
 
 @Component({
   selector: 'app-trajet-client',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './trajet-client.component.html'
 })
 export class TrajetClientComponent implements AfterViewInit, OnDestroy {
@@ -111,12 +112,27 @@ export class TrajetClientComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  /**
-   * Arrivé chez le client : bascule vers la saisie du code de sécurité (Image 3).
-   */
+  readonly arriveeEnCours = signal<boolean>(false);
+  readonly messageErreur = signal<string | null>(null);
+
+  /** Arrivé chez le client : l'écran du PIN s'ouvre seulement si le serveur a enregistré l'arrivée. */
   arriverChezClient(): void {
-    this.serviceLivreur.avancerEtapeCourse('VALIDATION_CODE');
-    this.routeur.navigate(['/livreur/validation-code']);
+    this.arriveeEnCours.set(true);
+    this.messageErreur.set(null);
+    this.serviceLivreur.signalerArriveeClient().subscribe({
+      next: () => {
+        this.arriveeEnCours.set(false);
+        this.routeur.navigate(['/livreur/validation-code']);
+      },
+      error: (erreur) => {
+        this.arriveeEnCours.set(false);
+        this.messageErreur.set(erreur?.error?.message || 'Impossible de signaler votre arrivée. Vérifiez votre connexion.');
+      }
+    });
+  }
+
+  retourAccueil(): void {
+    this.routeur.navigate(['/livreur']);
   }
 
   /**
