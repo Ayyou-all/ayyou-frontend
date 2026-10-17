@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, HostListener, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
+import { map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ServiceCatalogueService } from '../../../socle/services/service-catalogue.service';
 import { PublicationFil } from '../../../socle/modeles/fil-actualite.modele';
@@ -52,6 +52,7 @@ export class GerantAyyouStudioComponent {
   // Recherche
   readonly rechercheTexte = signal<string>('');
   readonly chargementEnCours = signal<boolean>(false);
+  readonly messageErreur = signal<string | null>(null);
 
   // État de lecture de la vidéo aperçu dans la vue publication
   readonly estEnLecture = signal<boolean>(false);
@@ -103,13 +104,15 @@ export class GerantAyyouStudioComponent {
 
     // 1. Chargement des vidéos réelles depuis Django
     this.http.get<VideoPublieeItem[]>(`${environment.apiUrl}/publications/studio/`).pipe(
-      catchError(() => of([]))
     ).subscribe({
       next: (videos) => {
         this.listeVideosPubliees.set(videos);
         this.chargementEnCours.set(false);
       },
-      error: () => this.chargementEnCours.set(false)
+      error: () => {
+        this.chargementEnCours.set(false);
+        this.messageErreur.set('Impossible de charger les données. Vérifiez votre connexion puis réessayez.');
+      }
     });
 
     // 2. Chargement des plats réels de l'établissement
@@ -124,8 +127,7 @@ export class GerantAyyouStudioComponent {
           description: p.description || '',
           estDisponible: Boolean(p.est_disponible)
         }))
-      ),
-      catchError(() => of([]))
+      )
     ).subscribe({
       next: (plats) => {
         this.cataloguePlats.set(plats);
@@ -136,7 +138,8 @@ export class GerantAyyouStudioComponent {
             this.urlAfficheActive.set(plats[0].adresseImage);
           }
         }
-      }
+      },
+      error: () => this.messageErreur.set('Impossible de charger vos plats. Vérifiez votre connexion puis réessayez.')
     });
   }
 

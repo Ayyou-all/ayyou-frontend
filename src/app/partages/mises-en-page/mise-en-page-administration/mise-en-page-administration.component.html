@@ -77,19 +77,15 @@
       <!-- Carte du Super Administrateur (Conforme à l'image : Admin AYYOU / admin@ayyou.com) -->
       <div class="flex items-center justify-between p-2 rounded-2xl bg-slate-50/80 border border-slate-100 hover:bg-slate-100/80 transition-colors">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-200 border border-slate-200 shrink-0">
-            <img
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150"
-              alt="Admin AYYOU"
-              class="w-full h-full object-cover"
-            />
+          <div class="w-10 h-10 rounded-full bg-slate-200 border border-slate-200 shrink-0 flex items-center justify-center">
+            <i class="fa-solid fa-shield-halved text-slate-500 text-sm"></i>
           </div>
           <div class="min-w-0 text-left">
             <div class="text-xs font-black text-slate-900 truncate">
-              Admin AYYOU
+              {{ serviceAuthentification.utilisateurConnecte()?.prenom }} {{ serviceAuthentification.utilisateurConnecte()?.nom }}
             </div>
             <div class="text-[10px] font-medium text-slate-400 truncate">
-              admin@ayyou.com
+              {{ serviceAuthentification.utilisateurConnecte()?.courriel }}
             </div>
           </div>
         </div>

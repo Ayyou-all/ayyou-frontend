@@ -215,6 +215,30 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   });
 
   readonly chargementPaiement = signal<boolean>(false);
+
+  private rafraichirMaintenant?: () => void;
+
+  // Annulation : le serveur l'autorise seulement avant que le restaurant accepte la commande.
+  readonly peutAnnuler = computed(() => ['EN_ATTENTE_PAIEMENT', 'CREEE_EN_ATTENTE'].includes(this.commande().statutBrut || ''));
+  readonly confirmationAnnulation = signal<boolean>(false);
+  readonly annulationEnCours = signal<boolean>(false);
+  readonly erreurAnnulation = signal<string | null>(null);
+
+  annulerCommande(): void {
+    const commande = this.commande();
+    this.annulationEnCours.set(true);
+    this.erreurAnnulation.set(null);
+    this.serviceCommandes.annulerCommande(commande.idNumerique || commande.identifiant).subscribe({
+      next: () => {
+        this.annulationEnCours.set(false);
+        this.confirmationAnnulation.set(false);
+      },
+      error: (erreur) => {
+        this.annulationEnCours.set(false);
+        this.erreurAnnulation.set(erreur?.error?.message || "L'annulation a échoué. Vérifiez votre connexion et réessayez.");
+      }
+    });
+  }
   readonly erreurPaiement = signal<string | null>(null);
   readonly alertePaiementSucces = signal<boolean>(false);
 
@@ -324,7 +348,7 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
       // Écoute temps réel : actualisation de la commande depuis la base toutes les 4 secondes
       this.intervallePolling = setInterval(() => {
         const cmdCourante = this.commande();
-        if (cmdCourante.statutBrut === 'LIVREE' || cmdCourante.statutBrut === 'REFUSEE_ANNULEE') {
+        if (['LIVREE', 'REFUSEE_ANNULEE', 'ECHEC_LIVRAISON'].includes(cmdCourante.statutBrut || '')) {
           if (this.intervallePolling) {
             clearInterval(this.intervallePolling);
             this.intervallePolling = null;
@@ -334,8 +358,17 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           return;
         }
+        // Écran en arrière-plan : on n'utilise pas le forfait internet pour rien.
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+          return;
+        }
         this.serviceCommandes.rechargerCommande(id);
       }, 4000);
+
+      // Retour sur l'écran ou retour du réseau : état réel immédiatement.
+      this.rafraichirMaintenant = () => this.serviceCommandes.rechargerCommande(id);
+      document.addEventListener('visibilitychange', this.rafraichirMaintenant);
+      window.addEventListener('online', this.rafraichirMaintenant);
     }
   }
 
@@ -349,6 +382,10 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   ngOnDestroy(): void {
     if (this.intervallePolling) {
       clearInterval(this.intervallePolling);
+    }
+    if (this.rafraichirMaintenant) {
+      document.removeEventListener('visibilitychange', this.rafraichirMaintenant);
+      window.removeEventListener('online', this.rafraichirMaintenant);
     }
     if (this.carteLeaflet) {
       this.carteLeaflet.remove();

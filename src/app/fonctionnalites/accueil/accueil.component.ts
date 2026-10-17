@@ -6,6 +6,7 @@ import {
   OnInit,
   ViewChild,
   computed,
+  effect,
   inject,
   signal
 } from '@angular/core';
@@ -29,9 +30,25 @@ export class AccueilComponent implements OnInit {
   readonly serviceAuthentification = inject(ServiceAuthentification);
   readonly routeur = inject(Router);
 
+  // Publications déjà comptées pendant cette visite (le serveur déduplique aussi de son côté)
+  private readonly vuesEnvoyees = new Set<string>();
+
+  constructor() {
+    // Une vue est enregistrée dès qu'une publication est affichée à l'écran.
+    effect(() => {
+      const identifiant = this.publicationCourante()?.identifiant;
+      if (identifiant && !this.vuesEnvoyees.has(identifiant)) {
+        this.vuesEnvoyees.add(identifiant);
+        this.serviceCatalogue.enregistrerVue(identifiant);
+      }
+    });
+  }
+
   ngOnInit(): void {
     // Actualisation automatique du fil d'actualité pour récupérer les nouveaux Reels
-    this.serviceCatalogue.chargerPublicationsFil().subscribe();
+    this.serviceCatalogue.chargerPublicationsFil().subscribe({
+      error: () => this.serviceCatalogue.messageErreur.set('Impossible de charger les vidéos. Vérifiez votre connexion.')
+    });
   }
 
   // Plat actuellement en consultation via le modal (Image 1)
@@ -220,16 +237,27 @@ export class AccueilComponent implements OnInit {
     if (!this.serviceAuthentification.estAuthentifie()) {
       this.serviceAuthentification.exigerAuthentification(
         'LIKE',
-        () => this.serviceCatalogue.basculerJaimePublication(pub.identifiant),
+        () => this.envoyerJaime(pub.identifiant),
         {
           titre: `Aimez ${pub.plat.nom}`,
-          description: `Connectez-vous pour liker ce plat de ${pub.plat.nomRestaurant} et l'ajouter à vos favoris.`
+          description: `Connectez-vous pour liker ce plat de ${pub.plat.nomRestaurant}.`
         }
       );
       return;
     }
 
-    this.serviceCatalogue.basculerJaimePublication(pub.identifiant);
+    this.envoyerJaime(pub.identifiant);
+  }
+
+  private envoyerJaime(identifiant: string): void {
+    this.serviceCatalogue.basculerJaimePublication(identifiant).subscribe({
+      error: () => this.afficherMessage("Impossible d'enregistrer votre j'aime. Vérifiez votre connexion.")
+    });
+  }
+
+  private afficherMessage(message: string): void {
+    this.notificationAjoutPanier.set(message);
+    setTimeout(() => this.notificationAjoutPanier.set(null), 2500);
   }
 
   /**
@@ -320,15 +348,24 @@ export class AccueilComponent implements OnInit {
    * Exécution réelle du partage du plat.
    */
   private procederAuPartagePlat(): void {
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      navigator.share({
-        title: this.publicationCourante()?.plat.nom,
-        text: this.publicationCourante()?.descriptionAccroche,
-        url: window.location.href
-      }).catch(() => {});
-    } else {
-      this.notificationAjoutPanier.set('Lien copié dans le presse-papier !');
-      setTimeout(() => this.notificationAjoutPanier.set(null), 2000);
+    const pub = this.publicationCourante();
+    if (!pub) return;
+    const lien = `${window.location.origin}/restaurant/${pub.identifiantRestaurant}`;
+    if (navigator.share) {
+      navigator
+        .share({ title: pub.plat?.nom, text: pub.descriptionAccroche, url: lien })
+        .then(() => this.serviceCatalogue.enregistrerPartage(pub.identifiant))
+        .catch(() => {
+          // Partage annulé par l'utilisateur : rien à compter.
+        });
+      return;
     }
+    navigator.clipboard
+      .writeText(lien)
+      .then(() => {
+        this.serviceCatalogue.enregistrerPartage(pub.identifiant);
+        this.afficherMessage('Lien copié dans le presse-papier !');
+      })
+      .catch(() => this.afficherMessage('Impossible de copier le lien sur cet appareil.'));
   }
 }

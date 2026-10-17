@@ -1,5 +1,9 @@
 <div class="space-y-8 max-w-7xl mx-auto">
 
+  @if (messageErreur()) {
+    <div class="p-3 rounded-2xl bg-red-50 border border-red-200 text-sm font-semibold text-red-700">{{ messageErreur() }}</div>
+  }
+
   <!-- ========================================================================= -->
   <!-- 1. GRILLE DES 4 CARTES KPI (CONFORME À L'IMAGE 1)                         -->
   <!-- ========================================================================= -->

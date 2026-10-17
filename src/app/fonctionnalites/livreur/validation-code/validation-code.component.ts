@@ -2,17 +2,16 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
-import { ServiceRestaurantCommandesService } from '../../../socle/services/service-restaurant-commandes.service';
+import { SignalerProblemeComponent } from '../signaler-probleme/signaler-probleme.component';
 
 @Component({
   selector: 'app-validation-code',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './validation-code.component.html'
 })
 export class ValidationCodeComponent {
   readonly serviceLivreur = inject(ServiceLivreurService);
-  private readonly serviceRestaurant = inject(ServiceRestaurantCommandesService);
   readonly routeur = inject(Router);
 
   // Chiffres saisis par le livreur
@@ -41,7 +40,7 @@ export class ValidationCodeComponent {
   // Résumé réel des articles commandés
   readonly articlesResume = computed(() => {
     const articles = this.serviceLivreur.courseEnCours()?.articles;
-    if (!articles || articles.length === 0) return 'Articles de la commande';
+    if (!articles || articles.length === 0) return '';
     return articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
   });
 
@@ -75,60 +74,34 @@ export class ValidationCodeComponent {
   }
 
   /**
-   * Valide la livraison avec le code saisi et vérifie sa conformité.
-   * En cas de code incorrect, la livraison n'est PAS clôturée et une alerte explicite est affichée.
-   */
-  /**
-   * Valide la livraison avec le code saisi et vérifie sa conformité auprès du backend Django.
-   * En cas de code incorrect, la livraison n'est PAS clôturée et une alerte explicite est affichée.
+   * Envoie le PIN au serveur, seul juge du code (nombre d'essais limité).
+   * La livraison n'est terminée que si le serveur répond OK.
    */
   confirmerLivraison(): void {
     if (this.validationEnCours() || this.livraisonReussie()) return;
-
-    const courseActive = this.serviceLivreur.courseEnCours();
-    if (!courseActive) {
-      this.messageErreur.set('Aucune commande active à valider.');
-      return;
-    }
-
     if (this.codeSaisi().length !== 4) {
       this.messageErreur.set('Veuillez saisir un code PIN à 4 chiffres.');
       return;
     }
-
     this.validationEnCours.set(true);
     this.messageErreur.set(null);
+    this.serviceLivreur.validerCode(this.codeSaisi()).subscribe({
+      next: () => {
+        this.validationEnCours.set(false);
+        this.livraisonReussie.set(true);
+        this.routeur.navigate(['/livreur/fin-livraison']);
+      },
+      error: (erreur) => {
+        this.validationEnCours.set(false);
+        this.codeSaisi.set('');
+        if (erreur?.error?.code === 'livraison_bloquee') this.serviceLivreur.livraisonBloquee.set(true);
+        this.messageErreur.set(erreur?.error?.message || 'Validation impossible. Vérifiez votre connexion et réessayez.');
+      }
+    });
+  }
 
-    this.serviceLivreur
-      .validerCodeAsync(this.codeSaisi(), courseActive.identifiantCommande)
-      .subscribe({
-        next: (verification) => {
-          this.validationEnCours.set(false);
-          if (!verification.valide) {
-            this.messageErreur.set(verification.message);
-            return;
-          }
-
-          // Propagation du statut LIVRÉE à l'historique restaurant si applicable
-          this.serviceRestaurant.marquerCommandeLivreeParLivreur(
-            courseActive.identifiantCommande
-          );
-
-          // Affichage visuel du succès puis transition maîtrisée
-          this.livraisonReussie.set(true);
-          setTimeout(() => {
-            this.routeur.navigate(['/livreur/fin-livraison']);
-          }, 1200);
-        },
-        error: (err) => {
-          this.validationEnCours.set(false);
-          const detail =
-            err.error?.detail ||
-            err.error?.message ||
-            'Code PIN de confirmation incorrect. Demandez le code affiché sur l\'application du client.';
-          this.messageErreur.set(detail);
-        }
-      });
+  retourAccueil(): void {
+    this.routeur.navigate(['/livreur']);
   }
 
   /**

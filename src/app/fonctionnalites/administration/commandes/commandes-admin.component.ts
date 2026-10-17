@@ -1,18 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 
-export type OngletStatutCommande =
-  | 'TOUS'
-  | 'EN_ATTENTE'
-  | 'EN_COURS'
-  | 'LIVREES'
-  | 'ANNULEES';
-
+export type OngletStatutCommande = 'TOUS' | 'EN_ATTENTE' | 'EN_COURS' | 'LIVREES' | 'ANNULEES' | 'SANS_LIVREUR' | 'A_REMBOURSER';
 export type StatutCommandeAdmin = 'EN_ATTENTE' | 'EN_COURS' | 'LIVREE' | 'ANNULEE';
+export type ActionSupport = 'annuler' | 'rembourser' | 'assigner-livreur' | 'retirer-livreur' | 'debloquer';
 
 export interface ArticleCommandeAdmin {
   nom: string;
@@ -20,28 +15,54 @@ export interface ArticleCommandeAdmin {
   prixUnitaire: number;
 }
 
+export interface EtapeHistorique {
+  date: string;
+  ancienStatut: string;
+  nouveauStatut: string;
+  auteur: string;
+  commentaire: string;
+}
+
+/** Commande telle que renvoyée par GET /api/administration/commandes/ (aucune valeur inventée). */
 export interface CommandeAdministration {
+  id: number;
   identifiantCommande: string;
   clientNom: string;
-  clientPhoto: string;
+  clientPhoto: string | null;
   clientTelephone: string;
   restaurantNom: string;
   restaurantAdresse: string;
-  coursierNom: string;
-  coursierPhoto?: string;
-  coursierTelephone?: string;
+  coursierNom: string | null;
+  coursierPhoto: string | null;
+  coursierTelephone: string | null;
   estCoursierAssigne: boolean;
   totalMontant: string;
   totalValeurNumerique: number;
+  sousTotalFcfa: number;
+  fraisLivraisonFcfa: number;
   statut: StatutCommandeAdmin;
+  statutDetaille: string;
   libelleStatut: string;
+  libelleStatutDetaille: string;
   classeStatut: string;
   dateAffichage: string;
   adresseLivraison: string;
-  articles: ArticleCommandeAdmin[];
+  repereLivraison: string;
+  motif: string;
   methodePaiement: string;
+  paiementConfirme: boolean;
+  paiementARembourser: boolean;
+  remiseConfirmee: boolean;
+  livraisonBloquee: boolean; // 5 codes PIN erronés
+  articles: ArticleCommandeAdmin[];
+  historique: EtapeHistorique[];
 }
 
+/**
+ * Supervision des commandes par le support.
+ * Pagination, filtres et recherche sont faits par le serveur ; chaque action est confirmée
+ * par le serveur puis la commande est rechargée (succès ou erreur réelle affichés).
+ */
 @Component({
   selector: 'app-commandes-admin',
   standalone: true,
@@ -51,222 +72,180 @@ export interface CommandeAdministration {
 export class CommandesAdminComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly url = `${environment.apiUrl}/administration/`;
 
-  // Onglet sélectionné
   readonly ongletActif = signal<OngletStatutCommande>('TOUS');
-
-  // Filtre textuel
   readonly rechercheTexte = signal<string>('');
-
-  // Date sélectionnée
-  readonly dateSelectionnee = signal<string>('Toutes les dates');
-
-  // Pagination
+  readonly dateSelectionnee = signal<string>(''); // AAAA-MM-JJ, vide = toutes les dates
   readonly pageActuelle = signal<number>(1);
-  readonly elementsParPage = 6;
+  readonly nombrePagesTotal = signal<number>(1);
+  readonly nombreTotal = signal<number>(0);
 
-  // Modale de détail d'une commande
+  readonly commandesAffichees = signal<CommandeAdministration[]>([]);
+  readonly chargementEnCours = signal<boolean>(false);
+  readonly messageErreur = signal<string | null>(null);
+  readonly notificationSucces = signal<string | null>(null);
+
+  readonly statsKpi = signal({ enAttente: 0, enCours: 0, livrees: 0, annulees: 0, aRembourser: 0 });
+
+  // Détail et actions
   readonly commandeEnDetail = signal<CommandeAdministration | null>(null);
   readonly modaleDetailOuverte = signal<boolean>(false);
-
-  // Modale de nouvelle commande
-  readonly modaleNouvelleCommandeOuverte = signal<boolean>(false);
-  readonly nouveauClientNom = signal<string>('');
-  readonly nouveauRestaurantNom = signal<string>('Le Ryad Dakar');
-  readonly nouveauMontant = signal<number>(12500);
-  readonly nouvelleAdresse = signal<string>('Plateau, Rue Carnot');
-
-  // Notification d'action
-  readonly notificationSucces = signal<string | null>(null);
-  readonly chargementEnCours = signal<boolean>(false);
-
-  // Liste des commandes réelles
-  readonly listeCommandes = signal<CommandeAdministration[]>([]);
-
-  // Liste des coursiers disponibles
   readonly livreurs = signal<any[]>([]);
+  readonly livreurChoisi = signal<string>('');
+  readonly motifAction = signal<string>('');
+  readonly actionEnCours = signal<boolean>(false);
+  readonly erreurAction = signal<string | null>(null);
 
-  // Cartes KPI dynamiques calculées depuis les données réelles
-  readonly statsKpi = computed(() => {
-    const list = this.listeCommandes();
-    const enAttente = list.filter((c) => c.statut === 'EN_ATTENTE').length;
-    const enCours = list.filter((c) => c.statut === 'EN_COURS').length;
-    const livrees = list.filter((c) => c.statut === 'LIVREE').length;
-    const annulees = list.filter((c) => c.statut === 'ANNULEE').length;
-
-    return {
-      enAttente: { valeur: enAttente, evolution: enAttente > 0 ? `+${enAttente}` : '0' },
-      enCours: { valeur: enCours, evolution: enCours > 0 ? `+${enCours}` : '0' },
-      livrees: { valeur: livrees, evolution: livrees > 0 ? `+${livrees}` : '0' },
-      annulees: { valeur: annulees < 10 ? `0${annulees}` : `${annulees}`, evolution: '-0%' }
-    };
-  });
+  private minuterieRecherche?: any;
 
   ngOnInit(): void {
     this.chargerCommandes();
-    this.chargerLivreurs();
-
+    this.chargerStatistiques();
     const intervalle = setInterval(() => {
       this.chargerCommandes(true);
-    }, 10000);
-
-    this.destroyRef.onDestroy(() => {
-      clearInterval(intervalle);
-    });
+      this.chargerStatistiques();
+    }, 15000);
+    this.destroyRef.onDestroy(() => clearInterval(intervalle));
   }
 
-  chargerLivreurs(): void {
-    this.http.get<any[]>(`${environment.apiUrl}/administration/livreurs/`).subscribe({
-      next: (donnees) => {
-        const items = Array.isArray(donnees) ? donnees : ((donnees as any)?.results || []);
-        this.livreurs.set(items);
-      },
-      error: () => {}
+  chargerStatistiques(): void {
+    this.http.get<any>(`${this.url}statistiques/`).subscribe({
+      next: (s) =>
+        this.statsKpi.set({
+          enAttente: s.commandesEnAttente ?? 0,
+          enCours: s.commandesActives ?? 0,
+          livrees: s.commandesLivrees ?? 0,
+          annulees: s.commandesAnnulees ?? 0,
+          aRembourser: s.commandesARembourser ?? 0
+        }),
+      error: () => {
+        // Les indicateurs sont secondaires : l'erreur de la liste suffit à prévenir.
+      }
     });
   }
 
   chargerCommandes(silencieux: boolean = false): void {
-    if (!silencieux) {
-      this.chargementEnCours.set(true);
-    }
-    this.http.get<any>(`${environment.apiUrl}/administration/commandes/`).subscribe({
-      next: (donnees) => {
-        const items = Array.isArray(donnees) ? donnees : (donnees?.results || []);
-        const liste: CommandeAdministration[] = items.map((cmd: any) => ({
-          identifiantCommande: cmd.identifiantCommande || `#ORD-${cmd.id}`,
-          clientNom: cmd.clientNom || 'Client AYYOU',
-          clientPhoto: cmd.clientPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          clientTelephone: cmd.clientTelephone || '',
-          restaurantNom: cmd.restaurantNom || 'Restaurant Partenaire',
-          restaurantAdresse: cmd.restaurantAdresse || 'Dakar',
-          coursierNom: cmd.coursierNom || 'Non assigné',
-          coursierPhoto: cmd.coursierPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-          coursierTelephone: cmd.coursierTelephone || '',
-          estCoursierAssigne: !!cmd.estCoursierAssigne,
-          totalMontant: cmd.totalMontant || `${cmd.totalValeurNumerique || 0} FCFA`,
-          totalValeurNumerique: cmd.totalValeurNumerique || 0,
-          statut: (cmd.statut as StatutCommandeAdmin) || 'EN_COURS',
-          libelleStatut: cmd.libelleStatut || 'En cours',
-          classeStatut: cmd.classeStatut || 'bg-amber-50 text-amber-700 border-amber-200/60',
-          dateAffichage: cmd.dateAffichage || 'Récent',
-          adresseLivraison: cmd.adresseLivraison || 'Dakar',
-          methodePaiement: cmd.methodePaiement || 'WAVE',
-          articles: cmd.articles || []
-        }));
+    if (!silencieux) this.chargementEnCours.set(true);
+    const params: Record<string, string> = { statut: this.ongletActif(), page: String(this.pageActuelle()) };
+    if (this.rechercheTexte().trim()) params['recherche'] = this.rechercheTexte().trim();
+    if (this.dateSelectionnee()) params['date'] = this.dateSelectionnee();
 
-        this.listeCommandes.set(liste);
+    this.http.get<any>(`${this.url}commandes/`, { params }).subscribe({
+      next: (reponse) => {
+        this.commandesAffichees.set(reponse.results || []);
+        this.nombreTotal.set(reponse.count || 0);
+        this.nombrePagesTotal.set(Math.max(1, Math.ceil((reponse.count || 0) / 20)));
+        this.messageErreur.set(null);
         this.chargementEnCours.set(false);
+        // Garder la fenêtre de détail à jour si elle est ouverte
+        const ouverte = this.commandeEnDetail();
+        const aJour = ouverte && (reponse.results || []).find((c: CommandeAdministration) => c.id === ouverte.id);
+        if (aJour) this.commandeEnDetail.set(aJour);
       },
-      error: (err) => {
-        console.error('Erreur chargement commandes:', err);
+      error: () => {
         this.chargementEnCours.set(false);
+        this.messageErreur.set('Impossible de charger les commandes. Vérifiez votre connexion.');
       }
     });
   }
 
-  // Filtrage selon onglet et recherche textuelle
-  readonly commandesFiltrees = computed(() => {
-    const onglet = this.ongletActif();
-    const recherche = this.rechercheTexte().trim().toLowerCase();
-
-    return this.listeCommandes().filter((cmd) => {
-      // Filtre d'onglet
-      if (onglet === 'EN_ATTENTE' && cmd.statut !== 'EN_ATTENTE') return false;
-      if (onglet === 'EN_COURS' && cmd.statut !== 'EN_COURS') return false;
-      if (onglet === 'LIVREES' && cmd.statut !== 'LIVREE') return false;
-      if (onglet === 'ANNULEES' && cmd.statut !== 'ANNULEE') return false;
-
-      // Filtre textuel
-      if (recherche) {
-        const idMatch = (cmd.identifiantCommande || '').toLowerCase().includes(recherche);
-        const clientMatch = (cmd.clientNom || '').toLowerCase().includes(recherche);
-        const restoMatch = (cmd.restaurantNom || '').toLowerCase().includes(recherche);
-        const coursierMatch = (cmd.coursierNom || '').toLowerCase().includes(recherche);
-        if (!idMatch && !clientMatch && !restoMatch && !coursierMatch) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  });
-
-  // Pagination dynamique
-  readonly commandesAffichees = computed(() => {
-    const debut = (this.pageActuelle() - 1) * this.elementsParPage;
-    return this.commandesFiltrees().slice(debut, debut + this.elementsParPage);
-  });
-
-  readonly nombrePagesTotal = computed(() => {
-    return Math.ceil(this.commandesFiltrees().length / this.elementsParPage) || 1;
-  });
-
-  consulterDetail(cmd: CommandeAdministration): void {
-    this.commandeEnDetail.set(cmd);
-    this.modaleDetailOuverte.set(true);
-  }
-
-  ouvrirDetailCommande(cmd: CommandeAdministration): void {
-    this.consulterDetail(cmd);
-  }
-
-  fermerDetail(): void {
-    this.modaleDetailOuverte.set(false);
-    this.commandeEnDetail.set(null);
-  }
-
-  fermerDetailCommande(): void {
-    this.fermerDetail();
-  }
-
-  assignerCoursier(nom?: string): void {
-    const cmd = this.commandeEnDetail();
-    if (!cmd) return;
-
-    let coursier = nom;
-    if (!coursier) {
-      const premier = this.livreurs()[0];
-      coursier = premier?.nomComplet || premier?.nom || 'Coursier Partenaire';
-    }
-
-    this.notificationSucces.set(`Coursier ${coursier} assigné à la commande ${cmd.identifiantCommande}.`);
-    this.fermerDetailCommande();
-    setTimeout(() => this.notificationSucces.set(null), 3000);
-  }
-
-  assignerCoursierAutomatique(): void {
-    const cmd = this.commandeEnDetail();
-    if (!cmd) return;
-
-    this.notificationSucces.set(`Recherche d'un coursier disponible pour la commande ${cmd.identifiantCommande}...`);
-    setTimeout(() => {
-      this.notificationSucces.set(`Coursier assigné avec succès à ${cmd.identifiantCommande} !`);
-      setTimeout(() => this.notificationSucces.set(null), 3000);
-    }, 1200);
-  }
-
-  ouvrirNouvelleCommande(): void {
-    this.nouveauClientNom.set('');
-    this.modaleNouvelleCommandeOuverte.set(true);
-  }
-
-  fermerNouvelleCommande(): void {
-    this.modaleNouvelleCommandeOuverte.set(false);
-  }
-
-  creerNouvelleCommande(): void {
-    const client = this.nouveauClientNom().trim();
-    if (!client) return;
-
-    this.notificationSucces.set(`Commande créée pour "${client}".`);
-    this.fermerNouvelleCommande();
+  changerOnglet(onglet: OngletStatutCommande): void {
+    this.ongletActif.set(onglet);
+    this.pageActuelle.set(1);
     this.chargerCommandes();
-    setTimeout(() => this.notificationSucces.set(null), 3000);
+  }
+
+  changerRecherche(texte: string): void {
+    this.rechercheTexte.set(texte);
+    this.pageActuelle.set(1);
+    clearTimeout(this.minuterieRecherche);
+    this.minuterieRecherche = setTimeout(() => this.chargerCommandes(), 400);
+  }
+
+  changerDate(date: string): void {
+    this.dateSelectionnee.set(date);
+    this.pageActuelle.set(1);
+    this.chargerCommandes();
   }
 
   changerPage(page: number): void {
     if (page >= 1 && page <= this.nombrePagesTotal()) {
       this.pageActuelle.set(page);
+      this.chargerCommandes();
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Détail et actions du support
+  // ---------------------------------------------------------------------------
+
+  ouvrirDetailCommande(commande: CommandeAdministration): void {
+    this.commandeEnDetail.set(commande);
+    this.modaleDetailOuverte.set(true);
+    this.motifAction.set('');
+    this.livreurChoisi.set('');
+    this.erreurAction.set(null);
+    if (commande.statutDetaille === 'PRETE_POUR_RETRAIT' && !commande.estCoursierAssigne) this.chargerLivreursDisponibles();
+  }
+
+  fermerDetailCommande(): void {
+    this.modaleDetailOuverte.set(false);
+    this.commandeEnDetail.set(null);
+  }
+
+  /** Livreurs validés et en ligne (seuls ceux-là peuvent recevoir une course). */
+  private chargerLivreursDisponibles(): void {
+    this.http.get<any>(`${this.url}livreurs/`, { params: { statut: 'ACTIF' } }).subscribe({
+      next: (reponse) => {
+        const liste = Array.isArray(reponse) ? reponse : reponse?.results || [];
+        this.livreurs.set(liste.filter((l: any) => l.disponibilite === 'EN_LIGNE'));
+      },
+      error: () => this.livreurs.set([])
+    });
+  }
+
+  peutAnnuler(c: CommandeAdministration): boolean {
+    return !['LIVREE', 'REFUSEE_ANNULEE', 'ECHEC_LIVRAISON', 'EN_LIVRAISON', 'ARRIVE_CLIENT'].includes(c.statutDetaille);
+  }
+
+  peutRetirerLivreur(c: CommandeAdministration): boolean {
+    return c.estCoursierAssigne && ['COURSE_ASSIGNEE', 'EN_VERIFICATION'].includes(c.statutDetaille) && !c.remiseConfirmee;
+  }
+
+  executerAction(action: ActionSupport): void {
+    const commande = this.commandeEnDetail();
+    if (!commande) return;
+    const corps: Record<string, unknown> = {};
+    if (action === 'annuler' || action === 'retirer-livreur') {
+      if (!this.motifAction().trim()) {
+        this.erreurAction.set('Indiquez un motif.');
+        return;
+      }
+      corps['motif'] = this.motifAction().trim();
+    }
+    if (action === 'assigner-livreur') corps['livreur_id'] = Number(this.livreurChoisi());
+
+    this.actionEnCours.set(true);
+    this.erreurAction.set(null);
+    this.http.post<CommandeAdministration>(`${this.url}commandes/${commande.id}/${action}/`, corps).subscribe({
+      next: (miseAJour) => {
+        this.actionEnCours.set(false);
+        this.commandeEnDetail.set(miseAJour);
+        this.motifAction.set('');
+        this.afficherSucces(`Action effectuée sur ${miseAJour.identifiantCommande}.`);
+        this.chargerCommandes(true);
+        this.chargerStatistiques();
+      },
+      error: (erreur) => {
+        this.actionEnCours.set(false);
+        this.erreurAction.set(erreur?.error?.message || "L'action a échoué. Vérifiez votre connexion et réessayez.");
+      }
+    });
+  }
+
+  private afficherSucces(message: string): void {
+    this.notificationSucces.set(message);
+    setTimeout(() => this.notificationSucces.set(null), 3500);
   }
 }

@@ -80,22 +80,18 @@
         <div class="flex items-center gap-3.5 min-w-0 flex-1">
           <!-- Avatar client avec pastille verte -->
           <div class="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-            <img
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
-              alt="Client"
-              class="w-full h-full object-cover"
-            />
+            <i class="fa-solid fa-user text-slate-400 text-xl absolute inset-0 m-auto w-fit h-fit"></i>
             <span class="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full bg-[#22c55e] border-2 border-white"></span>
           </div>
 
           <!-- Nom et adresse -->
           <div class="min-w-0 flex-1">
             <h3 class="text-xl sm:text-2xl font-black text-slate-900 truncate font-['Outfit']">
-              {{ serviceLivreur.courseEnCours()?.clientNom || 'Client AYYOU' }}
+              {{ serviceLivreur.courseEnCours()?.clientNom }}
             </h3>
             <div class="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 font-medium truncate mt-0.5">
               <i class="fa-solid fa-location-dot text-[#E51824] text-xs"></i>
-              <span class="truncate">{{ serviceLivreur.courseEnCours()?.clientAdresse || 'Adresse de livraison' }}</span>
+              <span class="truncate">{{ serviceLivreur.courseEnCours()?.clientAdresse }}</span>
             </div>
           </div>
         </div>
@@ -110,23 +106,35 @@
         </a>
       </div>
 
-      <!-- Encart Consignes de livraison -->
-      <div class="bg-[#f8fafc] rounded-2xl p-3.5 border border-slate-100 flex items-start gap-2.5">
-        <i class="fa-solid fa-circle-info text-[#E51824] text-sm mt-0.5 shrink-0"></i>
-        <p class="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-          {{ serviceLivreur.courseEnCours()?.clientInstructions || 'Livrer à l\'adresse indiquée.' }}
-        </p>
-      </div>
+      <!-- Repère et consignes donnés par le client (affichés seulement s'ils existent) -->
+      @if (serviceLivreur.courseEnCours()?.clientRepere || serviceLivreur.courseEnCours()?.clientInstructions) {
+        <div class="bg-[#f8fafc] rounded-2xl p-3.5 border border-slate-100 flex items-start gap-2.5">
+          <i class="fa-solid fa-circle-info text-[#E51824] text-sm mt-0.5 shrink-0"></i>
+          <div class="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+            @if (serviceLivreur.courseEnCours()?.clientRepere) {
+              <p><strong>Repère :</strong> {{ serviceLivreur.courseEnCours()?.clientRepere }}</p>
+            }
+            @if (serviceLivreur.courseEnCours()?.clientInstructions) {
+              <p>{{ serviceLivreur.courseEnCours()?.clientInstructions }}</p>
+            }
+          </div>
+        </div>
+      }
 
       <!-- GROS BOUTON ROUGE : ARRIVÉ CHEZ LE CLIENT -->
       <button
         type="button"
         (click)="arriverChezClient()"
-        class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl shadow-red-500/25 transition-all cursor-pointer"
+        [disabled]="arriveeEnCours()"
+        class="disabled:opacity-50 w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl shadow-red-500/25 transition-all cursor-pointer"
       >
-        <span>Arrivé chez le client</span>
+        <span>{{ arriveeEnCours() ? 'Envoi...' : 'Arrivé chez le client' }}</span>
         <i class="fa-solid fa-circle-check text-base"></i>
       </button>
+      @if (messageErreur()) {
+        <p class="text-xs font-semibold text-red-600">{{ messageErreur() }}</p>
+      }
+      <app-signaler-probleme mode="ECHEC" (termine)="retourAccueil()"></app-signaler-probleme>
 
     </div>
   </div>
