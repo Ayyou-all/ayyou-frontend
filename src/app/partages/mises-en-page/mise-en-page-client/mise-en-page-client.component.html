@@ -1,121 +1,85 @@
 <div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] flex flex-col justify-between">
 
   <!-- ========================================================================= -->
-  <!-- 1. EN-TÊTE BUREAU (ÉCRANS >= 768px)                                       -->
+  <!-- 1. MENU LATÉRAL (ORDINATEUR ET TABLETTE, ÉCRANS >= 768px)                 -->
+  <!-- Mêmes liens et mêmes règles d'accès que la barre mobile (gererClicOnglet) -->
   <!-- ========================================================================= -->
-  <header class="hidden md:flex items-center justify-between px-8 lg:px-14 py-4 bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50">
-    
-    <!-- Logo & Localisation -->
-    <div class="flex items-center gap-6">
-      <a routerLink="/accueil" class="flex items-center gap-2 group cursor-pointer">
-        <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="h-9 w-auto object-contain transition-transform group-hover:scale-105" />
+  <aside class="hidden md:flex fixed inset-y-0 left-0 z-40 w-64 flex-col justify-between bg-white border-r border-slate-200/70">
+    <div class="px-5 pt-7 space-y-8">
+      <a routerLink="/accueil" class="flex items-center gap-2 px-3 cursor-pointer" aria-label="Accueil Ayyou">
+        <img src="/images/logo-ayyou.png" alt="Ayyou" class="h-9 w-auto object-contain" />
       </a>
 
-      <!-- Badge de localisation -->
-      <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
-        <i class="fa-solid fa-location-dot text-red-600 text-xs"></i>
-        <span>Dakar, Sénégal</span>
-        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
-      </div>
+      <nav class="space-y-1.5" aria-label="Navigation principale">
+        @for (onglet of listeOnglets; track onglet.code) {
+          <a
+            [routerLink]="obtenirCheminOnglet(onglet)"
+            (click)="gererClicOnglet($event, onglet)"
+            [class]="estOngletActif(onglet.chemin)
+              ? 'bg-[#FFF1F2] text-[#E51824] font-bold'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium'"
+            class="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-[15px] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#E51824]"
+          >
+            <i [class]="onglet.icone + ' w-5 text-center text-base'"></i>
+            <span class="flex-1">{{ onglet.libelle }}</span>
+            @if (onglet.aBadge && servicePanier.nombreTotalArticles() > 0) {
+              <span class="min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#E51824] text-white text-[11px] font-extrabold flex items-center justify-center">
+                {{ servicePanier.nombreTotalArticles() }}
+              </span>
+            }
+          </a>
+        }
+      </nav>
     </div>
 
-    <!-- Liens de navigation centraux -->
-    <nav class="flex items-center gap-2">
-      @for (onglet of listeOnglets.slice(0, 3); track onglet.code) {
-        <a
-          [routerLink]="onglet.chemin"
-          [class]="estOngletActif(onglet.chemin)
-            ? 'bg-red-50 text-red-600 font-bold border-red-200'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-transparent'"
-          class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all border font-medium cursor-pointer"
-        >
-          <i [class]="onglet.icone + ' text-sm'"></i>
-          <span>{{ onglet.libelle }}</span>
-        </a>
-      }
-    </nav>
-
-    <!-- Actions droites : Recherche, Panier & Profil -->
-    <div class="flex items-center gap-3.5">
-      <!-- Raccourci vers catalogue / recherche -->
-      <a
-        routerLink="/catalogue"
-        class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
-        title="Rechercher des plats ou restaurants"
-      >
-        <i class="fa-solid fa-magnifying-glass text-sm"></i>
-      </a>
-
-      <!-- Bouton Panier avec Badge & Montant -->
-      <a
-        routerLink="/panier"
-        class="relative flex items-center gap-2.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all cursor-pointer"
-      >
-        <i class="fa-solid fa-cart-shopping text-sm"></i>
-        <span>{{ servicePanier.totalFcfa() | number }} FCFA</span>
-        @if (servicePanier.nombreTotalArticles() > 0) {
-          <span class="w-5 h-5 rounded-full bg-white text-red-600 text-xs font-extrabold flex items-center justify-center">
-            {{ servicePanier.nombreTotalArticles() }}
-          </span>
-        }
-      </a>
-
-      <!-- Profil Utilisateur (Connecté) OU Actions Visiteur (Non Connecté) -->
+    <!-- Compte connecté, ou accès visiteur -->
+    <div class="p-5 border-t border-slate-100">
       @if (serviceAuthentification.estAuthentifie()) {
         <a
           [routerLink]="obtenirCheminProfil()"
-          class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+          class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-colors cursor-pointer"
         >
-          <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+          <div class="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
             @if (serviceAuthentification.utilisateurConnecte()?.adressePhoto) {
-              <img [src]="serviceAuthentification.utilisateurConnecte()?.adressePhoto" alt="Avatar" class="w-full h-full object-cover" />
+              <img [src]="serviceAuthentification.utilisateurConnecte()?.adressePhoto" alt="" class="w-full h-full object-cover" />
             } @else {
-              <i class="fa-solid fa-user text-xs text-slate-400"></i>
+              <i class="fa-solid fa-user text-sm text-slate-400"></i>
             }
           </div>
-          <div class="text-left leading-tight hidden lg:block">
-            <div class="text-xs font-bold text-slate-900 truncate max-w-[100px]">
-              {{ serviceAuthentification.utilisateurConnecte()?.prenom }}
+          <div class="min-w-0 leading-tight">
+            <div class="text-sm font-bold text-slate-900 truncate">
+              {{ serviceAuthentification.utilisateurConnecte()?.prenom }} {{ serviceAuthentification.utilisateurConnecte()?.nom }}
             </div>
-            <div class="text-[10px] text-slate-400 font-medium">
+            <div class="text-xs text-slate-400 truncate">
               {{ serviceAuthentification.estLivreur() ? 'Livreur' : (serviceAuthentification.estGerant() ? 'Gérant' : (serviceAuthentification.estAdministrateur() ? 'Admin' : 'Client')) }}
             </div>
           </div>
         </a>
       } @else {
-        <!-- Boutons d'accès pour le visiteur -->
-        <div class="flex items-center gap-2">
-          <!-- Badge Mode Visiteur -->
-          <div class="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600">
-            <i class="fa-regular fa-eye text-slate-400 text-xs"></i>
-            <span>Mode Visiteur</span>
-          </div>
-
-          <!-- Connexion -->
+        <div class="space-y-2">
           <a
             routerLink="/connexion"
-            class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
+            class="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-sm font-bold transition-colors cursor-pointer"
           >
             <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
-            <span>Connexion</span>
+            <span>Se connecter</span>
           </a>
-
-          <!-- Inscription -->
           <a
             routerLink="/inscription"
-            class="hidden lg:flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+            class="flex items-center justify-center w-full py-3 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold transition-colors cursor-pointer"
           >
-            <span>S'inscrire</span>
+            Créer un compte
           </a>
         </div>
       }
     </div>
-  </header>
+  </aside>
 
   <!-- ========================================================================= -->
   <!-- 2. CONTENU PRINCIPAL (ROUTER-OUTLET)                                      -->
   <!-- ========================================================================= -->
-  <main class="flex-1 w-full" [class.pb-20]="!estOngletActif('/accueil')" [class.md:pb-6]="!estOngletActif('/accueil')">
+  <!-- md:pl-64 : place réservée au menu latéral fixe -->
+  <main class="flex-1 w-full md:pl-64" [class.pb-20]="!estOngletActif('/accueil')" [class.md:pb-6]="!estOngletActif('/accueil')">
     <!-- Erreurs de chargement (catalogue, vidéos, panier) : jamais masquées -->
     @if (serviceCatalogue.messageErreur() || servicePanier.messageErreur()) {
       <div class="mx-4 mt-3 p-3 rounded-2xl bg-red-50 border border-red-200 text-sm font-semibold text-red-700 flex items-center justify-between gap-3">

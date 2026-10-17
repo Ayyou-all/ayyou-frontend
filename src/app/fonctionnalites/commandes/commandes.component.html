@@ -1,22 +1,15 @@
-<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
+<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6 md:pt-10">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 space-y-6 md:space-y-8">
 
     <!-- ========================================================================= -->
     <!-- 1. EN-TÊTE : TITRE 'Mes Commandes' + BOUTON FILTRES (SLIDERS)              -->
     <!-- Conforme à l'Image 3                                                      -->
     <!-- ========================================================================= -->
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+      <h1 class="text-2xl sm:text-3xl md:text-[28px] font-extrabold text-slate-900 tracking-tight font-['Outfit']">
         Mes Commandes
       </h1>
 
-      <button
-        type="button"
-        class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-        title="Filtrer mes commandes"
-      >
-        <i class="fa-solid fa-sliders text-sm"></i>
-      </button>
     </div>
 
     <!-- ========================================================================= -->
@@ -112,11 +105,11 @@
               
               <!-- Image carrée du plat -->
               <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
-                <img
-                  [src]="cmd.adresseImageRestaurant"
-                  [alt]="cmd.nomRestaurant"
-                  class="w-full h-full object-cover"
-                />
+                @if (cmd.adresseImageRestaurant) {
+                  <img [src]="cmd.adresseImageRestaurant" [alt]="cmd.nomRestaurant" class="w-full h-full object-cover" />
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center bg-[#FFF1F2] text-[#E51824]"><i class="fa-solid fa-utensils"></i></div>
+                }
               </div>
 
               <!-- Bloc central : Nom resto + date/heure + prix -->
@@ -204,11 +197,11 @@
                 
                 <!-- Image du plat -->
                 <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
-                  <img
-                    [src]="cmd.adresseImageRestaurant"
-                    [alt]="cmd.nomRestaurant"
-                    class="w-full h-full object-cover"
-                  />
+                  @if (cmd.adresseImageRestaurant) {
+                  <img [src]="cmd.adresseImageRestaurant" [alt]="cmd.nomRestaurant" class="w-full h-full object-cover" />
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center bg-[#FFF1F2] text-[#E51824]"><i class="fa-solid fa-utensils"></i></div>
+                }
                 </div>
 
                 <!-- Informations produit / restaurant -->
@@ -286,7 +279,11 @@
           <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
-                <img [src]="cmd.adresseImageRestaurant" [alt]="cmd.nomRestaurant" class="w-full h-full object-cover" />
+                @if (cmd.adresseImageRestaurant) {
+                  <img [src]="cmd.adresseImageRestaurant" [alt]="cmd.nomRestaurant" class="w-full h-full object-cover" />
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center bg-[#FFF1F2] text-[#E51824]"><i class="fa-solid fa-utensils"></i></div>
+                }
               </div>
               <div class="min-w-0">
                 <h3 class="text-base font-extrabold text-slate-900 truncate font-['Outfit']">{{ cmd.nomRestaurant }}</h3>

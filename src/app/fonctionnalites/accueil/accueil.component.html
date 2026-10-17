@@ -2,8 +2,10 @@
   (wheel)="gererMolette($event)"
   (touchstart)="gererDebutToucher($event)"
   (touchend)="gererFinToucher($event)"
-  class="relative w-full h-[calc(100vh-68px)] max-h-[100dvh] flex items-center justify-center overflow-hidden bg-slate-950 select-none"
+  class="relative w-full h-[calc(100vh-68px)] md:h-screen max-h-[100dvh] flex overflow-hidden bg-black select-none"
 >
+  <!-- Scène vidéo (toute la largeur sur mobile, partie gauche sur grand écran) -->
+  <div class="relative flex-1 h-full flex items-center justify-center">
 
   <!-- Notification flottante d'ajout au panier -->
   @if (notificationAjoutPanier()) {
@@ -16,7 +18,7 @@
   <!-- ========================================================================= -->
   <!-- LECTEUR VIDÉO IMMERSIF STYLE TIKTOK (CENTRÉ SUR DESKTOP ET MOBILE)         -->
   <!-- ========================================================================= -->
-  <div class="relative w-full h-full md:max-h-[calc(100vh-84px)] md:aspect-[9/16] md:max-w-[410px] md:rounded-[32px] overflow-hidden bg-black md:border-2 md:border-slate-800 flex items-center justify-center">
+  <div class="relative w-full h-full md:h-[calc(100vh-64px)] md:w-auto md:aspect-[9/16] md:max-w-[440px] md:rounded-[28px] overflow-hidden bg-black md:border md:border-white/10 flex items-center justify-center">
 
     @if (publicationCourante(); as pub) {
       <!-- Vidéo en arrière-plan avec boucle automatique -->
@@ -43,7 +45,15 @@
       }
 
       <!-- Superposition de dégradé sombre (discret pour maximiser la visibilité de la vidéo) -->
-      <div class="absolute inset-0 bg-black/25 pointer-events-none"></div>
+      <div class="absolute inset-0 bg-black/25 lg:bg-transparent pointer-events-none"></div>
+
+      <!-- Grand écran : progression horizontale en bas de la vidéo (position dans le fil) -->
+      <div class="hidden lg:block absolute left-4 right-4 bottom-3 h-1 rounded-full bg-white/25 overflow-hidden z-30">
+        <div
+          class="h-full bg-[#E51824] rounded-full transition-all duration-300"
+          [style.width]="((indexPublicationActuelle() + 1) / totalPublications() * 100) + '%'"
+        ></div>
+      </div>
 
       <!-- Indicateur de pause si la vidéo est arrêtée -->
       @if (!estEnLecture()) {
@@ -80,12 +90,16 @@
       </div>
 
       <!-- Actions latérales à droite (Profil restaurant, J'aime, Partager) -->
-      <div class="absolute right-3.5 bottom-24 sm:bottom-28 z-30 flex flex-col items-center gap-5">
+      <div class="absolute right-3.5 bottom-24 sm:bottom-28 z-30 flex flex-col items-center gap-5 lg:hidden">
         
         <!-- Avatar du restaurant + bouton '+' d'abonnement -->
         <div class="relative cursor-pointer group" (click)="voirRestaurant(pub.identifiantRestaurant)">
-          <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-white bg-white">
-            <img [src]="pub.adresseLogoRestaurant" alt="Restaurant" class="w-full h-full object-cover" />
+          <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-white bg-white flex items-center justify-center">
+            @if (pub.adresseLogoRestaurant) {
+              <img [src]="pub.adresseLogoRestaurant" [alt]="pub.nomRestaurant" class="w-full h-full object-cover" />
+            } @else {
+              <i class="fa-solid fa-utensils text-[#E51824] text-sm"></i>
+            }
           </div>
           <button
             type="button"
@@ -137,7 +151,7 @@
       <!-- ========================================================================= -->
       <!-- BAS DU LECTEUR : INFORMATIONS COMPACTES DU PLAT (ESPACE VIDÉO MAXIMISÉ)    -->
       <!-- ========================================================================= -->
-      <div class="absolute left-4 right-18 bottom-5 z-30 space-y-1.5 text-left pointer-events-auto">
+      <div class="absolute left-4 right-18 bottom-5 z-30 space-y-1.5 text-left pointer-events-auto lg:hidden">
         
         <!-- Handle du restaurant cliquable -->
         <div>
@@ -186,7 +200,7 @@
       </div>
 
       <!-- Indicateur d'étape du fil (barre verticale fine de progression) -->
-      <div class="absolute right-1 top-1/3 bottom-1/3 w-1 rounded-full bg-white/20 flex flex-col justify-between overflow-hidden">
+      <div class="absolute right-1 top-1/3 bottom-1/3 w-1 rounded-full bg-white/20 flex flex-col justify-between overflow-hidden lg:hidden">
         <div
           class="w-full bg-[#E51824] transition-all duration-300 rounded-full"
           [style.height]="((indexPublicationActuelle() + 1) / totalPublications() * 100) + '%'"
@@ -219,12 +233,12 @@
   <!-- ========================================================================= -->
   <!-- COMMANDES DE DÉFILEMENT LATÉRALES SUR BUREAU (SWIPE VERTICAL ASSISTÉ)     -->
   <!-- ========================================================================= -->
-  <div class="hidden md:flex flex-col gap-3 absolute right-8 lg:right-16 top-1/2 -translate-y-1/2 z-40">
+  <div class="hidden md:flex flex-col gap-3 absolute right-6 xl:right-10 top-1/2 -translate-y-1/2 z-40">
     <!-- Vidéo précédente (haut) -->
     <button
       type="button"
       (click)="publicationPrecedente()"
-      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer group"
+      class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white border border-white/15 flex items-center justify-center active:scale-95 transition-colors cursor-pointer group"
       title="Vidéo précédente (Swipe vers le bas ou Flèche Haut)"
     >
       <i class="fa-solid fa-arrow-up text-sm group-hover:-translate-y-0.5 transition-transform"></i>
@@ -234,7 +248,7 @@
     <button
       type="button"
       (click)="publicationSuivante()"
-      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer group"
+      class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white border border-white/15 flex items-center justify-center active:scale-95 transition-colors cursor-pointer group"
       title="Vidéo suivante (Swipe vers le haut ou Flèche Bas / Molette)"
     >
       <i class="fa-solid fa-arrow-down text-sm group-hover:translate-y-0.5 transition-transform"></i>
@@ -242,10 +256,126 @@
   </div>
 
   <!-- Aide discrète sur Desktop en bas à gauche -->
-  <div class="hidden lg:flex items-center gap-2 absolute left-8 bottom-6 z-40 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400">
-    <i class="fa-solid fa-computer-mouse text-slate-300"></i>
-    <span>Scrollez la molette ou utilisez ↑ ↓ pour swiper de vidéo en vidéo</span>
+  <div class="hidden xl:flex items-center gap-2 absolute left-6 bottom-6 z-40 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[11px] text-white/70">
+    <i class="fa-solid fa-computer-mouse"></i>
+    <span>Molette ou flèches ↑ ↓ pour changer de vidéo</span>
   </div>
+  </div>
+  <!-- Fin de la scène vidéo -->
+
+  <!-- ========================================================================= -->
+  <!-- PANNEAU D'INFORMATIONS (GRAND ÉCRAN UNIQUEMENT, >= 1024px)                -->
+  <!-- Mêmes actions que les boutons superposés du mobile                       -->
+  <!-- ========================================================================= -->
+  <aside class="hidden lg:flex flex-col w-[400px] xl:w-[440px] shrink-0 h-full bg-white">
+    <!-- Recherche : ouvre le catalogue -->
+    <div class="px-8 py-6 border-b border-slate-100">
+      <a
+        routerLink="/catalogue"
+        class="flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-slate-400 text-sm hover:border-slate-200 transition-colors cursor-pointer"
+      >
+        <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+        <span>Rechercher un plat ou un restaurant</span>
+      </a>
+    </div>
+
+    @if (publicationCourante(); as pub) {
+      <div class="flex-1 overflow-y-auto px-8 py-8 space-y-7">
+        <!-- Restaurant + abonnement -->
+        <div class="flex items-center gap-4">
+          <div class="relative shrink-0">
+            <button
+              type="button"
+              (click)="voirRestaurant(pub.identifiantRestaurant)"
+              class="w-16 h-16 rounded-full overflow-hidden border-2 border-[#E51824] p-0.5 bg-white cursor-pointer"
+              [attr.aria-label]="'Voir ' + pub.nomRestaurant"
+            >
+              @if (pub.adresseLogoRestaurant) {
+                <img [src]="pub.adresseLogoRestaurant" alt="" class="w-full h-full rounded-full object-cover" />
+              } @else {
+                <span class="w-full h-full rounded-full bg-[#FFF1F2] text-[#E51824] flex items-center justify-center">
+                  <i class="fa-solid fa-utensils"></i>
+                </span>
+              }
+            </button>
+            <button
+              type="button"
+              (click)="basculerAbonnement()"
+              [class]="pub.estAbonne ? 'bg-emerald-600' : 'bg-[#E51824]'"
+              class="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full text-white flex items-center justify-center text-[10px] border-2 border-white cursor-pointer"
+              [title]="pub.estAbonne ? 'Abonné' : 'Suivre ce restaurant'"
+            >
+              <i [class]="pub.estAbonne ? 'fa-solid fa-check' : 'fa-solid fa-plus'"></i>
+            </button>
+          </div>
+          <button type="button" (click)="voirRestaurant(pub.identifiantRestaurant)" class="min-w-0 text-left cursor-pointer">
+            <div class="text-lg font-bold text-slate-900 font-['Outfit'] truncate">{{ pub.nomUtilisateurRestaurant }}</div>
+            <div class="text-sm text-slate-400 truncate">{{ pub.nomRestaurant }}</div>
+          </button>
+        </div>
+
+        <!-- Plat, prix, description -->
+        <div class="space-y-3">
+          <button
+            type="button"
+            (click)="ouvrirDetailPlat(pub.plat)"
+            class="block text-left text-[34px] leading-[1.1] font-extrabold text-slate-900 font-['Outfit'] hover:text-[#E51824] transition-colors cursor-pointer"
+          >
+            {{ pub.plat.nom }}
+          </button>
+          <div class="text-[28px] font-extrabold text-[#E51824] font-['Outfit']">{{ pub.plat.prixFcfa | number }} FCFA</div>
+          @if (pub.descriptionAccroche) {
+            <p class="text-base text-slate-500 leading-relaxed">{{ pub.descriptionAccroche }}</p>
+          }
+        </div>
+
+        <!-- J'aime, vues, partage : compteurs de la base -->
+        <div class="grid grid-cols-3 gap-3">
+          <button
+            type="button"
+            (click)="basculerJaime()"
+            class="flex flex-col items-center gap-2.5 py-5 rounded-3xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors cursor-pointer"
+            [attr.aria-pressed]="pub.estAime"
+          >
+            <span class="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center">
+              <i [class]="pub.estAime ? 'fa-solid fa-heart text-[#E51824]' : 'fa-regular fa-heart text-[#E51824]'" class="text-xl"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">{{ pub.nombreJeaime }} J'aime</span>
+          </button>
+          <div class="flex flex-col items-center gap-2.5 py-5 rounded-3xl bg-slate-50 border border-slate-100">
+            <span class="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center">
+              <i class="fa-regular fa-eye text-xl text-slate-700"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">{{ pub.nombreVues }} vues</span>
+          </div>
+          <button
+            type="button"
+            (click)="partagerPlat()"
+            class="flex flex-col items-center gap-2.5 py-5 rounded-3xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors cursor-pointer"
+          >
+            <span class="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center">
+              <i class="fa-solid fa-share-nodes text-xl text-slate-700"></i>
+            </span>
+            <span class="text-xs font-bold text-slate-800">{{ pub.nombrePartages ? pub.nombrePartages + ' partages' : 'Partager' }}</span>
+          </button>
+        </div>
+
+        <!-- Action principale : même méthode que le bouton « Commander » du mobile -->
+        <button
+          type="button"
+          (click)="commanderPlatActuel(pub.plat)"
+          class="w-full py-5 rounded-3xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-lg font-['Outfit'] flex items-center justify-center gap-3 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E51824]"
+        >
+          <span>Ajouter au panier</span>
+          <i class="fa-solid fa-cart-plus"></i>
+        </button>
+      </div>
+    } @else {
+      <div class="flex-1 flex items-center justify-center px-10 text-center text-sm text-slate-400">
+        Les plats des vidéos publiées par les restaurants s'afficheront ici.
+      </div>
+    }
+  </aside>
 
   <!-- ========================================================================= -->
   <!-- MODAL DÉTAIL PRODUIT (CONFORME À L'IMAGE 1)                               -->
