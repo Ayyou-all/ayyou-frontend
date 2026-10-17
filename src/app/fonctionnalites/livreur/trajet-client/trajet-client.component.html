@@ -10,14 +10,14 @@
       <button
         type="button"
         (click)="retourner()"
-        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer shrink-0"
+        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 flex items-center justify-center transition-transform active:scale-95 cursor-pointer shrink-0"
         aria-label="Retour"
       >
         <i class="fa-solid fa-chevron-left text-base font-bold"></i>
       </button>
 
       <!-- Badge central flottant : ESTIMATION + 8 min • 2.4 km -->
-      <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-orange-100 flex items-center gap-3">
+      <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-orange-100 flex items-center gap-3">
         <div class="w-8 h-8 rounded-xl bg-rose-50 text-[#E51824] flex items-center justify-center shrink-0">
           <i class="fa-solid fa-location-arrow text-xs"></i>
         </div>
@@ -35,7 +35,7 @@
       <button
         type="button"
         (click)="basculerStyleCarte()"
-        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer shrink-0"
+        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 flex items-center justify-center transition-transform active:scale-95 cursor-pointer shrink-0"
         aria-label="Basculer le style de carte"
         title="Basculer style clair / sombre"
       >
@@ -58,7 +58,7 @@
       <button
         type="button"
         (click)="recentrerPosition()"
-        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-[#E51824] shadow-xl flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-[#E51824] flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         aria-label="Recentrer ma position"
         title="Recentrer sur ma position"
       >
@@ -73,7 +73,7 @@
   <!-- Conforme au bas de l'Image 2                                              -->
   <!-- ========================================================================= -->
   <div class="relative z-30 w-full max-w-xl mx-auto p-4 pb-6 sm:pb-8">
-    <div class="bg-white rounded-[36px] p-5 sm:p-6 shadow-2xl border border-orange-100/60 space-y-4">
+    <div class="bg-white rounded-[36px] p-5 sm:p-6 border border-orange-100/60 space-y-4">
       
       <!-- Fiche Client + Photo avec point vert + Bouton téléphone -->
       <div class="flex items-center justify-between gap-3">
@@ -99,7 +99,7 @@
         <!-- Bouton d'appel sombre -->
         <a
           [href]="serviceLivreur.courseEnCours()?.clientTelephone ? ('tel:' + serviceLivreur.courseEnCours()?.clientTelephone) : 'javascript:void(0)'"
-          class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-transform active:scale-95 shrink-0"
+          class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center transition-transform active:scale-95 shrink-0"
           title="Appeler le client"
         >
           <i class="fa-solid fa-phone text-base"></i>
@@ -126,7 +126,7 @@
         type="button"
         (click)="arriverChezClient()"
         [disabled]="arriveeEnCours()"
-        class="disabled:opacity-50 w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl shadow-red-500/25 transition-all cursor-pointer"
+        class="disabled:opacity-50 w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer"
       >
         <span>{{ arriveeEnCours() ? 'Envoi...' : 'Arrivé chez le client' }}</span>
         <i class="fa-solid fa-circle-check text-base"></i>

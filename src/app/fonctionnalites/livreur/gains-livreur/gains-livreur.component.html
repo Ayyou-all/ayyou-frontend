@@ -3,7 +3,7 @@
   <!-- ========================================================================= -->
   <!-- 1. EN-TÊTE MES GAINS DU LIVREUR (DESKTOP & MOBILE)                        -->
   <!-- ========================================================================= -->
-  <header class="w-full bg-white border-b border-slate-100 px-4 sm:px-8 py-3.5 sticky top-0 z-40 shadow-xs">
+  <header class="w-full bg-white border-b border-slate-100 px-4 sm:px-8 py-3.5 sticky top-0 z-40">
     <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
       
       <!-- Gauche : Logo + Badge Espace Livreur -->
@@ -53,7 +53,7 @@
         <!-- Bouton calendrier rond -->
         <button
           type="button"
-          class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-100 shadow-2xs"
+          class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-100"
           aria-label="Sélectionner la période"
           title="Sélectionner la période"
         >
@@ -63,10 +63,10 @@
         <!-- Profil Livreur cliquable (Mobile et Desktop) -> /livreur/profil -->
         <a
           routerLink="/livreur/profil"
-          class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-2xl border border-slate-100 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all cursor-pointer group shadow-2xs"
+          class="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-2xl border border-slate-100 hover:border-red-200 bg-white hover:bg-red-50/20 transition-all cursor-pointer group"
           title="Modifier mes informations livreur"
         >
-          <div class="w-9 h-9 rounded-full overflow-hidden bg-slate-900 border-2 border-slate-100 shadow-xs shrink-0 flex items-center justify-center">
+          <div class="w-9 h-9 rounded-full overflow-hidden bg-slate-900 border-2 border-slate-100 shrink-0 flex items-center justify-center">
             @if (serviceLivreur.profilLivreur().adressePhoto) {
               <img
                 [src]="serviceLivreur.profilLivreur().adressePhoto"
@@ -97,7 +97,7 @@
   <main class="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
     <!-- CARTE ROUGE VIF : CETTE SEMAINE 85 000 FCFA (CONFORME À L'IMAGE 2) -->
-    <div class="w-full bg-[#E51824] rounded-[32px] p-6 text-white shadow-xl shadow-red-500/20 space-y-5 relative overflow-hidden">
+    <div class="w-full bg-[#E51824] rounded-[32px] p-6 text-white space-y-5 relative overflow-hidden">
       
       <!-- Ligne supérieure : CETTE SEMAINE + Badge d'évolution -->
       <div class="space-y-2">
@@ -147,7 +147,7 @@
     </div>
 
     <!-- CARTE : ACTIVITÉ HEBDOMADAIRE (GRAPHIQUE EN BÂTONNETS LUN - DIM) -->
-    <div class="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm space-y-5">
+    <div class="bg-white rounded-[32px] p-6 border border-slate-100 space-y-5">
       
       <!-- Titre du graphique -->
       <div class="flex items-center justify-between">
@@ -184,7 +184,7 @@
       <!-- Liste des cartes par jour -->
       <div class="space-y-2.5">
         @for (item of serviceLivreur.detailsQuotidiens(); track item.titreDate) {
-          <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center justify-between gap-3 hover:border-slate-200 transition-all cursor-pointer group">
+          <div class="bg-white rounded-2xl p-4 border border-slate-100 flex items-center justify-between gap-3 hover:border-slate-200 transition-all cursor-pointer group">
             
             <!-- Icône & date & nombre de livraisons -->
             <div class="flex items-center gap-3.5 min-w-0 flex-1">
@@ -235,7 +235,7 @@
   <!-- 3. BARRE DE NAVIGATION INFÉRIEURE (ACCUEIL, GAINS ACTIF, PROFIL)          -->
   <!-- Conforme au bas de l'Image 2                                              -->
   <!-- ========================================================================= -->
-  <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+  <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40">
     <!-- Onglet 1 : Accueil -->
     <a
       routerLink="/livreur"

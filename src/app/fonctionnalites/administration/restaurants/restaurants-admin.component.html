@@ -2,7 +2,7 @@
 
   <!-- Notification Toast -->
   @if (notificationSucces()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationSucces() }}</span>
     </div>
@@ -24,7 +24,7 @@
     <!-- Actions à droite : Badge partenaires actifs & Bouton '+ Nouveau Restaurant' -->
     <div class="flex items-center gap-3 shrink-0">
       <!-- Badge Partenaires actifs -->
-      <div class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold shadow-2xs flex items-center gap-2">
+      <div class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold flex items-center gap-2">
         <i class="fa-solid fa-store text-slate-400 text-xs"></i>
         <span>{{ statsKpi().actifs.valeur }} Partenaires actifs</span>
       </div>
@@ -33,7 +33,7 @@
       <!-- Les partenaires s'inscrivent eux-mêmes ; l'admin valide leurs documents -->
       <a
         routerLink="/administration/validations"
-        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-2"
+        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center gap-2"
       >
         <i class="fa-solid fa-user-check text-xs"></i>
         <span>Restaurants à valider</span>
@@ -47,9 +47,9 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     
     <!-- 1. Actifs -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-circle-check"></i>
         </div>
         @if (statsKpi().actifs.evolution) {
@@ -67,9 +67,9 @@
     </div>
 
     <!-- 2. En attente -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-hourglass-half"></i>
         </div>
         @if (statsKpi().enAttente.evolution) {
@@ -87,9 +87,9 @@
     </div>
 
     <!-- 3. Inactifs -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-circle-minus"></i>
         </div>
         @if (statsKpi().inactifs.evolution) {
@@ -107,9 +107,9 @@
     </div>
 
     <!-- 4. Commandes reçues par l'ensemble des restaurants -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-receipt"></i>
         </div>
       </div>
@@ -126,7 +126,7 @@
   <!-- ========================================================================= -->
   <!-- 3. BARRE D'ONGLETS & RECHERCHE (CONFORME À L'IMAGE 3)                       -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
+  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
     
     <!-- Onglets : Tous les restaurants, Fast Food, Local, Asiatique, Desserts -->
     <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-50 border border-slate-100 shrink-0 overflow-x-auto">
@@ -134,7 +134,7 @@
         type="button"
         (click)="ongletActif.set('TOUS'); pageActuelle.set(1)"
         [class]="ongletActif() === 'TOUS'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-4 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -145,7 +145,7 @@
         type="button"
         (click)="ongletActif.set('FAST_FOOD'); pageActuelle.set(1)"
         [class]="ongletActif() === 'FAST_FOOD'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-4 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -156,7 +156,7 @@
         type="button"
         (click)="ongletActif.set('LOCAL'); pageActuelle.set(1)"
         [class]="ongletActif() === 'LOCAL'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-4 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -167,7 +167,7 @@
         type="button"
         (click)="ongletActif.set('ASIATIQUE'); pageActuelle.set(1)"
         [class]="ongletActif() === 'ASIATIQUE'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-4 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -178,7 +178,7 @@
         type="button"
         (click)="ongletActif.set('DESSERTS'); pageActuelle.set(1)"
         [class]="ongletActif() === 'DESSERTS'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-4 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -210,7 +210,7 @@
   <!-- ========================================================================= -->
   <!-- 4. TABLEAU DES RESTAURANTS (CONFORME À L'IMAGE 3)                          -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
+  <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
@@ -230,13 +230,13 @@
               <!-- 1. LOGO -->
               <td class="py-4 px-6">
                 @if (resto.adresseLogo) {
-                  <div class="w-10 h-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-2xs shrink-0">
+                  <div class="w-10 h-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
                     <img [src]="resto.adresseLogo" [alt]="resto.nom" class="w-full h-full object-cover" />
                   </div>
                 } @else {
                   <div
                     [class]="resto.fondLogo"
-                    class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm shadow-2xs shrink-0"
+                    class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm shrink-0"
                   >
                     <i [class]="resto.logoIcone"></i>
                   </div>
@@ -367,7 +367,7 @@
           type="button"
           (click)="changerPage(1)"
           [class]="pageActuelle() === 1
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -379,7 +379,7 @@
           type="button"
           (click)="changerPage(2)"
           [class]="pageActuelle() === 2
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -391,7 +391,7 @@
           type="button"
           (click)="changerPage(3)"
           [class]="pageActuelle() === 3
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -421,7 +421,7 @@
   <div class="flex justify-center pt-2">
     <a
       routerLink="/administration/tableau-de-bord"
-      class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-black text-xs shadow-2xs transition-all cursor-pointer"
+      class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-black text-xs transition-all cursor-pointer"
     >
       <i class="fa-solid fa-arrow-left text-xs"></i>
       <span>Retour au Dashboard principal</span>
@@ -437,7 +437,7 @@
       (click)="fermerModaleMenu()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative max-h-[90vh] overflow-y-auto"
+        class="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 border border-slate-100 space-y-6 relative max-h-[90vh] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <button
@@ -450,13 +450,13 @@
 
         <div class="flex items-center gap-3.5">
           @if (restaurantEnConsultation()!.adresseLogo) {
-            <div class="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0 shadow-2xs">
+            <div class="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
               <img [src]="restaurantEnConsultation()!.adresseLogo" [alt]="restaurantEnConsultation()!.nom" class="w-full h-full object-cover" />
             </div>
           } @else {
             <div
               [class]="restaurantEnConsultation()!.fondLogo"
-              class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs"
+              class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg shrink-0"
             >
               <i [class]="restaurantEnConsultation()!.logoIcone"></i>
             </div>
@@ -494,7 +494,7 @@
           <button
             type="button"
             (click)="fermerModaleMenu()"
-            class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-extrabold text-xs shadow-md cursor-pointer"
+            class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-extrabold text-xs cursor-pointer"
           >
             Fermer
           </button>
@@ -512,7 +512,7 @@
       (click)="fermerModaleEdition()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 relative"
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 border border-slate-100 space-y-5 relative"
         (click)="$event.stopPropagation()"
       >
         <button
@@ -579,7 +579,7 @@
           <button
             type="button"
             (click)="sauvegarderRestaurant()"
-            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md"
+            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs"
           >
             Enregistrer
           </button>

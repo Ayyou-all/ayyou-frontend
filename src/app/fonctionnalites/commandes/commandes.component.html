@@ -12,7 +12,7 @@
 
       <button
         type="button"
-        class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         title="Filtrer mes commandes"
       >
         <i class="fa-solid fa-sliders text-sm"></i>
@@ -23,8 +23,8 @@
     <!-- CAS VISITEUR (NON CONNECTÉ)                                               -->
     <!-- ========================================================================= -->
     @if (serviceAuthentification.estVisiteur()) {
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-xl text-center space-y-6 max-w-md mx-auto my-6">
-        <div class="w-20 h-20 rounded-3xl bg-red-50 text-[#E51824] flex items-center justify-center text-3xl mx-auto shadow-sm ring-4 ring-red-100/60">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 text-center space-y-6 max-w-md mx-auto my-6">
+        <div class="w-20 h-20 rounded-3xl bg-red-50 text-[#E51824] flex items-center justify-center text-3xl mx-auto ring-4 ring-red-100/60">
           <i class="fa-solid fa-receipt"></i>
         </div>
 
@@ -40,7 +40,7 @@
         <div class="space-y-3 pt-2">
           <a
             routerLink="/connexion"
-            class="w-full py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-lg shadow-red-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            class="w-full py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <i class="fa-solid fa-arrow-right-to-bracket text-sm"></i>
             <span>Se connecter</span>
@@ -108,10 +108,10 @@
         <!-- A. SECTION DES COMMANDES EN COURS -->
         <div class="space-y-4">
           @for (cmd of serviceCommandes.commandesEnCours(); track cmd.identifiant) {
-            <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between gap-3.5 sm:gap-4">
+            <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 flex items-center justify-between gap-3.5 sm:gap-4">
               
               <!-- Image carrée du plat -->
-              <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-2xs shrink-0">
+              <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
                 <img
                   [src]="cmd.adresseImageRestaurant"
                   [alt]="cmd.nomRestaurant"
@@ -162,7 +162,7 @@
                     type="button"
                     (click)="payerCommande(cmd)"
                     [disabled]="chargementPaiementId() === cmd.identifiant"
-                    class="py-1.5 px-3.5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-xs shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    class="py-1.5 px-3.5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-xs transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                   >
                     @if (chargementPaiementId() === cmd.identifiant) {
                       <i class="fa-solid fa-circle-notch fa-spin text-xs"></i>
@@ -175,7 +175,7 @@
                   <button
                     type="button"
                     (click)="suivreCommande(cmd.identifiant)"
-                    class="py-1.5 px-4 rounded-xl bg-[#f8f9fa] hover:bg-slate-100 active:scale-95 text-slate-700 font-extrabold text-xs border border-slate-200/80 transition-all cursor-pointer shadow-2xs"
+                    class="py-1.5 px-4 rounded-xl bg-[#f8f9fa] hover:bg-slate-100 active:scale-95 text-slate-700 font-extrabold text-xs border border-slate-200/80 transition-all cursor-pointer"
                   >
                     Suivre
                   </button>
@@ -200,10 +200,10 @@
 
           <div class="space-y-4">
             @for (cmd of commandesRecentes(); track cmd.identifiant) {
-              <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between gap-3.5 sm:gap-4">
+              <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 flex items-center justify-between gap-3.5 sm:gap-4">
                 
                 <!-- Image du plat -->
-                <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-2xs shrink-0">
+                <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
                   <img
                     [src]="cmd.adresseImageRestaurant"
                     [alt]="cmd.nomRestaurant"
@@ -253,7 +253,7 @@
                     <button
                       type="button"
                       (click)="recommander(cmd)"
-                      class="py-1.5 px-3.5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-red-500/20 transition-all cursor-pointer"
+                      class="py-1.5 px-3.5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs transition-all cursor-pointer"
                     >
                       Ré-commander
                     </button>
@@ -283,7 +283,7 @@
       <!-- ===================================================================== -->
       <div class="space-y-4">
         @for (cmd of serviceCommandes.commandesHistorique(); track cmd.identifiant) {
-          <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-4">
+          <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0">
                 <img [src]="cmd.adresseImageRestaurant" [alt]="cmd.nomRestaurant" class="w-full h-full object-cover" />
@@ -298,7 +298,7 @@
             <button
               type="button"
               (click)="recommander(cmd)"
-              class="py-2 px-4 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-red-500/20 transition-all cursor-pointer shrink-0"
+              class="py-2 px-4 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs transition-all cursor-pointer shrink-0"
             >
               Commander
             </button>

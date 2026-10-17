@@ -5,14 +5,14 @@
   <!-- NOTIFICATIONS DE SUCCÈS OU D'ERREUR                                       -->
   <!-- ========================================================================= -->
   @if (messageSucces()) {
-    <div class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl border border-slate-700 shadow-xl animate-fade-in">
+    <div class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl border border-slate-700 animate-fade-in">
       <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
       <span class="text-sm font-bold">{{ messageSucces() }}</span>
     </div>
   }
 
   @if (messageErreur()) {
-    <div class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-red-950 text-white px-5 py-3.5 rounded-2xl border border-red-800 shadow-xl animate-fade-in">
+    <div class="fixed top-20 right-6 z-50 flex items-center gap-3 bg-red-950 text-white px-5 py-3.5 rounded-2xl border border-red-800 animate-fade-in">
       <i class="fa-solid fa-triangle-exclamation text-red-400 text-lg"></i>
       <span class="text-sm font-bold">{{ messageErreur() }}</span>
     </div>
@@ -21,7 +21,7 @@
   <!-- ========================================================================= -->
   <!-- EN-TÊTE DE LA PAGE AVEC BOUTON SE DÉCONNECTER                             -->
   <!-- ========================================================================= -->
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-200/80">
     <div>
       <h1 class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit']">Mon Profil & Établissement</h1>
       <p class="text-xs text-slate-500 mt-0.5">Consultez et modifiez les informations renseignées lors de votre inscription.</p>
@@ -31,7 +31,7 @@
     <button
       type="button"
       (click)="modaleDeconnexionOuverte.set(true)"
-      class="px-4 py-2.5 rounded-2xl bg-red-50 hover:bg-[#E51824] text-[#E51824] hover:text-white border border-red-100 text-xs font-black flex items-center justify-center gap-2 transition cursor-pointer active:scale-95 shadow-xs shrink-0"
+      class="px-4 py-2.5 rounded-2xl bg-red-50 hover:bg-[#E51824] text-[#E51824] hover:text-white border border-red-100 text-xs font-black flex items-center justify-center gap-2 transition cursor-pointer active:scale-95 shrink-0"
       title="Se déconnecter de votre compte"
     >
       <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
@@ -44,7 +44,7 @@
     <!-- ========================================================================= -->
     <!-- 1. PHOTO DE COUVERTURE & LOGO DU RESTAURANT (VISUELS DE L'INSCRIPTION)    -->
     <!-- ========================================================================= -->
-    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-5">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 space-y-5">
       <div class="pb-3 border-b border-slate-100">
         <h2 class="text-base font-black text-slate-900 font-['Outfit']">Visuels de l'Établissement</h2>
         <p class="text-xs text-slate-400">Votre logo et votre photo de couverture tels que configurés à l'inscription.</p>
@@ -61,18 +61,18 @@
               class="w-full h-full object-cover"
             />
           } @else {
-            <div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-gradient-to-r from-slate-900 to-slate-800">
+            <div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-slate-900">
               <i class="fa-regular fa-image text-3xl mb-1.5 text-slate-600"></i>
               <span class="text-xs font-semibold text-slate-400">Aucune photo de couverture</span>
             </div>
           }
 
           <!-- Voile sombre -->
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+          <div class="absolute inset-0 bg-black/40"></div>
 
           <!-- Bouton pour changer la couverture -->
           <label
-            class="absolute top-3 right-3 z-10 px-3.5 py-1.5 rounded-xl bg-black/60 hover:bg-black/85 backdrop-blur-md text-white text-xs font-bold flex items-center gap-2 cursor-pointer transition border border-white/20 active:scale-95 shadow-md"
+            class="absolute top-3 right-3 z-10 px-3.5 py-1.5 rounded-xl bg-black/60 hover:bg-black/85 backdrop-blur-md text-white text-xs font-bold flex items-center gap-2 cursor-pointer transition border border-white/20 active:scale-95"
           >
             <i class="fa-solid fa-camera text-xs text-rose-400"></i>
             <span>Changer la couverture</span>
@@ -82,7 +82,7 @@
           <!-- Logo positionné en bas à gauche de la bannière -->
           <div class="absolute bottom-3 left-4 flex items-end gap-3 z-10">
             <div class="relative group">
-              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-white shadow-xl bg-white flex items-center justify-center">
+              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-white bg-white flex items-center justify-center">
                 @if (apercuLogo() || urlLogo()) {
                   <img
                     [src]="apercuLogo() || urlLogo()"
@@ -98,7 +98,7 @@
 
               <!-- Bouton pour changer le logo -->
               <label
-                class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#E51824] hover:bg-red-700 text-white flex items-center justify-center text-[10px] shadow-lg border-2 border-white cursor-pointer transition active:scale-90"
+                class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#E51824] hover:bg-red-700 text-white flex items-center justify-center text-[10px] border-2 border-white cursor-pointer transition active:scale-90"
                 title="Changer le logo"
               >
                 <i class="fa-solid fa-pencil"></i>
@@ -107,10 +107,10 @@
             </div>
 
             <div class="text-white pb-1">
-              <div class="text-sm sm:text-base font-black font-['Outfit'] drop-shadow">
+              <div class="text-sm sm:text-base font-black font-['Outfit']">
                 {{ nomRestaurant }}
               </div>
-              <div class="text-[11px] text-slate-300 drop-shadow">
+              <div class="text-[11px] text-slate-300">
                 {{ adresseRestaurant }}
               </div>
             </div>
@@ -149,7 +149,7 @@
     <!-- ========================================================================= -->
     <!-- 2. INFORMATIONS DU RESTAURANT & DU GÉRANT (EXACTEMENT COMME L'INSCRIPTION) -->
     <!-- ========================================================================= -->
-    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-6">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 space-y-6">
       
       <div class="pb-3 border-b border-slate-100">
         <h2 class="text-base font-black text-slate-900 font-['Outfit']">Informations du Compte & Établissement</h2>
@@ -242,7 +242,7 @@
     <!-- ========================================================================= -->
     <!-- 2 bis. FONCTIONNEMENT : horaires, position GPS et reversements             -->
     <!-- ========================================================================= -->
-    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-6">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 space-y-6">
       <div class="pb-3 border-b border-slate-100">
         <h2 class="text-base font-black text-slate-900 font-['Outfit']">Fonctionnement du restaurant</h2>
         <p class="text-xs text-slate-400">En dehors de ces horaires, les clients ne peuvent pas commander.</p>
@@ -331,7 +331,7 @@
     <!-- ========================================================================= -->
     <!-- 3. MOT DE PASSE (MODIFICATION SÉCURISÉE)                                   -->
     <!-- ========================================================================= -->
-    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-5">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 space-y-5">
       <div class="pb-3 border-b border-slate-100">
         <h2 class="text-base font-black text-slate-900 font-['Outfit']">Mot de passe</h2>
         <p class="text-xs text-slate-400">Laissez ces champs vides si vous ne souhaitez pas modifier votre mot de passe.</p>
@@ -412,7 +412,7 @@
       <button
         type="submit"
         [disabled]="chargementAction()"
-        class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-lg shadow-red-600/25 flex items-center justify-center gap-2.5 transition cursor-pointer active:scale-95 disabled:opacity-50"
+        class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 transition cursor-pointer active:scale-95 disabled:opacity-50"
       >
         @if (chargementAction()) {
           <i class="fa-solid fa-spinner fa-spin text-sm"></i>
@@ -431,7 +431,7 @@
   <!-- ========================================================================= -->
   @if (modaleDeconnexionOuverte()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 animate-scale-up">
+      <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 space-y-6 border border-slate-100 animate-scale-up">
         
         <div class="w-14 h-14 rounded-2xl bg-red-100 text-[#E51824] flex items-center justify-center text-2xl mx-auto">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -455,7 +455,7 @@
           <button
             type="button"
             (click)="confirmerDeconnexion()"
-            class="py-3 px-4 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs font-black transition cursor-pointer shadow-lg shadow-red-600/25"
+            class="py-3 px-4 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs font-black transition cursor-pointer"
           >
             Oui, me déconnecter
           </button>

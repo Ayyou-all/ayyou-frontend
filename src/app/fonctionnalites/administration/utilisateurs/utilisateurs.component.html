@@ -2,7 +2,7 @@
 
   <!-- Notification Toast -->
   @if (notificationSucces()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationSucces() }}</span>
     </div>
@@ -25,7 +25,7 @@
     <div class="flex items-center gap-3 shrink-0">
       <button
         type="button"
-        class="w-10 h-10 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center shadow-2xs transition-colors cursor-pointer"
+        class="w-10 h-10 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
         title="Notifications"
       >
         <i class="fa-regular fa-bell text-sm"></i>
@@ -34,7 +34,7 @@
       <button
         type="button"
         (click)="exporterCsv()"
-        class="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer flex items-center gap-2"
+        class="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2"
       >
         <i class="fa-solid fa-arrow-up-from-bracket text-xs"></i>
         <span>Exporter CSV</span>
@@ -45,7 +45,7 @@
   <!-- ========================================================================= -->
   <!-- 2. BARRE D'ONGLETS & RECHERCHE (CONFORME À L'IMAGE 1)                       -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
+  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
     
     <!-- Onglets de rôles : Clients, Restaurants, Livreurs -->
     <div class="flex items-center gap-2 p-1 rounded-2xl bg-slate-50 border border-slate-100 shrink-0">
@@ -53,7 +53,7 @@
         type="button"
         (click)="changerOnglet('CLIENTS')"
         [class]="ongletActif() === 'CLIENTS'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
       >
@@ -64,7 +64,7 @@
         type="button"
         (click)="changerOnglet('RESTAURANTS')"
         [class]="ongletActif() === 'RESTAURANTS'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
       >
@@ -75,7 +75,7 @@
         type="button"
         (click)="changerOnglet('LIVREURS')"
         [class]="ongletActif() === 'LIVREURS'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
       >
@@ -100,7 +100,7 @@
   <!-- ========================================================================= -->
   <!-- 3. TABLEAU DES UTILISATEURS (CONFORME À L'IMAGE 1)                         -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
+  <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
@@ -200,7 +200,7 @@
                     <button
                       type="button"
                       (click)="ouvrirAlerteUtilisateur(utilisateur)"
-                      class="w-8 h-8 rounded-xl bg-[#E51824] hover:bg-red-700 text-white flex items-center justify-center text-xs shadow-xs transition-colors cursor-pointer"
+                      class="w-8 h-8 rounded-xl bg-[#E51824] hover:bg-red-700 text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
                       title="Envoyer un message au client banni"
                     >
                       <i class="fa-solid fa-paper-plane text-[11px]"></i>
@@ -263,7 +263,7 @@
           type="button"
           (click)="changerPage(1)"
           [class]="pageActuelle() === 1
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -275,7 +275,7 @@
           type="button"
           (click)="changerPage(2)"
           [class]="pageActuelle() === 2
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -287,7 +287,7 @@
           type="button"
           (click)="changerPage(3)"
           [class]="pageActuelle() === 3
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -331,7 +331,7 @@
       (click)="fermerModaleEdition()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative"
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 border border-slate-100 space-y-6 relative"
         (click)="$event.stopPropagation()"
       >
         <button
@@ -389,7 +389,7 @@
           <button
             type="button"
             (click)="sauvegarderUtilisateur()"
-            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md"
+            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs"
           >
             Enregistrer
           </button>
@@ -407,7 +407,7 @@
       (click)="fermerModaleAlerte()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative"
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 border border-slate-100 space-y-6 relative"
         (click)="$event.stopPropagation()"
       >
         <button
@@ -446,7 +446,7 @@
           <button
             type="button"
             (click)="envoyerAlerte()"
-            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center gap-2"
+            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs flex items-center gap-2"
           >
             <i class="fa-solid fa-paper-plane text-xs"></i>
             <span>Envoyer la notification</span>

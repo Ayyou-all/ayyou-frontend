@@ -5,7 +5,7 @@
 
   <!-- Boîte principale (Bottom-sheet mobile / Modale centrée bureau) -->
   <div
-    class="w-full max-w-sm sm:max-w-md bg-white rounded-t-[36px] sm:rounded-[36px] p-6 sm:p-8 flex flex-col items-center text-center space-y-6 shadow-2xl relative animation-glissement-haut"
+    class="w-full max-w-sm sm:max-w-md bg-white rounded-t-[36px] sm:rounded-[36px] p-6 sm:p-8 flex flex-col items-center text-center space-y-6 relative animation-glissement-haut"
     (click)="$event.stopPropagation()"
   >
 
@@ -29,30 +29,30 @@
       <div class="absolute inset-0 rounded-full bg-rose-50/70 border border-rose-100/40 animate-pulse"></div>
 
       <!-- Auréole intermédiaire -->
-      <div class="absolute inset-4 rounded-full bg-rose-100/60 shadow-inner"></div>
+      <div class="absolute inset-4 rounded-full bg-rose-100/60"></div>
 
       <!-- Grand cercle rouge vif central avec check blanc -->
-      <div class="relative z-10 w-28 h-28 rounded-full bg-[#E51824] text-white flex items-center justify-center shadow-xl shadow-red-500/30">
+      <div class="relative z-10 w-28 h-28 rounded-full bg-[#E51824] text-white flex items-center justify-center">
         <i class="fa-solid fa-check text-4xl stroke-[3px]"></i>
       </div>
 
       <!-- Icône 1 : Point d'interrogation dans cercle jaune (haut gauche) -->
-      <div class="absolute top-4 left-6 w-6 h-6 rounded-full bg-amber-50 text-amber-500 text-xs font-bold flex items-center justify-center shadow-xs">
+      <div class="absolute top-4 left-6 w-6 h-6 rounded-full bg-amber-50 text-amber-500 text-xs font-bold flex items-center justify-center">
         <i class="fa-solid fa-question text-[10px]"></i>
       </div>
 
       <!-- Icône 2 : Couverts rouges dans badge blanc (haut droite) -->
-      <div class="absolute top-2 right-4 w-9 h-9 rounded-2xl bg-white border border-slate-100 text-[#E51824] flex items-center justify-center shadow-md">
+      <div class="absolute top-2 right-4 w-9 h-9 rounded-2xl bg-white border border-slate-100 text-[#E51824] flex items-center justify-center">
         <i class="fa-solid fa-utensils text-xs"></i>
       </div>
 
       <!-- Icône 3 : Cœur vert dans badge blanc (bas gauche) -->
-      <div class="absolute bottom-6 left-2 w-8 h-8 rounded-xl bg-white border border-slate-100 text-emerald-500 flex items-center justify-center shadow-md">
+      <div class="absolute bottom-6 left-2 w-8 h-8 rounded-xl bg-white border border-slate-100 text-emerald-500 flex items-center justify-center">
         <i class="fa-solid fa-heart text-xs"></i>
       </div>
 
       <!-- Icône 4 : Étoile dorée (bas droite) -->
-      <div class="absolute bottom-8 right-6 text-amber-400 text-base drop-shadow-xs">
+      <div class="absolute bottom-8 right-6 text-amber-400 text-base">
         <i class="fa-solid fa-star"></i>
       </div>
 
@@ -79,7 +79,7 @@
       <button
         type="button"
         (click)="commanderANouveau()"
-        class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xl shadow-red-500/25 transition-all cursor-pointer"
+        class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer"
       >
         <i class="fa-solid fa-rotate-right text-sm"></i>
         <span>Commander à nouveau</span>
@@ -89,7 +89,7 @@
       <button
         type="button"
         (click)="consulterRecu()"
-        class="w-full py-4 px-6 rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-800 font-extrabold text-sm sm:text-base border border-slate-200/90 shadow-2xs transition-all cursor-pointer"
+        class="w-full py-4 px-6 rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-800 font-extrabold text-sm sm:text-base border border-slate-200/90 transition-all cursor-pointer"
       >
         <span>Consulter le reçu</span>
       </button>

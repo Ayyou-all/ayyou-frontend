@@ -7,7 +7,7 @@
 
   <!-- Notification flottante d'ajout au panier -->
   @if (notificationAjoutPanier()) {
-    <div class="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white text-xs sm:text-sm font-bold shadow-2xl border border-slate-700/60 flex items-center gap-2 animation-apparition">
+    <div class="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white text-xs sm:text-sm font-bold border border-slate-700/60 flex items-center gap-2 animation-apparition">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationAjoutPanier() }}</span>
     </div>
@@ -16,7 +16,7 @@
   <!-- ========================================================================= -->
   <!-- LECTEUR VIDÉO IMMERSIF STYLE TIKTOK (CENTRÉ SUR DESKTOP ET MOBILE)         -->
   <!-- ========================================================================= -->
-  <div class="relative w-full h-full md:max-h-[calc(100vh-84px)] md:aspect-[9/16] md:max-w-[410px] md:rounded-[32px] overflow-hidden shadow-2xl bg-black md:border-2 md:border-slate-800 flex items-center justify-center">
+  <div class="relative w-full h-full md:max-h-[calc(100vh-84px)] md:aspect-[9/16] md:max-w-[410px] md:rounded-[32px] overflow-hidden bg-black md:border-2 md:border-slate-800 flex items-center justify-center">
 
     @if (publicationCourante(); as pub) {
       <!-- Vidéo en arrière-plan avec boucle automatique -->
@@ -43,7 +43,7 @@
       }
 
       <!-- Superposition de dégradé sombre (discret pour maximiser la visibilité de la vidéo) -->
-      <div class="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/85 pointer-events-none"></div>
+      <div class="absolute inset-0 bg-black/25 pointer-events-none"></div>
 
       <!-- Indicateur de pause si la vidéo est arrêtée -->
       @if (!estEnLecture()) {
@@ -51,7 +51,7 @@
           (click)="basculerLecture()"
           class="absolute inset-0 flex items-center justify-center z-20 bg-black/30 backdrop-blur-[2px] cursor-pointer animation-apparition"
         >
-          <div class="w-16 h-16 rounded-full bg-black/60 border border-white/20 text-white flex items-center justify-center text-2xl shadow-xl">
+          <div class="w-16 h-16 rounded-full bg-black/60 border border-white/20 text-white flex items-center justify-center text-2xl">
             <i class="fa-solid fa-play ml-1"></i>
           </div>
         </div>
@@ -63,7 +63,7 @@
         <button
           type="button"
           (click)="basculerSon()"
-          class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-white hover:bg-black/60 flex items-center justify-center text-xs shadow-md transition-all cursor-pointer"
+          class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-white hover:bg-black/60 flex items-center justify-center text-xs transition-all cursor-pointer"
           [title]="estEnSourdine() ? 'Activer le son' : 'Couper le son'"
         >
           <i [class]="estEnSourdine() ? 'fa-solid fa-volume-xmark text-slate-300' : 'fa-solid fa-volume-high text-white'"></i>
@@ -72,7 +72,7 @@
         <!-- Bouton Recherche (Glassmorphism de la maquette) -->
         <a
           routerLink="/catalogue"
-          class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/60 flex items-center justify-center shadow-lg transition-all cursor-pointer"
+          class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/60 flex items-center justify-center transition-all cursor-pointer"
           aria-label="Rechercher"
         >
           <i class="fa-solid fa-magnifying-glass text-sm"></i>
@@ -84,14 +84,14 @@
         
         <!-- Avatar du restaurant + bouton '+' d'abonnement -->
         <div class="relative cursor-pointer group" (click)="voirRestaurant(pub.identifiantRestaurant)">
-          <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-xl bg-white">
+          <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-white bg-white">
             <img [src]="pub.adresseLogoRestaurant" alt="Restaurant" class="w-full h-full object-cover" />
           </div>
           <button
             type="button"
             (click)="basculerAbonnement(); $event.stopPropagation()"
             [class]="pub.estAbonne ? 'bg-emerald-600' : 'bg-[#E51824]'"
-            class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4.5 h-4.5 rounded-full text-white flex items-center justify-center text-[9px] shadow-md border-2 border-white transition-colors cursor-pointer"
+            class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4.5 h-4.5 rounded-full text-white flex items-center justify-center text-[9px] border-2 border-white transition-colors cursor-pointer"
             [title]="pub.estAbonne ? 'Abonné' : 'Suivre'"
           >
             <i [class]="pub.estAbonne ? 'fa-solid fa-check' : 'fa-solid fa-plus'"></i>
@@ -104,21 +104,21 @@
           (click)="basculerJaime()"
           class="flex flex-col items-center gap-1 text-white hover:scale-105 active:scale-95 transition-transform cursor-pointer"
         >
-          <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg">
+          <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center">
             <i
               [class]="pub.estAime ? 'fa-solid fa-heart text-red-500 scale-110' : 'fa-solid fa-heart text-white'"
-              class="text-lg drop-shadow transition-all"
+              class="text-lg transition-all"
             ></i>
           </div>
-          <span class="text-[11px] font-bold drop-shadow-md">{{ pub.nombreJeaime }}</span>
+          <span class="text-[11px] font-bold">{{ pub.nombreJeaime }}</span>
         </button>
 
         <!-- Nombre de vues (compteur de la base) -->
         <div class="flex flex-col items-center gap-1 text-white">
-          <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg">
-            <i class="fa-solid fa-eye text-base drop-shadow"></i>
+          <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center">
+            <i class="fa-solid fa-eye text-base"></i>
           </div>
-          <span class="text-[11px] font-bold drop-shadow-md">{{ pub.nombreVues }}</span>
+          <span class="text-[11px] font-bold">{{ pub.nombreVues }}</span>
         </div>
 
         <!-- Bouton Partager -->
@@ -127,10 +127,10 @@
           (click)="partagerPlat()"
           class="flex flex-col items-center gap-1 text-white hover:scale-105 active:scale-95 transition-transform cursor-pointer"
         >
-          <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-lg">
-            <i class="fa-solid fa-share text-base drop-shadow"></i>
+          <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center">
+            <i class="fa-solid fa-share text-base"></i>
           </div>
-          <span class="text-[11px] font-bold drop-shadow-md">{{ pub.nombrePartages || 'Partager' }}</span>
+          <span class="text-[11px] font-bold">{{ pub.nombrePartages || 'Partager' }}</span>
         </button>
       </div>
 
@@ -144,7 +144,7 @@
           <button
             type="button"
             (click)="voirRestaurant(pub.identifiantRestaurant)"
-            class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-white hover:underline drop-shadow-md cursor-pointer"
+            class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-white hover:underline cursor-pointer"
           >
             <span>{{ pub.nomUtilisateurRestaurant }}</span>
           </button>
@@ -154,7 +154,7 @@
         <button
           type="button"
           (click)="ouvrirDetailPlat(pub.plat)"
-          class="text-left text-sm sm:text-base font-bold text-white leading-tight font-['Outfit'] drop-shadow-md line-clamp-1 hover:text-red-300 transition-colors cursor-pointer"
+          class="text-left text-sm sm:text-base font-bold text-white leading-tight font-['Outfit'] line-clamp-1 hover:text-red-300 transition-colors cursor-pointer"
         >
           {{ pub.plat.nom }}
         </button>
@@ -162,13 +162,13 @@
         <!-- Prix en FCFA (Rouge vif caractéristique de la maquette) -->
         <div
           (click)="ouvrirDetailPlat(pub.plat)"
-          class="text-base sm:text-lg font-black text-[#E51824] tracking-tight drop-shadow-md cursor-pointer hover:scale-105 transition-transform inline-block"
+          class="text-base sm:text-lg font-black text-[#E51824] tracking-tight cursor-pointer hover:scale-105 transition-transform inline-block"
         >
           {{ pub.plat.prixFcfa | number }} FCFA
         </div>
 
         <!-- Description courte / Accroche -->
-        <p class="text-[11px] sm:text-xs text-neutral-200 leading-tight drop-shadow line-clamp-1 max-w-xs">
+        <p class="text-[11px] sm:text-xs text-neutral-200 leading-tight line-clamp-1 max-w-xs">
           {{ pub.descriptionAccroche }}
         </p>
 
@@ -177,7 +177,7 @@
           <button
             type="button"
             (click)="commanderPlatActuel(pub.plat)"
-            class="w-full py-2.5 sm:py-3 px-5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/40 transition-all cursor-pointer"
+            class="w-full py-2.5 sm:py-3 px-5 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <span>Commander</span>
             <i class="fa-solid fa-cart-shopping text-xs"></i>
@@ -224,7 +224,7 @@
     <button
       type="button"
       (click)="publicationPrecedente()"
-      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl cursor-pointer group"
+      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer group"
       title="Vidéo précédente (Swipe vers le bas ou Flèche Haut)"
     >
       <i class="fa-solid fa-arrow-up text-sm group-hover:-translate-y-0.5 transition-transform"></i>
@@ -234,7 +234,7 @@
     <button
       type="button"
       (click)="publicationSuivante()"
-      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl cursor-pointer group"
+      class="w-12 h-12 rounded-full bg-slate-900/90 hover:bg-black text-white border border-slate-700/80 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer group"
       title="Vidéo suivante (Swipe vers le haut ou Flèche Bas / Molette)"
     >
       <i class="fa-solid fa-arrow-down text-sm group-hover:translate-y-0.5 transition-transform"></i>

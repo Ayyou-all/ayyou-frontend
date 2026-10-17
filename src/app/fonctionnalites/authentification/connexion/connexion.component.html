@@ -11,12 +11,12 @@
       <img
         src="/images/plat-accueil.jpg"
         alt="Bol gourmand de riz et poulet AYYOU"
-        class="h-full w-auto max-w-full object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)] select-none pointer-events-none"
+        class="h-full w-auto max-w-full object-contain select-none pointer-events-none"
       />
     </div>
 
     <!-- Feuille inférieure blanche (Bottom sheet modale avec coins arrondis) -->
-    <div class="flex-1 bg-white rounded-t-[32px] px-6 pt-3 pb-8 -mt-6 z-10 shadow-2xl flex flex-col justify-between">
+    <div class="flex-1 bg-white rounded-t-[32px] px-6 pt-3 pb-8 -mt-6 z-10 flex flex-col justify-between">
       
       <div>
         <!-- Barre de glissement / Poignée grise au sommet -->
@@ -108,7 +108,7 @@
             type="submit"
             id="bouton-se-connecter-mobile"
             [disabled]="serviceAuthentification.chargementEnCours()"
-            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 mt-3"
+            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 mt-3"
           >
             @if (serviceAuthentification.chargementEnCours()) {
               <i class="fa-solid fa-circle-notch fa-spin text-white"></i>
@@ -161,7 +161,7 @@
           <img
             src="/images/plat-accueil.jpg"
             alt="Bol gourmand de riz et poulet AYYOU"
-            class="w-full h-full object-contain rounded-2xl drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] select-none pointer-events-none"
+            class="w-full h-full object-contain rounded-2xl select-none pointer-events-none"
           />
         </div>
       </div>
@@ -194,7 +194,7 @@
         <a
           routerLink="/accueil"
           id="bouton-retour-accueil-desktop"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-xs sm:text-sm font-medium rounded-full border border-slate-200/90 shadow-sm hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-xs sm:text-sm font-medium rounded-full border border-slate-200/90 hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer"
         >
           <i class="fa-solid fa-arrow-left text-slate-600 text-xs"></i>
           <span>Retour à l'accueil</span>
@@ -203,7 +203,7 @@
 
       <!-- Carte centrale de connexion -->
       <main class="w-full max-w-[440px] mx-auto my-auto py-8">
-        <div class="bg-white rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/70 border border-slate-100 flex flex-col">
+        <div class="bg-white rounded-3xl p-8 sm:p-10 border border-slate-100 flex flex-col">
           
           <!-- Logo AYYOU centré en haut de la carte -->
           <div class="flex justify-center mb-8">
@@ -296,7 +296,7 @@
               type="submit"
               id="bouton-se-connecter-desktop"
               [disabled]="serviceAuthentification.chargementEnCours()"
-              class="w-full py-3.5 px-6 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed mt-2"
+              class="w-full py-3.5 px-6 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed mt-2"
             >
               @if (serviceAuthentification.chargementEnCours()) {
                 <i class="fa-solid fa-circle-notch fa-spin text-white"></i>
