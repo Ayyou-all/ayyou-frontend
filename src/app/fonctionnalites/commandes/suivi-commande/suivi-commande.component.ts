@@ -216,6 +216,8 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
 
   readonly chargementPaiement = signal<boolean>(false);
 
+  private rafraichirMaintenant?: () => void;
+
   // Annulation : le serveur l'autorise seulement avant que le restaurant accepte la commande.
   readonly peutAnnuler = computed(() => ['EN_ATTENTE_PAIEMENT', 'CREEE_EN_ATTENTE'].includes(this.commande().statutBrut || ''));
   readonly confirmationAnnulation = signal<boolean>(false);
@@ -356,8 +358,17 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           return;
         }
+        // Écran en arrière-plan : on n'utilise pas le forfait internet pour rien.
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+          return;
+        }
         this.serviceCommandes.rechargerCommande(id);
       }, 4000);
+
+      // Retour sur l'écran ou retour du réseau : état réel immédiatement.
+      this.rafraichirMaintenant = () => this.serviceCommandes.rechargerCommande(id);
+      document.addEventListener('visibilitychange', this.rafraichirMaintenant);
+      window.addEventListener('online', this.rafraichirMaintenant);
     }
   }
 
@@ -371,6 +382,10 @@ export class SuiviCommandeComponent implements OnInit, AfterViewInit, OnDestroy 
   ngOnDestroy(): void {
     if (this.intervallePolling) {
       clearInterval(this.intervallePolling);
+    }
+    if (this.rafraichirMaintenant) {
+      document.removeEventListener('visibilitychange', this.rafraichirMaintenant);
+      window.removeEventListener('online', this.rafraichirMaintenant);
     }
     if (this.carteLeaflet) {
       this.carteLeaflet.remove();
