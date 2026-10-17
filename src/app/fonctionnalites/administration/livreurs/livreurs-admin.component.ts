@@ -58,12 +58,6 @@ export class LivreursAdminComponent implements OnInit {
   readonly livreurEnEdition = signal<LivreurAdministration | null>(null);
   readonly modaleEditionOuverte = signal<boolean>(false);
 
-  // Modale d'ajout
-  readonly modaleAjoutOuverte = signal<boolean>(false);
-  readonly nouveauNom = signal<string>('');
-  readonly nouveauTelephone = signal<string>('+221 77 ');
-  readonly nouveauVehicule = signal<string>('Yamaha Crypton');
-  readonly nouveauTypeVehicule = signal<'MOTO' | 'VELO' | 'VOITURE'>('MOTO');
 
   // Données dynamiques des livreurs
   readonly listeLivreurs = signal<LivreurAdministration[]>([]);
@@ -79,7 +73,7 @@ export class LivreursAdminComponent implements OnInit {
 
     return {
       enLigne: { valeur: nbEnLigne, evolution: pctEnLigne },
-      enLivraison: { valeur: nbEnLivraison, evolution: 'Actif' },
+      enLivraison: { valeur: nbEnLivraison, evolution: '' },
       totalLivreurs: { valeur: total },
       livrAujourdhui: { valeur: livrAujourdhui }
     };
@@ -138,7 +132,7 @@ export class LivreursAdminComponent implements OnInit {
             zonePrincipale: l.zone_principale || '',
             dateInscription: l.dateInscription
               ? new Date(l.dateInscription).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-              : 'Récent'
+              : ''
           };
         });
 
@@ -223,25 +217,6 @@ export class LivreursAdminComponent implements OnInit {
         setTimeout(() => this.notificationSucces.set(null), 3000);
       }
     });
-  }
-
-  ouvrirNouveauLivreur(): void {
-    this.nouveauNom.set('');
-    this.modaleAjoutOuverte.set(true);
-  }
-
-  fermerNouveauLivreur(): void {
-    this.modaleAjoutOuverte.set(false);
-  }
-
-  creerNouveauLivreur(): void {
-    const nom = this.nouveauNom().trim();
-    if (!nom) return;
-
-    this.notificationSucces.set(`Le coursier "${nom}" a été enregistré.`);
-    this.fermerNouveauLivreur();
-    this.chargerLivreurs();
-    setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
   changerPage(page: number): void {

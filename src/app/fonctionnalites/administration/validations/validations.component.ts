@@ -174,7 +174,7 @@ export class ValidationsComponent implements OnInit {
             specialiteOuVehicule: e.specialite || 'Restauration',
             telephone: e.telephone || e.telephoneGerant || '',
             courriel: e.emailGerant || '',
-            region: e.quartier_ville || e.adresse || 'Dakar',
+            region: e.quartier_ville || e.adresse || '',
             adresseComplete: e.adresse || 'Dakar, Sénégal',
             type: 'RESTAURANT' as const,
             iconeOuPhoto: e.adresse_logo || e.logo || 'fa-solid fa-utensils',
@@ -185,7 +185,7 @@ export class ValidationsComponent implements OnInit {
             listeDocuments: docs,
             dateSoumission: e.date_creation
               ? new Date(e.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-              : 'Récent',
+              : '',
             statut:
               e.statut_validation === 'ACTIF'
                 ? 'VALIDE'
@@ -205,7 +205,7 @@ export class ValidationsComponent implements OnInit {
             specialiteOuVehicule: l.nom_vehicule || l.type_vehicule || 'Moto',
             telephone: l.telephone || '',
             courriel: l.email || '',
-            region: l.zone_principale || 'Dakar',
+            region: l.zone_principale || '',
             adresseComplete: l.zone_principale || 'Dakar, Sénégal',
             type: 'LIVREUR' as const,
             iconeOuPhoto: l.photo || 'fa-solid fa-motorcycle',
@@ -216,7 +216,7 @@ export class ValidationsComponent implements OnInit {
             listeDocuments: docs,
             dateSoumission: l.dateInscription
               ? new Date(l.dateInscription).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-              : 'Récent',
+              : '',
             statut:
               l.statut_validation === 'ACTIF'
                 ? 'VALIDE'
@@ -307,7 +307,7 @@ export class ValidationsComponent implements OnInit {
         tailleFichier: d.taille_fichier || 'Fichier certifié',
         dateTeleversement: d.date_envoi
           ? new Date(d.date_envoi).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-          : 'Récent',
+          : '',
         urlFichier: urlComplete,
         nomFichier: nomFichierReel,
         estImage,

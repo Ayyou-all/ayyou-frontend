@@ -68,12 +68,6 @@ export class RestaurantsAdminComponent implements OnInit {
   readonly restaurantEnEdition = signal<RestaurantAdministration | null>(null);
   readonly modaleEditionOuverte = signal<boolean>(false);
 
-  // Modale d'ajout
-  readonly modaleAjoutOuverte = signal<boolean>(false);
-  readonly nouveauNom = signal<string>('');
-  readonly nouvelleCategorie = signal<string>('Fast Food Local');
-  readonly nouvelleLocalisation = signal<string>('Almadies, Dakar');
-  readonly nouveauTelephone = signal<string>('+221 77 123 45 67');
 
   // Données dynamiques des restaurants
   readonly listeRestaurants = signal<RestaurantAdministration[]>([]);
@@ -86,9 +80,9 @@ export class RestaurantsAdminComponent implements OnInit {
     const nbInactifs = restos.filter((r) => r.statut === 'INACTIF').length;
 
     return {
-      actifs: { valeur: nbActifs, evolution: `+${nbActifs}` },
-      enAttente: { valeur: nbEnAttente, evolution: nbEnAttente > 0 ? 'Nouveau' : '0' },
-      inactifs: { valeur: nbInactifs < 10 ? `0${nbInactifs}` : `${nbInactifs}`, evolution: '-0' },
+      actifs: { valeur: nbActifs, evolution: '' },
+      enAttente: { valeur: nbEnAttente, evolution: '' },
+      inactifs: { valeur: nbInactifs, evolution: '' },
       commandesTotales: { valeur: restos.reduce((total, r) => total + (r.totalCommandes ?? 0), 0) }
     };
   });
@@ -254,25 +248,6 @@ export class RestaurantsAdminComponent implements OnInit {
         setTimeout(() => this.notificationSucces.set(null), 3000);
       }
     });
-  }
-
-  ouvrirNouveauRestaurant(): void {
-    this.nouveauNom.set('');
-    this.modaleAjoutOuverte.set(true);
-  }
-
-  fermerNouveauRestaurant(): void {
-    this.modaleAjoutOuverte.set(false);
-  }
-
-  creerNouveauRestaurant(): void {
-    const nom = this.nouveauNom().trim();
-    if (!nom) return;
-
-    this.notificationSucces.set(`Demande d'inscription envoyée pour "${nom}".`);
-    this.fermerNouveauRestaurant();
-    this.chargerRestaurants();
-    setTimeout(() => this.notificationSucces.set(null), 3000);
   }
 
   changerPage(page: number): void {

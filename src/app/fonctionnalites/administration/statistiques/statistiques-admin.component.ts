@@ -68,10 +68,10 @@ export class StatistiquesAdminComponent implements OnInit, AfterViewInit, OnDest
 
   // 4 Cartes KPI dynamiques
   readonly kpis = signal({
-    revenuTotal: { valeur: '0 FCFA', evolution: '+0%' },
-    commandesTotales: { valeur: '0', evolution: '+0%' },
-    utilisateursActifs: { valeur: '0', evolution: '+0%' },
-    tauxCroissance: { valeur: '100%', evolution: 'Optimal' }
+    revenuTotal: { valeur: '0 FCFA', evolution: '' },
+    commandesTotales: { valeur: '0', evolution: '' },
+    utilisateursActifs: { valeur: '0', evolution: '' },
+    tauxCroissance: { valeur: '—', evolution: '' }
   });
 
   // Points de la courbe d'évolution des commandes/revenus
@@ -288,10 +288,14 @@ export class StatistiquesAdminComponent implements OnInit, AfterViewInit, OnDest
         const totalUsersFormate = Number(totalUsers).toLocaleString('fr-FR');
 
         this.kpis.set({
-          revenuTotal: { valeur: volumeFormate, evolution: `+${totalCmd} cmd` },
-          commandesTotales: { valeur: totalCmdFormate, evolution: totalCmd > 0 ? '+100%' : '0%' },
-          utilisateursActifs: { valeur: totalUsersFormate, evolution: '+100%' },
-          tauxCroissance: { valeur: '98.5%', evolution: 'Optimal' }
+          revenuTotal: { valeur: volumeFormate, evolution: '' },
+          commandesTotales: { valeur: totalCmdFormate, evolution: '' },
+          utilisateursActifs: { valeur: totalUsersFormate, evolution: '' },
+          // Part des commandes payées qui ont réellement été livrées
+          tauxCroissance: {
+            valeur: totalCmd > 0 ? `${Math.round(((stats.commandesLivrees ?? 0) / totalCmd) * 100)} %` : '—',
+            evolution: ''
+          }
         });
 
         const maintenant = new Date();

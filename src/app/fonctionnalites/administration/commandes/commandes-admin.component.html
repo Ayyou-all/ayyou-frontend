@@ -1,6 +1,9 @@
 <div class="space-y-6 max-w-7xl mx-auto">
 
   <!-- Notification Toast -->
+  @if (messageErreur()) {
+    <div class="p-3 rounded-2xl bg-red-50 border border-red-200 text-sm font-semibold text-red-700">{{ messageErreur() }}</div>
+  }
   @if (notificationSucces()) {
     <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
@@ -23,24 +26,14 @@
 
     <!-- Actions à droite : Date & Bouton '+ Nouvelle Commande' -->
     <div class="flex items-center gap-3 shrink-0">
-      <!-- Sélecteur de date -->
-      <button
-        type="button"
-        class="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer flex items-center gap-2"
-      >
-        <i class="fa-regular fa-calendar text-slate-400 text-xs"></i>
-        <span>{{ dateSelectionnee() }}</span>
-      </button>
-
-      <!-- Bouton rouge + Nouvelle Commande -->
-      <button
-        type="button"
-        (click)="ouvrirNouvelleCommande()"
-        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
-      >
-        <i class="fa-solid fa-plus text-xs"></i>
-        <span>Nouvelle Commande</span>
-      </button>
+      <!-- Filtre par date (appliqué par le serveur) -->
+      <input
+        type="date"
+        [ngModel]="dateSelectionnee()"
+        (ngModelChange)="changerDate($event)"
+        class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold"
+        aria-label="Filtrer par date"
+      />
     </div>
   </div>
 
@@ -55,14 +48,11 @@
         <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm shadow-2xs">
           <i class="fa-solid fa-clock-rotate-left"></i>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ statsKpi().enAttente.evolution }}
-        </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En attente</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi().enAttente.valeur }}
+          {{ statsKpi().enAttente }}
         </div>
       </div>
     </div>
@@ -73,14 +63,11 @@
         <div class="w-10 h-10 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center text-sm shadow-2xs">
           <i class="fa-solid fa-truck-fast"></i>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ statsKpi().enCours.evolution }}
-        </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En cours</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi().enCours.valeur }}
+          {{ statsKpi().enCours }}
         </div>
       </div>
     </div>
@@ -91,14 +78,11 @@
         <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm shadow-2xs">
           <i class="fa-solid fa-circle-check"></i>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-          {{ statsKpi().livrees.evolution }}
-        </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Livrées</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi().livrees.valeur }}
+          {{ statsKpi().livrees }}
         </div>
       </div>
     </div>
@@ -109,14 +93,11 @@
         <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-sm shadow-2xs">
           <i class="fa-solid fa-circle-xmark"></i>
         </div>
-        <span class="px-2.5 py-1 rounded-full text-xs font-black bg-red-50 text-red-600 border border-red-100">
-          {{ statsKpi().annulees.evolution }}
-        </span>
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Annulées</div>
         <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
-          {{ statsKpi().annulees.valeur }}
+          {{ statsKpi().annulees }}
         </div>
       </div>
     </div>
@@ -132,7 +113,7 @@
     <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-50 border border-slate-100 shrink-0 overflow-x-auto">
       <button
         type="button"
-        (click)="ongletActif.set('TOUS'); pageActuelle.set(1)"
+        (click)="changerOnglet('TOUS')"
         [class]="ongletActif() === 'TOUS'
           ? 'bg-white text-slate-900 font-extrabold shadow-sm'
           : 'text-slate-500 hover:text-slate-800 font-bold'"
@@ -143,7 +124,7 @@
 
       <button
         type="button"
-        (click)="ongletActif.set('EN_ATTENTE'); pageActuelle.set(1)"
+        (click)="changerOnglet('EN_ATTENTE')"
         [class]="ongletActif() === 'EN_ATTENTE'
           ? 'bg-white text-slate-900 font-extrabold shadow-sm'
           : 'text-slate-500 hover:text-slate-800 font-bold'"
@@ -154,7 +135,7 @@
 
       <button
         type="button"
-        (click)="ongletActif.set('EN_COURS'); pageActuelle.set(1)"
+        (click)="changerOnglet('EN_COURS')"
         [class]="ongletActif() === 'EN_COURS'
           ? 'bg-white text-slate-900 font-extrabold shadow-sm'
           : 'text-slate-500 hover:text-slate-800 font-bold'"
@@ -165,7 +146,7 @@
 
       <button
         type="button"
-        (click)="ongletActif.set('LIVREES'); pageActuelle.set(1)"
+        (click)="changerOnglet('LIVREES')"
         [class]="ongletActif() === 'LIVREES'
           ? 'bg-white text-slate-900 font-extrabold shadow-sm'
           : 'text-slate-500 hover:text-slate-800 font-bold'"
@@ -176,7 +157,7 @@
 
       <button
         type="button"
-        (click)="ongletActif.set('ANNULEES'); pageActuelle.set(1)"
+        (click)="changerOnglet('ANNULEES')"
         [class]="ongletActif() === 'ANNULEES'
           ? 'bg-white text-slate-900 font-extrabold shadow-sm'
           : 'text-slate-500 hover:text-slate-800 font-bold'"
@@ -184,6 +165,19 @@
       >
         Annulées
       </button>
+      @for (onglet of [{ cle: 'SANS_LIVREUR', libelle: 'Sans livreur' }, { cle: 'A_REMBOURSER', libelle: 'À rembourser' }]; track onglet.cle) {
+        <button
+          type="button"
+          (click)="changerOnglet($any(onglet.cle))"
+          [class]="ongletActif() === onglet.cle ? 'bg-white text-slate-900 font-extrabold shadow-sm' : 'text-slate-500 hover:text-slate-800 font-bold'"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
+        >
+          {{ onglet.libelle }}
+          @if (onglet.cle === 'A_REMBOURSER' && statsKpi().aRembourser > 0) {
+            <span class="ml-1 px-1.5 rounded-full bg-[#E51824] text-white text-[10px]">{{ statsKpi().aRembourser }}</span>
+          }
+        </button>
+      }
     </div>
 
     <!-- Champ de recherche + Icône de filtres avancés -->
@@ -192,8 +186,8 @@
       <input
         type="text"
         [ngModel]="rechercheTexte()"
-        (ngModelChange)="rechercheTexte.set($event); pageActuelle.set(1)"
-        placeholder="Rechercher ID, client..."
+        (ngModelChange)="changerRecherche($event)"
+        placeholder="Référence, client, téléphone, restaurant, livreur..."
         class="w-full py-2.5 pl-10 pr-10 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-100 transition-all"
       />
       <button
@@ -237,8 +231,12 @@
               <!-- 2. CLIENT (Photo + Nom) -->
               <td class="py-4 px-6">
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                    <img [src]="cmd.clientPhoto" [alt]="cmd.clientNom" class="w-full h-full object-cover" />
+                  <div class="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+                    @if (cmd.clientPhoto) {
+                      <img [src]="cmd.clientPhoto" [alt]="cmd.clientNom" class="w-full h-full object-cover" />
+                    } @else {
+                      <i class="fa-solid fa-user text-slate-400 text-[10px]"></i>
+                    }
                   </div>
                   <span class="font-bold text-slate-900 text-xs truncate">
                     {{ cmd.clientNom }}
@@ -255,8 +253,12 @@
               <td class="py-4 px-6">
                 @if (cmd.estCoursierAssigne) {
                   <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                      <img [src]="cmd.coursierPhoto" [alt]="cmd.coursierNom" class="w-full h-full object-cover" />
+                    <div class="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+                      @if (cmd.coursierPhoto) {
+                        <img [src]="cmd.coursierPhoto" [alt]="cmd.coursierNom" class="w-full h-full object-cover" />
+                      } @else {
+                        <i class="fa-solid fa-motorcycle text-slate-400 text-[10px]"></i>
+                      }
                     </div>
                     <span class="text-xs font-bold text-slate-800 truncate">
                       {{ cmd.coursierNom }}
@@ -322,9 +324,9 @@
       
       <!-- Texte récapitulatif -->
       <div class="text-xs font-semibold text-slate-500">
-        Affichage de <span class="font-bold text-slate-900">1</span> à
-        <span class="font-bold text-slate-900">{{ commandesAffichees().length }}</span> sur
-        <span class="font-bold text-slate-900">{{ commandesFiltrees().length }}</span> commandes
+        Page <span class="font-bold text-slate-900">{{ pageActuelle() }}</span> sur
+        <span class="font-bold text-slate-900">{{ nombrePagesTotal() }}</span> ·
+        <span class="font-bold text-slate-900">{{ nombreTotal() }}</span> commandes
       </div>
 
       <!-- Contrôles : <  1  2  3  > -->
@@ -341,41 +343,7 @@
           <i class="fa-solid fa-chevron-left text-[10px]"></i>
         </button>
 
-        <!-- Page 1 (Active) -->
-        <button
-          type="button"
-          (click)="changerPage(1)"
-          [class]="pageActuelle() === 1
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          1
-        </button>
-
-        <!-- Page 2 -->
-        <button
-          type="button"
-          (click)="changerPage(2)"
-          [class]="pageActuelle() === 2
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          2
-        </button>
-
-        <!-- Page 3 -->
-        <button
-          type="button"
-          (click)="changerPage(3)"
-          [class]="pageActuelle() === 3
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          3
-        </button>
+        <span class="px-2 text-xs font-bold text-slate-700">{{ pageActuelle() }}</span>
 
         <!-- Suivant > -->
         <button
@@ -481,47 +449,101 @@
           </div>
         </div>
 
-        <!-- Assignation du coursier -->
-        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-          <div class="text-xs font-bold text-slate-700 flex items-center justify-between">
-            <span>Coursier affecté :</span>
-            @if (commandeEnDetail()!.estCoursierAssigne) {
-              <span class="text-emerald-600 font-extrabold flex items-center gap-1">
-                <i class="fa-solid fa-circle-check text-[10px]"></i>
-                <span>{{ commandeEnDetail()!.coursierNom }}</span>
-              </span>
-            } @else {
-              <span class="text-amber-600 font-bold">Non assigné</span>
+        <!-- État réel de la commande -->
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-1 text-xs text-slate-700">
+          <div><strong>Statut :</strong> {{ commandeEnDetail()!.libelleStatutDetaille }}</div>
+          @if (commandeEnDetail()!.motif) {
+            <div><strong>Motif :</strong> {{ commandeEnDetail()!.motif }}</div>
+          }
+          @if (commandeEnDetail()!.repereLivraison) {
+            <div><strong>Repère :</strong> {{ commandeEnDetail()!.repereLivraison }}</div>
+          }
+          <div>
+            <strong>Paiement :</strong>
+            {{ commandeEnDetail()!.paiementConfirme ? 'reçu' : 'non reçu' }}
+            @if (commandeEnDetail()!.paiementARembourser) {
+              <span class="ml-1 font-bold text-[#E51824]">— à rembourser</span>
             }
           </div>
+          <div>
+            <strong>Livreur :</strong>
+            {{ commandeEnDetail()!.estCoursierAssigne ? commandeEnDetail()!.coursierNom : 'aucun' }}
+            @if (commandeEnDetail()!.coursierTelephone) {
+              · <a class="underline" [href]="'tel:' + commandeEnDetail()!.coursierTelephone">{{ commandeEnDetail()!.coursierTelephone }}</a>
+            }
+          </div>
+        </div>
 
-          @if (!commandeEnDetail()!.estCoursierAssigne) {
-            <div class="flex flex-wrap items-center gap-2 pt-1">
-              @for (liv of livreurs(); track liv.id) {
-                <button
-                  type="button"
-                  (click)="assignerCoursier(liv.nomComplet || liv.nom)"
-                  class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer"
-                >
-                  Assigner {{ liv.nomComplet || liv.nom }}
-                </button>
-              }
-              <button
-                type="button"
-                (click)="assignerCoursierAutomatique()"
-                class="px-3 py-1.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <i class="fa-solid fa-bolt text-[10px]"></i>
-                <span>Assignation automatique</span>
+        <!-- Actions du support -->
+        <div class="p-4 rounded-2xl border border-slate-200 space-y-3">
+          <div class="text-xs font-bold text-slate-700">Actions du support</div>
+
+          @if (commandeEnDetail()!.paiementARembourser) {
+            <button type="button" (click)="executerAction('rembourser')" [disabled]="actionEnCours()"
+              class="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer disabled:opacity-50">
+              Rembourser le client ({{ commandeEnDetail()!.totalMontant }})
+            </button>
+          }
+
+          @if (commandeEnDetail()!.statutDetaille === 'PRETE_POUR_RETRAIT' && !commandeEnDetail()!.estCoursierAssigne) {
+            <div class="flex gap-2">
+              <select [ngModel]="livreurChoisi()" (ngModelChange)="livreurChoisi.set($event)"
+                class="flex-1 p-2 rounded-xl border border-slate-200 text-xs">
+                <option value="">Livreur en ligne…</option>
+                @for (liv of livreurs(); track liv.id) {
+                  <option [value]="liv.id">{{ liv.nomComplet }} · {{ liv.zone_principale }}</option>
+                }
+              </select>
+              <button type="button" (click)="executerAction('assigner-livreur')" [disabled]="!livreurChoisi() || actionEnCours()"
+                class="px-3 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer disabled:opacity-50">
+                Assigner
               </button>
             </div>
+            @if (livreurs().length === 0) {
+              <p class="text-[11px] text-slate-500">Aucun livreur validé n'est en ligne pour le moment.</p>
+            }
+          }
+
+          @if (peutAnnuler(commandeEnDetail()!) || peutRetirerLivreur(commandeEnDetail()!)) {
+            <input [ngModel]="motifAction()" (ngModelChange)="motifAction.set($event)" placeholder="Motif (obligatoire)"
+              class="w-full p-2 rounded-xl border border-slate-200 text-xs" />
+            <div class="flex gap-2">
+              @if (peutRetirerLivreur(commandeEnDetail()!)) {
+                <button type="button" (click)="executerAction('retirer-livreur')" [disabled]="actionEnCours()"
+                  class="flex-1 py-2.5 rounded-xl border border-slate-300 text-xs font-bold cursor-pointer disabled:opacity-50">
+                  Retirer le livreur
+                </button>
+              }
+              @if (peutAnnuler(commandeEnDetail()!)) {
+                <button type="button" (click)="executerAction('annuler')" [disabled]="actionEnCours()"
+                  class="flex-1 py-2.5 rounded-xl bg-[#E51824] text-white text-xs font-bold cursor-pointer disabled:opacity-50">
+                  Annuler{{ commandeEnDetail()!.paiementConfirme ? ' et rembourser' : '' }}
+                </button>
+              }
+            </div>
+          }
+          @if (erreurAction()) {
+            <p class="text-xs font-semibold text-red-600">{{ erreurAction() }}</p>
           }
         </div>
+
+        <!-- Journal de la commande : qui a fait quoi et quand -->
+        <details class="text-xs text-slate-600">
+          <summary class="cursor-pointer font-bold text-slate-700">Historique ({{ commandeEnDetail()!.historique.length }})</summary>
+          <ul class="mt-2 space-y-1">
+            @for (etape of commandeEnDetail()!.historique; track $index) {
+              <li>
+                {{ etape.date | date: 'dd/MM HH:mm' }} · <strong>{{ etape.auteur }}</strong> :
+                {{ etape.nouveauStatut }} — {{ etape.commentaire }}
+              </li>
+            }
+          </ul>
+        </details>
 
         <!-- Total et fermeture -->
         <div class="flex items-center justify-between pt-4 border-t border-slate-100">
           <div>
-            <div class="text-xs text-slate-400 font-medium">Montant total réglé</div>
+            <div class="text-xs text-slate-400 font-medium">Montant total</div>
             <div class="text-xl font-black text-slate-900 font-['Outfit']">
               {{ commandeEnDetail()!.totalMontant }}
             </div>
@@ -540,91 +562,5 @@
     </div>
   }
 
-  <!-- ========================================================================= -->
-  <!-- 8. MODALE CRÉATION 'NOUVELLE COMMANDE'                                     -->
-  <!-- ========================================================================= -->
-  @if (modaleNouvelleCommandeOuverte()) {
-    <div
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animation-apparition"
-      (click)="fermerNouvelleCommande()"
-    >
-      <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 relative"
-        (click)="$event.stopPropagation()"
-      >
-        <button
-          type="button"
-          (click)="fermerNouvelleCommande()"
-          class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
-        >
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-
-        <h3 class="text-xl font-black text-slate-900 font-['Outfit']">
-          Nouvelle commande express
-        </h3>
-
-        <div class="space-y-3.5 text-xs">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Nom du client</label>
-            <input
-              type="text"
-              [(ngModel)]="nouveauClientNom"
-              placeholder="Ex: Ousmane Dieng"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
-            />
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Restaurant partenaire</label>
-            <select
-              [(ngModel)]="nouveauRestaurantNom"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 focus:outline-none focus:border-red-500"
-            >
-              <option value="Le Ryad Dakar">Le Ryad Dakar</option>
-              <option value="Chez Loutcha">Chez Loutcha</option>
-              <option value="KFC Plateaux">KFC Plateaux</option>
-              <option value="Griot Express">Griot Express</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Montant estimé (FCFA)</label>
-            <input
-              type="number"
-              [(ngModel)]="nouveauMontant"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
-            />
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Adresse de destination</label>
-            <input
-              type="text"
-              [(ngModel)]="nouvelleAdresse"
-              class="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-red-500"
-            />
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            (click)="fermerNouvelleCommande()"
-            class="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs"
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            (click)="creerNouvelleCommande()"
-            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md"
-          >
-            Créer la commande
-          </button>
-        </div>
-      </div>
-    </div>
-  }
 
 </div>
