@@ -5,7 +5,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { EMPTY, Observable, catchError, expand, forkJoin, map, of, reduce, tap } from 'rxjs';
+import { EMPTY, Observable, expand, forkJoin, map, reduce, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PublicationFil } from '../modeles/fil-actualite.modele';
 import { Plat } from '../modeles/plat.modele';
@@ -82,8 +82,7 @@ export class ServiceCatalogueService {
           couleurFond: cat.couleur_fond || cat.couleurFond || 'bg-rose-50',
           couleurTexte: cat.couleur_texte || cat.couleurTexte || 'text-[#E51824]'
         }));
-      }),
-      catchError(() => of([]))
+      })
     );
   }
 
@@ -265,7 +264,7 @@ export class ServiceCatalogueService {
           )
         );
       },
-      error: () => {}
+      error: () => this.messageErreur.set("Impossible de modifier l'abonnement. Vérifiez votre connexion.")
     });
   }
 

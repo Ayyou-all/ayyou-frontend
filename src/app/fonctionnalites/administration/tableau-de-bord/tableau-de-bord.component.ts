@@ -100,6 +100,7 @@ export class TableauDeBordComponent implements AfterViewInit, OnDestroy {
   readonly dernieresValidations = signal<ValidationRecenteSuperadmin[]>([]);
 
   // Horodatage de la dernière synchronisation avec l'API
+  readonly messageErreur = signal<string | null>(null);
   readonly derniereMiseAJour = signal<Date | null>(null);
 
   constructor() {
@@ -314,8 +315,9 @@ export class TableauDeBordComponent implements AfterViewInit, OnDestroy {
         }
 
         this.derniereMiseAJour.set(new Date());
+        this.messageErreur.set(null);
       },
-      error: () => {}
+      error: () => this.messageErreur.set('Impossible de charger les statistiques. Nouvelle tentative automatique.')
     });
   }
 

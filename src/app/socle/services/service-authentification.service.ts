@@ -278,8 +278,9 @@ export class ServiceAuthentification {
           jeton_rafraichissement: jetonRafraichissement
         })
         .subscribe({
-          next: () => {},
-          error: () => {}
+          // Déconnexion locale faite dans tous les cas ; si le serveur est injoignable,
+          // le jeton expirera de lui-même. Rien à montrer à l'utilisateur.
+          error: () => undefined
         });
     }
 
