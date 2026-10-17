@@ -1,4 +1,7 @@
-<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between select-none font-['Plus_Jakarta_Sans',sans-serif]">
+<div class="md:pl-64 min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between select-none font-['Plus_Jakarta_Sans',sans-serif]">
+  <!-- Menu latéral livreur (ordinateur et tablette uniquement) -->
+  <app-menu-livreur></app-menu-livreur>
+
 
   <!-- ========================================================================= -->
   <!-- 1. EN-TÊTE MES GAINS DU LIVREUR (DESKTOP & MOBILE)                        -->
@@ -8,7 +11,7 @@
       
       <!-- Gauche : Logo + Badge Espace Livreur -->
       <div class="flex items-center gap-4">
-        <a routerLink="/livreur" class="flex items-center gap-2 group cursor-pointer">
+        <a routerLink="/livreur" class="flex md:hidden items-center gap-2 group cursor-pointer">
           <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
           <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-[#E51824] text-[11px] font-black uppercase tracking-wider hidden sm:inline-flex items-center gap-1 border border-red-100">
             <i class="fa-solid fa-motorcycle text-[10px]"></i>
@@ -17,7 +20,7 @@
         </a>
 
         <!-- Liens de navigation Desktop -->
-        <nav class="hidden md:flex items-center gap-1 pl-4 border-l border-slate-100">
+        <nav class="hidden">
           <a
             routerLink="/livreur"
             routerLinkActive="bg-red-50 text-[#E51824] font-black"
@@ -50,15 +53,6 @@
 
       <!-- Droite : Calendrier + Profil Livreur (Desktop & Mobile) -->
       <div class="flex items-center gap-3">
-        <!-- Bouton calendrier rond -->
-        <button
-          type="button"
-          class="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors cursor-pointer border border-slate-100"
-          aria-label="Sélectionner la période"
-          title="Sélectionner la période"
-        >
-          <i class="fa-regular fa-calendar text-sm"></i>
-        </button>
 
         <!-- Profil Livreur cliquable (Mobile et Desktop) -> /livreur/profil -->
         <a
@@ -173,12 +167,6 @@
         <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
           Détails quotidiens
         </h3>
-        <button
-          type="button"
-          class="text-xs font-black text-[#E51824] hover:text-red-700 tracking-wider uppercase cursor-pointer"
-        >
-          VOIR TOUT
-        </button>
       </div>
 
       <!-- Liste des cartes par jour -->
@@ -235,7 +223,7 @@
   <!-- 3. BARRE DE NAVIGATION INFÉRIEURE (ACCUEIL, GAINS ACTIF, PROFIL)          -->
   <!-- Conforme au bas de l'Image 2                                              -->
   <!-- ========================================================================= -->
-  <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40">
+  <nav class="md:hidden w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40">
     <!-- Onglet 1 : Accueil -->
     <a
       routerLink="/livreur"
