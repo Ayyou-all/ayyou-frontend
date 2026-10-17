@@ -16,7 +16,8 @@ export interface VideoPublieeItem {
   titrePlat: string;
   detailsPlat: string;
   imageAffiche: string;
-  videoUrl: string;
+  videoUrl: string; // fichier de la publication (vidéo, ou photo si typeMedia = IMAGE)
+  typeMedia: 'VIDEO' | 'IMAGE';
   nombreJeaime: string;
   nombreVues: string;
   datePublication: string;
