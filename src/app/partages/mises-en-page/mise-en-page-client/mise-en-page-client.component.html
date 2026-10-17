@@ -116,6 +116,15 @@
   <!-- 2. CONTENU PRINCIPAL (ROUTER-OUTLET)                                      -->
   <!-- ========================================================================= -->
   <main class="flex-1 w-full" [class.pb-20]="!estOngletActif('/accueil')" [class.md:pb-6]="!estOngletActif('/accueil')">
+    <!-- Erreurs de chargement (catalogue, vidéos, panier) : jamais masquées -->
+    @if (serviceCatalogue.messageErreur() || servicePanier.messageErreur()) {
+      <div class="mx-4 mt-3 p-3 rounded-2xl bg-red-50 border border-red-200 text-sm font-semibold text-red-700 flex items-center justify-between gap-3">
+        <span>{{ serviceCatalogue.messageErreur() || servicePanier.messageErreur() }}</span>
+        <button type="button" (click)="serviceCatalogue.chargerTout(); servicePanier.messageErreur.set(null)" class="underline cursor-pointer shrink-0">
+          Réessayer
+        </button>
+      </div>
+    }
     <router-outlet></router-outlet>
   </main>
 

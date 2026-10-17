@@ -16,6 +16,5 @@ export interface Plat {
   categorie: string;
   statut: StatutDisponibilitePlat;
   tempsPreparationMinutes?: number;
-  noteMoyenne?: number;
   nombreCommandes?: number;
 }

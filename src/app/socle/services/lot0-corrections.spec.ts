@@ -72,118 +72,84 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
     });
   });
 
-  describe('B. Cycle de vie des commandes — Remise au livreur', () => {
-    beforeEach(() => {
-      serviceRestaurant.commandesKanban.set([
-        {
-          numero: '#1240',
-          clientNom: 'Amadou Diallo',
-          totalMontant: '12 500 FCFA',
-          totalValeurNumerique: 12500,
-          typeLivraison: 'LIVRAISON',
-          statut: 'PRETES',
-          articles: [{ nom: 'Thieboudienne Penda Mbaye', quantite: 2 }]
-        },
-        {
-          numero: '#1239',
-          clientNom: 'Fatou Sow',
-          totalMontant: '6 000 FCFA',
-          totalValeurNumerique: 6000,
-          typeLivraison: 'A_EMPORTER',
-          statut: 'PRETES',
-          articles: [{ nom: 'Yassa Poulet', quantite: 1 }]
-        }
+  describe('B. Tableau de cuisine — répartition des commandes renvoyées par le serveur', () => {
+    const commandeServeur = (reference: string, statut: string, autres: object = {}) => ({
+      id: 1,
+      reference,
+      statut,
+      client_nom: 'Amadou Diallo',
+      total_fcfa: 12500,
+      sous_total_fcfa: 11000,
+      commission_plateforme_fcfa: 1000,
+      date_creation: '2026-10-16T12:30:00Z',
+      articles: [{ nom_plat: 'Thieboudienne', quantite: 2 }],
+      ...autres
+    });
+
+    it('garde une commande prête dans la colonne « Prêtes » tant que la remise n est pas confirmée', () => {
+      serviceRestaurant.appliquerCommandesServeur([
+        commandeServeur('ORD-1', 'COURSE_ASSIGNEE', { remise_confirmee: false, livreur: { nom: 'Moussa' } })
       ]);
-      serviceRestaurant.historiqueCommandes.set([]);
+      const commande = serviceRestaurant.commandesPretes()[0];
+      expect(commande.numero).toBe('ORD-1');
+      expect(commande.livreurAssigne).toBe(true);
     });
 
-    it('ne doit PAS marquer une commande de livraison comme LIVRÉE lors de la remise au livreur', () => {
-      // #1240 est une commande de type LIVRAISON
-      const cmdAvant = serviceRestaurant.commandesKanban().find((c) => c.numero === '#1240');
-      expect(cmdAvant).toBeDefined();
-      expect(cmdAvant?.typeLivraison).toBe('LIVRAISON');
-
-      serviceRestaurant.remettreAuLivreur('#1240');
-
-      // Doit quitter le Kanban
-      const cmdKanbanApres = serviceRestaurant.commandesKanban().find((c) => c.numero === '#1240');
-      expect(cmdKanbanApres).toBeUndefined();
-
-      // Doit être dans l'historique avec le statut EN_COURS (acheminement en cours)
-      const cmdHist = serviceRestaurant.historiqueCommandes().find((c) => c.numero === '#1240');
-      expect(cmdHist).toBeDefined();
-      expect(cmdHist?.statut).toBe('EN_COURS');
+    it('passe la commande dans l historique « en cours » une fois la remise confirmée par le serveur', () => {
+      serviceRestaurant.appliquerCommandesServeur([commandeServeur('ORD-2', 'EN_VERIFICATION', { remise_confirmee: true })]);
+      expect(serviceRestaurant.commandesPretes().length).toBe(0);
+      expect(serviceRestaurant.historiqueCommandes()[0].statut).toBe('EN_COURS');
     });
 
-    it('doit marquer une commande emportée directement comme LIVRÉE lors de la remise client', () => {
-      // #1239 est une commande A_EMPORTER
-      serviceRestaurant.remettreAuLivreur('#1239');
-      const cmdHist = serviceRestaurant.historiqueCommandes().find((c) => c.numero === '#1239');
-      expect(cmdHist).toBeDefined();
-      expect(cmdHist?.statut).toBe('LIVRÉE');
-    });
-
-    it('doit basculer une commande en cours de livraison à LIVRÉE après validation coursier', () => {
-      serviceRestaurant.remettreAuLivreur('#1240');
-      serviceRestaurant.marquerCommandeLivreeParLivreur('1240');
-
-      const cmdHist = serviceRestaurant.historiqueCommandes().find((c) => c.numero === '#1240');
-      expect(cmdHist?.statut).toBe('LIVRÉE');
+    it('classe les commandes livrées et annulées dans l historique', () => {
+      serviceRestaurant.appliquerCommandesServeur([
+        commandeServeur('ORD-3', 'LIVREE'),
+        commandeServeur('ORD-4', 'ECHEC_LIVRAISON')
+      ]);
+      const statuts = serviceRestaurant.historiqueCommandes().map((h) => h.statut);
+      expect(statuts).toEqual(['LIVRÉE', 'ANNULÉE']);
+      // Revenu du restaurant = plats − commission (les frais de livraison ne lui reviennent pas)
+      expect(serviceRestaurant.chiffreAffairesJour()).toBe(10000);
     });
   });
 
-  describe('C. Validation du code PIN de sécurité', () => {
+  describe('C. Course du livreur — le PIN est vérifié uniquement par le serveur', () => {
     beforeEach(() => {
       serviceLivreur.courseEnCours.set({
         identifiantCommande: '1240',
         restaurantNom: 'Le Teranga',
         restaurantAdresse: 'Plateau',
         restaurantTelephone: '+221 33 800 00 00',
-        comptoirRetrait: 'Guichet 1',
+        comptoirRetrait: '',
         clientNom: 'Client Test',
         clientTelephone: '+221 77 000 00 00',
-        clientAdresse: 'Almadies',
-        clientInstructions: 'Appeler à l entrée',
+        clientAdresse: 'Sacré-Cœur',
         distanceKm: 3.2,
-        gainFcfa: 1500,
-        tempsRestantSec: 300,
-        tempsTrajetMin: 12,
-        codeValidation: '8245',
-        articles: []
+        gainFcfa: 1200,
+        tempsRestantSec: 0,
+        tempsTrajetMin: 0,
+        articles: [
+          { id: 1, nom: 'Thieb', quantite: 1, estVerifie: true },
+          { id: 2, nom: 'Bissap', quantite: 1, estVerifie: false }
+        ]
       });
-      serviceLivreur.etapeCourse.set('VALIDATION_CODE');
-    });
-    it('doit refuser un code incomplet ou de mauvaise longueur', () => {
-      const res = serviceLivreur.verifierCodeValidation('12');
-      expect(res.valide).toBe(false);
-      expect(res.message).toContain('4 chiffres');
     });
 
-    it('doit refuser des caractères non numériques', () => {
-      const res = serviceLivreur.verifierCodeValidation('abcd');
-      expect(res.valide).toBe(false);
+    it("n'expose plus de vérification locale du PIN (aucun code sur le téléphone)", () => {
+      expect((serviceLivreur as any).verifierCodeValidation).toBeUndefined();
+      expect((serviceLivreur as any).validerCodeAsync).toBeUndefined();
     });
 
-    it('doit refuser un code incorrect par rapport à la commande', () => {
-      // Le code de la commande mockée active est '8245'
-      const res = serviceLivreur.verifierCodeValidation('0000');
-      expect(res.valide).toBe(false);
-      expect(res.message).toContain('Code de sécurité incorrect');
-      expect(serviceLivreur.etapeCourse()).not.toBe('LIVRE');
+    it('ne permet le départ que lorsque tous les articles sont vérifiés', () => {
+      expect(serviceLivreur.tousArticlesVerifies()).toBe(false);
+      serviceLivreur.courseEnCours.update((c) => (c ? { ...c, articles: c.articles.map((a) => ({ ...a, estVerifie: true })) } : c));
+      expect(serviceLivreur.tousArticlesVerifies()).toBe(true);
     });
 
-    it('doit valider le code exact de la commande active', () => {
-      const res = serviceLivreur.verifierCodeValidation('8245');
-      expect(res.valide).toBe(true);
-    });
-
-    it('doit bloquer les validations multiples si la course est déjà clôturée', () => {
-      serviceLivreur.terminerCourse();
+    it('libère la course à la fin de la livraison', () => {
+      serviceLivreur.terminerLivraison();
+      expect(serviceLivreur.courseEnCours()).toBeNull();
       expect(serviceLivreur.etapeCourse()).toBe('LIVRE');
-
-      const res = serviceLivreur.verifierCodeValidation('8245');
-      expect(res.valide).toBe(false);
-      expect(res.message).toContain('déjà été validée');
     });
   });
 
@@ -208,6 +174,7 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
         etape_suivi: 'PREPARATION',
         code_livraison_pin: '4821',
         total_fcfa: 9500,
+        est_en_cours: true, // champ toujours renvoyé par SerializerCommandeClient
         articles: [
           { nom_plat: 'Thieboudienne Penda Mbaye', quantite: 2, total_ligne_fcfa: 7000 },
           { nom_plat: 'Jus de Bissap', quantite: 1, total_ligne_fcfa: 2500 }
@@ -222,33 +189,7 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       expect(adaptee.articles.length).toBe(2);
       expect(adaptee.estEnCours).toBe(true);
     });
-
-    it('doit rejeter de manière asynchrone un code PIN mal formé ou hors chiffres', async () => {
-      const serviceLivreurTest = TestBed.inject(ServiceLivreurService);
-      serviceLivreurTest.courseEnCours.set({
-        identifiantCommande: '42',
-        restaurantNom: 'Le Teranga',
-        restaurantAdresse: 'Plateau',
-        restaurantTelephone: '+221 33 000 00 00',
-        comptoirRetrait: 'Comptoir 1',
-        clientNom: 'Moussa',
-        clientTelephone: '+221 77 000 00 00',
-        clientAdresse: 'Almadies',
-        distanceKm: 2,
-        gainFcfa: 1500,
-        tempsRestantSec: 30,
-        tempsTrajetMin: 10,
-        articles: []
-      });
-      serviceLivreurTest.etapeCourse.set('VALIDATION_CODE');
-
-      const resCourt = await firstValueFrom(serviceLivreurTest.validerCodeAsync('12'));
-      expect(resCourt.valide).toBe(false);
-
-      const resAlpha = await firstValueFrom(serviceLivreurTest.validerCodeAsync('abcd'));
-      expect(resAlpha.valide).toBe(false);
-      expect(resAlpha.message).toContain('chiffres');
-    });
+    // Le format et la valeur du PIN sont contrôlés par le serveur (voir livraisons/tests côté Django).
   });
 
   describe('F. Contrôle des accès par AuthGuards (Lot 2)', () => {
@@ -300,30 +241,6 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
         expect(serviceAuth.utilisateurConnecte()).toBeNull();
       }
     });
-
-    it('doit empêcher une commande remise au livreur de réapparaître dans le Kanban', () => {
-      serviceRestaurant.commandesKanban.set([
-        {
-          idInterne: 101,
-          numero: '#CMD-101',
-          clientNom: 'Fatou',
-          totalMontant: '5 000 FCFA',
-          totalValeurNumerique: 5000,
-          typeLivraison: 'LIVRAISON',
-          statut: 'PRETES',
-          articles: [{ nom: 'Thiéboudienne', quantite: 1 }]
-        }
-      ]);
-
-      expect(serviceRestaurant.commandesPretes().length).toBe(1);
-
-      // Le gérant remet le colis au coursier
-      serviceRestaurant.remettreAuLivreur('#CMD-101');
-
-      expect(serviceRestaurant.commandesPretes().length).toBe(0);
-      expect(serviceRestaurant.historiqueCommandes().length).toBe(1);
-      expect(serviceRestaurant.historiqueCommandes()[0].numero).toBe('#CMD-101');
-      expect(serviceRestaurant.historiqueCommandes()[0].statut).toBe('EN_COURS');
-    });
+    // La remise au livreur est désormais confirmée par le serveur : voir la section B.
   });
 });

@@ -1,6 +1,15 @@
+/**
+ * Service de l'espace restaurant : tableau de cuisine (Kanban), historique du jour et notifications.
+ *
+ * Règles :
+ * - toutes les données viennent de l'API Django (GET /api/commandes/restaurant/?vue=jour) ;
+ * - chaque action (accepter, refuser, prête, remise au livreur) renvoie un Observable :
+ *   l'écran n'affiche « succès » qu'après la réponse du serveur, puis recharge l'état réel.
+ */
+
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export type ColonneKanbanGerant = 'NOUVELLES' | 'PREPARATION' | 'PRETES';
@@ -14,7 +23,7 @@ export interface NotificationGerant {
   texteVocal: string;
   heure: string;
   lue: boolean;
-  type: 'COMMANDE_NOUVELLE' | 'COMMANDE_PRETE' | 'LIVREUR_ARRIVE';
+  type: string;
   numeroCommande?: string;
 }
 
@@ -36,6 +45,8 @@ export interface CommandeKanban {
   coursierNom?: string;
   coursierVehicule?: string;
   coursierPhoto?: string;
+  coursierTelephone?: string;
+  livreurAssigne?: boolean; // un livreur a accepté la course
   bordureActive?: boolean;
 }
 
@@ -47,133 +58,110 @@ export interface LigneHistoriqueGerant {
   articlesResume: string;
   statut: StatutHistorique;
   montantTotal: number;
+  montantRestaurant: number; // plats − commission AYYOU (sans les frais de livraison)
 }
+
+const STATUTS_TERMINES_LIVRES = ['LIVREE'];
+const STATUTS_TERMINES_ANNULES = ['REFUSEE_ANNULEE', 'ECHEC_LIVRAISON'];
 
 @Injectable({
   providedIn: 'root'
 })
 export class ServiceRestaurantCommandesService {
   private readonly http = inject(HttpClient);
+  private readonly urlCommandes = `${environment.apiUrl}/commandes/`;
 
-  // Liste des commandes actives dans le Kanban (alimentée par Django)
   readonly commandesKanban = signal<CommandeKanban[]>([]);
-
-  // Liste de l'historique des commandes terminées
   readonly historiqueCommandes = signal<LigneHistoriqueGerant[]>([]);
-
-  // Notifications en direct
   readonly notifications = signal<NotificationGerant[]>([]);
-
-  // États de chargement et d'erreur
   readonly chargementEnCours = signal<boolean>(false);
   readonly messageErreur = signal<string | null>(null);
-
-  // Signaux calculés par colonne du Kanban
-  readonly commandesNouvelles = computed(() =>
-    this.commandesKanban().filter((c) => c.statut === 'NOUVELLES')
-  );
-
-  readonly commandesEnPreparation = computed(() =>
-    this.commandesKanban().filter((c) => c.statut === 'PREPARATION')
-  );
-  readonly commandesPreparation = computed(() => this.commandesEnPreparation());
-
-  readonly commandesPretes = computed(() =>
-    this.commandesKanban().filter((c) => c.statut === 'PRETES')
-  );
-
-  // Total de commandes actives
-  readonly totalCommandesActives = computed(() => this.commandesKanban().length);
-
-  // Chiffre d'affaires de la journée (somme des commandes en cours + historique livrées)
-  readonly chiffreAffairesDuJour = computed(() => {
-    const totalKanban = this.commandesKanban().reduce((acc, c) => acc + c.totalValeurNumerique, 0);
-    const totalHist = this.historiqueCommandes()
-      .filter((h) => h.statut === 'LIVRÉE')
-      .reduce((acc, h) => acc + h.montantTotal, 0);
-    return totalKanban + totalHist;
-  });
-  readonly chiffreAffairesJour = computed(() => this.chiffreAffairesDuJour());
-
-  readonly totalCommandesJour = computed(() =>
-    this.commandesKanban().length + this.historiqueCommandes().length
-  );
-
-  readonly nombreCommandesLivreesJour = computed(() =>
-    this.historiqueCommandes().filter((h) => h.statut === 'LIVRÉE').length
-  );
-
-  readonly notificationsNonLues = computed(() =>
-    this.notifications().filter((n) => !n.lue)
-  );
-
-  readonly nombreNotificationsNonLues = computed(() =>
-    this.notificationsNonLues().length
-  );
-
-  // Indicateur d'état de connectivité réseau
   readonly estEnLigne = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
+  readonly commandesNouvelles = computed(() => this.commandesKanban().filter((c) => c.statut === 'NOUVELLES'));
+  readonly commandesEnPreparation = computed(() => this.commandesKanban().filter((c) => c.statut === 'PREPARATION'));
+  readonly commandesPreparation = computed(() => this.commandesEnPreparation());
+  readonly commandesPretes = computed(() => this.commandesKanban().filter((c) => c.statut === 'PRETES'));
+  readonly totalCommandesActives = computed(() => this.commandesKanban().length);
+
+  // Indicateurs du jour (la liste chargée ne contient que les commandes du jour et celles encore en cours)
+  readonly totalCommandesJour = computed(() => this.commandesKanban().length + this.historiqueCommandes().length);
+  readonly nombreCommandesLivreesJour = computed(() => this.historiqueCommandes().filter((h) => h.statut === 'LIVRÉE').length);
+  readonly chiffreAffairesDuJour = computed(() =>
+    this.historiqueCommandes()
+      .filter((h) => h.statut === 'LIVRÉE')
+      .reduce((total, h) => total + h.montantRestaurant, 0)
+  );
+  readonly chiffreAffairesJour = computed(() => this.chiffreAffairesDuJour());
+
+  readonly notificationsNonLues = computed(() => this.notifications().filter((n) => !n.lue));
+  readonly nombreNotificationsNonLues = computed(() => this.notificationsNonLues().length);
+
   private intervallePolling: any = null;
-  private idsCommandesConnues = new Set<string>();
-  private readonly idsCommandesRemises = new Set<string>();
+  private referencesConnues = new Set<string>();
 
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
         this.estEnLigne.set(true);
-        if (this.estRoleGerant()) {
-          this.chargerCommandesRestaurant(false);
-        }
+        if (this.estRoleGerant()) this.chargerCommandesRestaurant(false);
       });
-      window.addEventListener('offline', () => {
-        this.estEnLigne.set(false);
-      });
+      window.addEventListener('offline', () => this.estEnLigne.set(false));
     }
-
     if (this.estRoleGerant()) {
-      this.demarrerEcouteTempsReel(3500);
+      this.demarrerEcouteTempsReel();
     }
   }
 
-  /**
-   * Vérifie si l'utilisateur actuellement connecté est un gérant de restaurant.
-   */
   estRoleGerant(): boolean {
     if (typeof localStorage === 'undefined') return false;
     try {
-      const brut = localStorage.getItem('ayyou_utilisateur_connecte');
-      if (brut) {
-        const u = JSON.parse(brut);
-        return u?.role === 'RESTAURANT' || u?.role === 'GERANT_RESTAURANT';
-      }
-    } catch {}
-    return false;
+      const utilisateur = JSON.parse(localStorage.getItem('ayyou_utilisateur_connecte') || 'null');
+      return utilisateur?.role === 'RESTAURANT';
+    } catch {
+      return false;
+    }
   }
 
   /**
-   * Démarre l'écoute temps réel des commandes restaurant via polling automatique.
+   * Quasi temps réel, sans infrastructure supplémentaire :
+   * toutes les 4 secondes on demande une petite « version » au serveur ;
+   * la liste complète n'est rechargée que si cette version a changé.
    */
-  demarrerEcouteTempsReel(intervalleMs: number = 3500): void {
-    if (!this.estRoleGerant()) {
-      this.arreterEcouteTempsReel();
-      return;
-    }
+  demarrerEcouteTempsReel(intervalleMs: number = 4000): void {
+    if (!this.estRoleGerant()) return;
     this.chargerCommandesRestaurant(true);
     if (!this.intervallePolling) {
-      this.intervallePolling = setInterval(() => {
-        if (typeof navigator !== 'undefined' && !navigator.onLine) {
-          this.estEnLigne.set(false);
-          return;
-        }
-        this.chargerCommandesRestaurant(false);
-      }, intervalleMs);
+      this.intervallePolling = setInterval(() => this.verifierChangements(), intervalleMs);
     }
   }
 
-  /**
-   * Arrête l'écoute temps réel.
-   */
+  private derniereVersion = '';
+
+  private verifierChangements(): void {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.estEnLigne.set(false);
+      return;
+    }
+    this.http.get<{ version: string }>(`${this.urlCommandes}restaurant/version/`).subscribe({
+      next: ({ version }) => {
+        this.estEnLigne.set(true);
+        if (version !== this.derniereVersion) {
+          this.derniereVersion = version;
+          this.chargerCommandesRestaurant(false);
+        }
+      },
+      error: (erreur) => {
+        if (erreur?.status === 0) {
+          this.estEnLigne.set(false);
+          this.messageErreur.set('Connexion perdue. Nouvelle tentative automatique...');
+        } else if (erreur?.status === 401 || erreur?.status === 403) {
+          this.arreterEcouteTempsReel();
+        }
+      }
+    });
+  }
+
   arreterEcouteTempsReel(): void {
     if (this.intervallePolling) {
       clearInterval(this.intervallePolling);
@@ -181,390 +169,199 @@ export class ServiceRestaurantCommandesService {
     }
   }
 
-  /**
-   * Émet un carillon sonore pour avertir le gérant d'une nouvelle commande.
-   */
+  /** Signal sonore + annonce vocale pour une nouvelle commande. */
   jouerSonNouvelleCommande(texte?: string): void {
     if (typeof window === 'undefined') return;
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.5);
+        const oscillateur = ctx.createOscillator();
+        const volume = ctx.createGain();
+        oscillateur.connect(volume);
+        volume.connect(ctx.destination);
+        oscillateur.frequency.setValueAtTime(880, ctx.currentTime);
+        oscillateur.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.15);
+        volume.gain.setValueAtTime(0.3, ctx.currentTime);
+        volume.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillateur.start();
+        oscillateur.stop(ctx.currentTime + 0.5);
       }
       if ('speechSynthesis' in window && texte) {
-        const u = new SpeechSynthesisUtterance(texte);
-        u.lang = 'fr-FR';
-        window.speechSynthesis.speak(u);
+        const annonce = new SpeechSynthesisUtterance(texte);
+        annonce.lang = 'fr-FR';
+        window.speechSynthesis.speak(annonce);
       }
-    } catch {}
+    } catch {
+      // Le navigateur peut bloquer le son tant que l'utilisateur n'a pas touché la page.
+    }
   }
 
-  /**
-   * Charge les commandes réelles de l'établissement depuis l'API Django.
-   */
-  chargerCommandesRestaurant(afficherChargement: boolean = false): void {
-    if (!this.estRoleGerant()) {
-      this.arreterEcouteTempsReel();
-      if (afficherChargement) this.chargementEnCours.set(false);
-      return;
-    }
+  // ---------------------------------------------------------------------------
+  // Lecture
+  // ---------------------------------------------------------------------------
 
+  chargerCommandesRestaurant(afficherChargement: boolean = false): void {
+    if (!this.estRoleGerant()) return;
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       this.estEnLigne.set(false);
-      if (afficherChargement) this.chargementEnCours.set(false);
       return;
     }
+    if (afficherChargement) this.chargementEnCours.set(true);
 
-    if (afficherChargement) {
-      this.chargementEnCours.set(true);
-    }
-    this.messageErreur.set(null);
-
-    // Actualisation conjointe des notifications serveur
     this.chargerNotifications();
-
-    this.http.get<any>(`${environment.apiUrl}/commandes/restaurant/`).subscribe({
+    this.http.get<any[]>(`${this.urlCommandes}restaurant/`, { params: { vue: 'jour' } }).subscribe({
       next: (commandes) => {
-        const kanban: CommandeKanban[] = [];
-        const historique: LigneHistoriqueGerant[] = [];
-        const liste: any[] = Array.isArray(commandes) ? commandes : (commandes?.results || []);
-        const nouvellesArrivees: CommandeKanban[] = [];
-
-        liste.forEach((c) => {
-          const numeroAffiche = c.reference || `#${c.id}`;
-          const clientNom = c.client_nom || 'Client AYYOU';
-          const montant = Number(c.total_fcfa || 0);
-          const articles: ArticleCommandeGerant[] = (c.articles || []).map((art: any) => ({
-            nom: art.nom_plat || 'Plat',
-            quantite: Number(art.quantite || 1)
-          }));
-          const articlesResume = articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
-          const date = c.date_creation ? new Date(c.date_creation) : new Date();
-          const heureStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-
-          if (c.statut === 'CREEE_EN_ATTENTE') {
-            const itemKanban: CommandeKanban = {
-              idInterne: c.id,
-              numero: numeroAffiche,
-              clientNom,
-              totalMontant: `${montant.toLocaleString('fr-FR')} FCFA`,
-              totalValeurNumerique: montant,
-              typeLivraison: 'LIVRAISON',
-              statut: 'NOUVELLES',
-              articles,
-              remarqueClient: c.instructions_livraison || undefined
-            };
-            kanban.push(itemKanban);
-
-            // Détection temps réel : si nouvelle commande non vue auparavant
-            if (this.idsCommandesConnues.size > 0 && !this.idsCommandesConnues.has(numeroAffiche)) {
-              nouvellesArrivees.push(itemKanban);
-            }
-          } else if (c.statut === 'EN_PREPARATION') {
-            kanban.push({
-              idInterne: c.id,
-              numero: numeroAffiche,
-              clientNom,
-              totalMontant: `${montant.toLocaleString('fr-FR')} FCFA`,
-              totalValeurNumerique: montant,
-              typeLivraison: 'LIVRAISON',
-              statut: 'PREPARATION',
-              articles,
-              remarqueClient: c.instructions_livraison || undefined,
-              bordureActive: true
-            });
-          } else if (c.statut === 'PRETE_POUR_RETRAIT' || c.statut === 'COURSE_ASSIGNEE' || c.statut === 'EN_VERIFICATION') {
-            if (this.idsCommandesRemises.has(numeroAffiche)) {
-              // Déjà remise par le restaurant au comptoir : maintenue dans l'historique en cours
-              historique.push({
-                numero: numeroAffiche,
-                heure: heureStr,
-                clientNom,
-                type: 'LIVRAISON',
-                articlesResume,
-                statut: 'EN_COURS',
-                montantTotal: montant
-              });
-            } else {
-              kanban.push({
-                idInterne: c.id,
-                numero: numeroAffiche,
-                clientNom,
-                totalMontant: `${montant.toLocaleString('fr-FR')} FCFA`,
-                totalValeurNumerique: montant,
-                typeLivraison: 'LIVRAISON',
-                statut: 'PRETES',
-                articles,
-                coursierNom: c.livreur?.nom || 'Coursier en cours d\'assignation',
-                coursierVehicule: c.livreur?.vehicule || 'Livraison AYYOU Express',
-                coursierPhoto: c.livreur?.adressePhoto || ''
-              });
-            }
-          } else {
-            // Le serveur confirme le départ en livraison ou la livraison finale
-            this.idsCommandesRemises.delete(numeroAffiche);
-            // Historique
-            const statutHist: StatutHistorique =
-              c.statut === 'LIVREE' ? 'LIVRÉE' : c.statut === 'REFUSEE_ANNULEE' ? 'ANNULÉE' : 'EN_COURS';
-            historique.push({
-              numero: numeroAffiche,
-              heure: heureStr,
-              clientNom,
-              type: 'LIVRAISON',
-              articlesResume,
-              statut: statutHist,
-              montantTotal: montant
-            });
-          }
-        });
-
-        // Alerte sonore et visuelle pour les nouvelles commandes
-        if (nouvellesArrivees.length > 0) {
-          nouvellesArrivees.forEach((cmd) => {
-            this.ajouterNotification({
-              id: `notif-${Date.now()}-${cmd.numero}`,
-              titre: `Nouvelle commande reçue !`,
-              message: `${cmd.numero} • ${cmd.totalMontant} (${cmd.articles.length} plat(s))`,
-              texteVocal: `Nouvelle commande reçue. Numéro ${cmd.numero}.`,
-              heure: 'À l\'instant',
-              lue: false,
-              type: 'COMMANDE_NOUVELLE',
-              numeroCommande: cmd.numero
-            });
-            this.jouerSonNouvelleCommande(`Nouvelle commande ${cmd.numero}`);
-          });
-        }
-
-        // Mémorisation des identifiants connus
-        this.idsCommandesConnues = new Set(liste.map((c) => c.reference || `#${c.id}`));
-
-        this.commandesKanban.set(kanban);
-        this.historiqueCommandes.set(historique);
+        this.appliquerCommandesServeur(commandes || []);
         this.estEnLigne.set(true);
-        if (afficherChargement) {
-          this.chargementEnCours.set(false);
-        }
+        this.messageErreur.set(null);
+        this.chargementEnCours.set(false);
       },
-      error: (err: any) => {
-        if (afficherChargement) {
-          this.chargementEnCours.set(false);
-        }
-        if (err?.status === 0) {
+      error: (erreur) => {
+        this.chargementEnCours.set(false);
+        if (erreur?.status === 0) {
           this.estEnLigne.set(false);
-        } else if (err?.status === 401 || err?.status === 403) {
+          this.messageErreur.set('Connexion perdue. Nouvelle tentative automatique...');
+        } else if (erreur?.status === 401 || erreur?.status === 403) {
           this.arreterEcouteTempsReel();
+        } else {
+          this.messageErreur.set('Impossible de charger les commandes. Veuillez réessayer.');
         }
       }
     });
   }
 
-  accepterCommande(numero: string): void {
-    this.passerEnPreparation(numero);
+  /** Répartit les commandes du serveur entre le Kanban et l'historique du jour. */
+  appliquerCommandesServeur(commandes: any[]): void {
+    const kanban: CommandeKanban[] = [];
+    const historique: LigneHistoriqueGerant[] = [];
+    const nouvellesArrivees: string[] = [];
+
+    for (const c of commandes) {
+      const articles: ArticleCommandeGerant[] = (c.articles || []).map((a: any) => ({ nom: a.nom_plat, quantite: a.quantite }));
+      const base = {
+        idInterne: c.id,
+        numero: c.reference,
+        clientNom: c.client_nom || '',
+        totalMontant: `${Number(c.total_fcfa).toLocaleString('fr-FR')} FCFA`,
+        totalValeurNumerique: Number(c.total_fcfa),
+        typeLivraison: 'LIVRAISON' as const,
+        articles,
+        remarqueClient: c.instructions_livraison || undefined
+      };
+
+      if (c.statut === 'CREEE_EN_ATTENTE') {
+        kanban.push({ ...base, statut: 'NOUVELLES' });
+        if (this.referencesConnues.size > 0 && !this.referencesConnues.has(c.reference)) nouvellesArrivees.push(c.reference);
+      } else if (c.statut === 'EN_PREPARATION') {
+        kanban.push({ ...base, statut: 'PREPARATION', bordureActive: true });
+      } else if (['PRETE_POUR_RETRAIT', 'COURSE_ASSIGNEE', 'EN_VERIFICATION'].includes(c.statut) && !c.remise_confirmee) {
+        kanban.push({
+          ...base,
+          statut: 'PRETES',
+          livreurAssigne: Boolean(c.livreur),
+          coursierNom: c.livreur?.nom || '',
+          coursierVehicule: c.livreur?.vehicule || '',
+          coursierPhoto: c.livreur?.adressePhoto || '',
+          coursierTelephone: c.livreur?.numeroTelephone || ''
+        });
+      } else {
+        const date = new Date(c.date_creation);
+        historique.push({
+          numero: c.reference,
+          heure: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+          clientNom: c.client_nom || '',
+          type: 'LIVRAISON',
+          articlesResume: articles.map((a) => `${a.quantite}x ${a.nom}`).join(', '),
+          statut: STATUTS_TERMINES_LIVRES.includes(c.statut)
+            ? 'LIVRÉE'
+            : STATUTS_TERMINES_ANNULES.includes(c.statut)
+              ? 'ANNULÉE'
+              : 'EN_COURS',
+          montantTotal: Number(c.total_fcfa),
+          montantRestaurant: Number(c.sous_total_fcfa ?? 0) - Number(c.commission_plateforme_fcfa ?? 0)
+        });
+      }
+    }
+
+    // Les notifications « Nouvelle commande » sont créées par le serveur ; ici on ne joue que le son.
+    nouvellesArrivees.forEach((reference) => this.jouerSonNouvelleCommande(`Nouvelle commande ${reference}`));
+    this.referencesConnues = new Set(commandes.map((c) => c.reference));
+    this.commandesKanban.set(kanban);
+    this.historiqueCommandes.set(historique);
   }
 
-  /**
-   * Accepte une commande et la passe en préparation (action persistée par Django).
-   */
-  passerEnPreparation(numero: string, delaiMinutes: number = 20): void {
-    const cmd = this.commandesKanban().find((c) => c.numero === numero);
-    const idCommande = cmd?.idInterne || (cmd?.numero ? cmd.numero.replace('#', '') : numero);
+  // ---------------------------------------------------------------------------
+  // Actions (chacune confirmée par le serveur, puis l'état réel est rechargé)
+  // ---------------------------------------------------------------------------
 
-    this.http
-      .post(`${environment.apiUrl}/commandes/${idCommande}/accepter/`, {
-        delai_preparation_estime_minutes: delaiMinutes
-      })
-      .subscribe({
-        next: () => {
-          this.commandesKanban.update((liste) =>
-            liste.map((c) =>
-              c.numero === numero
-                ? { ...c, statut: 'PREPARATION' as const, bordureActive: true }
-                : c
-            )
-          );
-        },
-        error: (err) => {
-          const detail =
-            err?.error?.detail ||
-            err?.error?.message ||
-            'Échec de l\'acceptation de la commande. Veuillez vérifier la connexion.';
-          this.messageErreur.set(detail);
-          // Rollback immédiat : synchronisation avec l'état réel de la base de données
-          this.chargerCommandesRestaurant(false);
-        }
-      });
+  private idCommande(numero: string): string | number {
+    return this.commandesKanban().find((c) => c.numero === numero)?.idInterne ?? numero;
   }
 
-  /**
-   * Refuse une commande via l'API Django et la place dans l'historique en ANNULÉE.
-   */
-  refuserCommande(numero: string, motif: string = 'Refusée par le restaurant'): void {
-    const cmd = this.commandesKanban().find((c) => c.numero === numero);
-    if (!cmd) return;
-
-    const idCommande = cmd.idInterne || cmd.numero.replace('#', '');
-    this.http
-      .post(`${environment.apiUrl}/commandes/${idCommande}/refuser/`, {
-        motif_refus: motif
-      })
-      .subscribe({
-        next: () => {
-          this.commandesKanban.update((liste) => liste.filter((c) => c.numero !== numero));
-
-          const dateNow = new Date();
-          const heureStr = `${dateNow.getHours().toString().padStart(2, '0')}:${dateNow.getMinutes().toString().padStart(2, '0')}`;
-          const articlesStr = cmd.articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
-
-          const ligneRefusee: LigneHistoriqueGerant = {
-            numero: cmd.numero,
-            heure: heureStr,
-            clientNom: cmd.clientNom,
-            type: cmd.typeLivraison === 'LIVRAISON' ? 'LIVRAISON' : cmd.typeLivraison === 'SUR_PLACE' ? 'SUR PLACE' : 'EMPORTÉ',
-            articlesResume: articlesStr,
-            statut: 'ANNULÉE',
-            montantTotal: cmd.totalValeurNumerique
-          };
-
-          this.historiqueCommandes.update((hist) => [ligneRefusee, ...hist]);
-        },
-        error: (err) => {
-          const detail =
-            err?.error?.detail ||
-            err?.error?.message ||
-            'Impossible de refuser la commande sur le serveur.';
-          this.messageErreur.set(detail);
-          this.chargerCommandesRestaurant(false);
-        }
-      });
+  private actionServeur(chemin: string, numero: string, corps: object = {}): Observable<any> {
+    return this.http
+      .post(`${this.urlCommandes}${this.idCommande(numero)}/${chemin}/`, corps)
+      .pipe(tap({ next: () => this.chargerCommandesRestaurant(false), error: () => this.chargerCommandesRestaurant(false) }));
   }
 
-  /**
-   * Marque une commande en préparation comme prête (API Django).
-   */
-  marquerCommePrete(numero: string): void {
-    const cmd = this.commandesKanban().find((c) => c.numero === numero);
-    const idCommande = cmd?.idInterne || (cmd?.numero ? cmd.numero.replace('#', '') : numero);
-
-    this.http
-      .post(`${environment.apiUrl}/commandes/${idCommande}/marquer-prete/`, {})
-      .subscribe({
-        next: () => {
-          this.commandesKanban.update((liste) =>
-            liste.map((c) =>
-              c.numero === numero
-                ? {
-                    ...c,
-                    statut: 'PRETES' as const,
-                    bordureActive: false,
-                    coursierNom: c.coursierNom,
-                    coursierVehicule: c.coursierVehicule,
-                    coursierPhoto: c.coursierPhoto
-                  }
-                : c
-            )
-          );
-        },
-        error: (err) => {
-          const detail =
-            err?.error?.detail ||
-            err?.error?.message ||
-            'Impossible de marquer la commande comme prête sur le serveur.';
-          this.messageErreur.set(detail);
-          this.chargerCommandesRestaurant(false);
-        }
-      });
+  /** Accepte la commande avec le temps de préparation choisi par le gérant (en minutes). */
+  accepterCommande(numero: string, delaiMinutes: number): Observable<any> {
+    return this.actionServeur('accepter', numero, { delai_minutes: delaiMinutes });
   }
 
-  /**
-   * Remet le colis au livreur.
-   */
-  remettreAuLivreur(numero: string): void {
-    const cmd = this.commandesKanban().find((c) => c.numero === numero);
-    if (!cmd) return;
-
-    this.idsCommandesRemises.add(numero);
-    this.commandesKanban.update((liste) => liste.filter((c) => c.numero !== numero));
-
-    const dateNow = new Date();
-    const heureStr = `${dateNow.getHours().toString().padStart(2, '0')}:${dateNow.getMinutes().toString().padStart(2, '0')}`;
-    const articlesStr = cmd.articles.map((a) => `${a.quantite}x ${a.nom}`).join(', ');
-
-    const ligneHistorique: LigneHistoriqueGerant = {
-      numero: cmd.numero,
-      heure: heureStr,
-      clientNom: cmd.clientNom,
-      type: cmd.typeLivraison === 'LIVRAISON' ? 'LIVRAISON' : cmd.typeLivraison === 'SUR_PLACE' ? 'SUR PLACE' : 'EMPORTÉ',
-      articlesResume: articlesStr,
-      statut: cmd.typeLivraison === 'LIVRAISON' ? 'EN_COURS' : 'LIVRÉE',
-      montantTotal: cmd.totalValeurNumerique
-    };
-
-    this.historiqueCommandes.update((hist) => [ligneHistorique, ...hist]);
+  /** Refuse une commande pas encore acceptée ; le client est remboursé par le serveur. */
+  refuserCommande(numero: string, motif: string): Observable<any> {
+    return this.actionServeur('refuser', numero, { motif });
   }
 
-  remettreAuLivreurEtTerminer(numero: string): void {
-    this.remettreAuLivreur(numero);
+  marquerCommePrete(numero: string): Observable<any> {
+    return this.actionServeur('marquer-prete', numero);
   }
 
-  marquerCommandeLivreeParLivreur(numeroOuId: string): void {
-    const numeroNormalise = numeroOuId.startsWith('#') ? numeroOuId : `#${numeroOuId}`;
-    this.historiqueCommandes.update((liste) =>
-      liste.map((c) =>
-        c.numero === numeroNormalise || c.numero === numeroOuId
-          ? { ...c, statut: 'LIVRÉE' as const }
-          : c
-      )
-    );
+  /** Confirme que le sac a été remis au livreur : il peut ensuite partir chez le client. */
+  remettreAuLivreur(numero: string): Observable<any> {
+    return this.actionServeur('remettre-au-livreur', numero);
   }
 
-  marquerNotificationCommeLue(id: string): void {
-    this.notifications.update((liste) =>
-      liste.map((n) => (n.id === id ? { ...n, lue: true } : n))
-    );
-    this.http.post(`${environment.apiUrl}/notifications/${id}/lire/`, {}).subscribe({
-      error: () => {}
-    });
-  }
-
-  toutMarquerCommeLu(): void {
-    this.notifications.update((liste) => liste.map((n) => ({ ...n, lue: true })));
-    this.http.post(`${environment.apiUrl}/notifications/tout-lire/`, {}).subscribe({
-      error: () => {}
-    });
-  }
-
-  ajouterNotification(notif: NotificationGerant): void {
-    this.notifications.update((liste) => [notif, ...liste]);
-  }
+  // ---------------------------------------------------------------------------
+  // Notifications (créées par le serveur)
+  // ---------------------------------------------------------------------------
 
   chargerNotifications(): void {
     this.http.get<any>(`${environment.apiUrl}/notifications/`).subscribe({
       next: (reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : (reponse?.results || []);
-        const adaptees: NotificationGerant[] = liste.map((n: any) => ({
-          id: String(n.id),
-          titre: n.titre || 'Notification',
-          message: n.message || '',
-          texteVocal: n.texteVocal || n.texte_vocal || '',
-          heure: n.heure || '',
-          lue: Boolean(n.lue),
-          type: n.type || 'COMMANDE',
-          numeroCommande: n.numeroCommande || n.numero_commande
-        }));
-        this.notifications.set(adaptees);
+        const liste = Array.isArray(reponse) ? reponse : reponse?.results || [];
+        this.notifications.set(
+          liste.map((n: any) => ({
+            id: String(n.id),
+            titre: n.titre,
+            message: n.message,
+            texteVocal: n.texteVocal || '',
+            heure: n.heure || '',
+            lue: Boolean(n.lue),
+            type: n.type || '',
+            numeroCommande: n.numeroCommande
+          }))
+        );
       },
-      error: () => {}
+      error: () => {
+        // Les notifications sont secondaires : l'erreur de chargement des commandes suffit à prévenir.
+      }
+    });
+  }
+
+  marquerNotificationCommeLue(id: string): void {
+    this.http.post(`${environment.apiUrl}/notifications/${id}/lire/`, {}).subscribe({
+      next: () => this.notifications.update((liste) => liste.map((n) => (n.id === id ? { ...n, lue: true } : n))),
+      error: () => this.messageErreur.set('Impossible de marquer la notification comme lue.')
+    });
+  }
+
+  toutMarquerCommeLu(): void {
+    this.http.post(`${environment.apiUrl}/notifications/tout-lire/`, {}).subscribe({
+      next: () => this.notifications.update((liste) => liste.map((n) => ({ ...n, lue: true }))),
+      error: () => this.messageErreur.set('Impossible de marquer les notifications comme lues.')
     });
   }
 }

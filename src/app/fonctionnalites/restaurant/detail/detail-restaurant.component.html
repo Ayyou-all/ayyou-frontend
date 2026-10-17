@@ -1,4 +1,9 @@
 <div class="relative w-full pb-24">
+  @if (messageErreurLike()) {
+    <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-red-600 text-white text-xs font-bold shadow-lg" (click)="messageErreurLike.set(null)">
+      {{ messageErreurLike() }}
+    </div>
+  }
 
   @if (restaurant(); as resto) {
     <!-- ========================================================================= -->
@@ -122,9 +127,11 @@
         <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
           <!-- Colonne 1 : Horaires & Statut -->
           <div class="space-y-0.5">
-            <div class="text-xs text-slate-400 font-medium">
-              Ferme à {{ resto.heureFermeture }}
-            </div>
+            @if (resto.heureFermeture) {
+              <div class="text-xs text-slate-400 font-medium">
+                Ferme à {{ resto.heureFermeture }}
+              </div>
+            }
             <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
               <i class="fa-regular fa-clock text-red-600 text-sm"></i>
               <span>{{ resto.estOuvert ? 'Ouvert' : 'Fermé' }}</span>

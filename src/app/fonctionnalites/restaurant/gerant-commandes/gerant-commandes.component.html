@@ -123,7 +123,21 @@
               </div>
             }
 
-            <!-- BOUTONS D'ACTION DIRECTS : SOIT ON ACCEPTE SOIT ON REFUSE (PAS DE DÉTAILS) -->
+            <!-- Temps de préparation annoncé au client -->
+            <label class="flex items-center justify-between gap-2 text-xs font-bold text-slate-600">
+              <span>Temps de préparation</span>
+              <select
+                [ngModel]="delaiChoisi(cmd.numero)"
+                (ngModelChange)="choisirDelai(cmd.numero, $event)"
+                class="px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900"
+              >
+                @for (minutes of delaisPossibles; track minutes) {
+                  <option [ngValue]="minutes">{{ minutes }} min</option>
+                }
+              </select>
+            </label>
+
+            <!-- BOUTONS D'ACTION : ACCEPTER OU REFUSER -->
             <div class="grid grid-cols-2 gap-3 pt-1">
               <button
                 type="button"
@@ -135,7 +149,8 @@
               <button
                 type="button"
                 (click)="accepterCommande(cmd.numero)"
-                class="py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs transition-all cursor-pointer text-center"
+                [disabled]="actionEnCours() === cmd.numero"
+                class="disabled:opacity-50 py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs transition-all cursor-pointer text-center"
               >
                 Accepter
               </button>
@@ -294,11 +309,16 @@
                 </div>
                 <div>
                   <div class="text-xs font-black text-slate-900">
-                    {{ cmd.coursierNom || 'Livreur en approche' }}
+                    {{ cmd.livreurAssigne ? cmd.coursierNom : 'Recherche d’un livreur…' }}
                   </div>
-                  <div class="text-[10px] font-semibold text-slate-500">
-                    {{ cmd.coursierVehicule || 'Course assignée' }}
-                  </div>
+                  @if (cmd.livreurAssigne) {
+                    <div class="text-[10px] font-semibold text-slate-500">
+                      {{ cmd.coursierVehicule }}
+                      @if (cmd.coursierTelephone) {
+                        · <a [href]="'tel:' + cmd.coursierTelephone" class="underline">{{ cmd.coursierTelephone }}</a>
+                      }
+                    </div>
+                  }
                 </div>
               </div>
 
@@ -307,11 +327,12 @@
               </span>
             </div>
 
-            <!-- ACTION DIRECTE : REMIS AU LIVREUR -> PART DIRECTEMENT DANS L'HISTORIQUE -->
+            <!-- REMISE AU LIVREUR : possible seulement quand un livreur a accepté la course -->
             <button
               type="button"
               (click)="remettreAuLivreur(cmd.numero)"
-              class="w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-black active:scale-95 text-white font-black text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+              [disabled]="!cmd.livreurAssigne || actionEnCours() === cmd.numero"
+              class="disabled:opacity-40 disabled:cursor-not-allowed w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-black active:scale-95 text-white font-black text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <i class="fa-solid fa-box-open text-sm"></i>
               <span>Remis au livreur</span>

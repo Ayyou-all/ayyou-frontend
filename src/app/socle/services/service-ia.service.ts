@@ -170,18 +170,24 @@ export class ServiceIaService {
   /**
    * Prévisions d'affluence et coups de feu pour le restaurant connecté.
    */
-  obtenirPrevisionsRestaurant(): Observable<PrevisionHeureRestaurant[]> {
-    return this.http
-      .get<PrevisionHeureRestaurant[]>(`${environment.apiUrl}/ia/restaurant/previsions/`)
-      .pipe(catchError(() => of([])));
+  /**
+   * Réponse : { donnees_suffisantes, message?, previsions_par_heure, heure_de_pointe }.
+   * Si donnees_suffisantes est faux, afficher `message` (« Données insuffisantes… »).
+   */
+  obtenirPrevisionsRestaurant(): Observable<{
+    donnees_suffisantes: boolean;
+    message?: string;
+    previsions_par_heure: PrevisionHeureRestaurant[];
+    heure_de_pointe?: string;
+  }> {
+    return this.http.get<any>(`${environment.apiUrl}/ia/restaurant/previsions/`);
   }
 
   /**
    * Rapport hebdomadaire IA de performance pour le restaurant connecté.
    */
   obtenirRapportHebdoRestaurant(): Observable<any> {
-    return this.http
-      .get<any>(`${environment.apiUrl}/ia/restaurant/rapport-hebdo/`)
-      .pipe(catchError(() => of(null)));
+    // Même règle : si donnees_suffisantes est faux, afficher `message` et aucun chiffre inventé.
+    return this.http.get<any>(`${environment.apiUrl}/ia/restaurant/rapport-hebdo/`);
   }
 }
