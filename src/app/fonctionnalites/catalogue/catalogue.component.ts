@@ -68,6 +68,24 @@ export class CatalogueComponent {
     this.routeur.navigate(['/restaurant', identifiantRestaurant]);
   }
 
+  // Recherche vocale : seulement si le navigateur sait reconnaître la parole (Chrome, Edge, Safari)
+  private readonly ReconnaissanceVocale =
+    typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null;
+  readonly rechercheVocaleDisponible = Boolean(this.ReconnaissanceVocale);
+  readonly ecouteEnCours = signal<boolean>(false);
+
+  /** Dicte la recherche : le texte reconnu remplit le champ de recherche. */
+  lancerRechercheVocale(): void {
+    if (!this.ReconnaissanceVocale || this.ecouteEnCours()) return;
+    const reconnaissance = new this.ReconnaissanceVocale();
+    reconnaissance.lang = 'fr-FR';
+    reconnaissance.onresult = (evenement: any) => this.texteRecherche.set(evenement.results[0][0].transcript);
+    reconnaissance.onend = () => this.ecouteEnCours.set(false);
+    reconnaissance.onerror = () => this.ecouteEnCours.set(false);
+    this.ecouteEnCours.set(true);
+    reconnaissance.start();
+  }
+
   /**
    * Ouvre la fiche détaillée d'un plat (Image 1).
    */

@@ -1,5 +1,5 @@
-<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6">
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
+<div class="min-h-[calc(100vh-80px)] w-full pb-24 md:pb-12 pt-4 sm:pt-6 md:pt-10">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 space-y-6 md:space-y-8">
 
     <!-- ========================================================================= -->
     <!-- EN-TÊTE : BOUTON RETOUR + TITRE "Mes paniers" + BADGE ROUGE (3)           -->
@@ -9,14 +9,14 @@
       <button
         type="button"
         (click)="retourner()"
-        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+        class="md:hidden w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         aria-label="Retour"
       >
         <i class="fa-solid fa-chevron-left text-sm font-bold"></i>
       </button>
 
       <div class="flex items-center gap-2.5">
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
+        <h1 class="text-2xl sm:text-3xl md:text-[28px] font-extrabold text-slate-900 tracking-tight font-['Outfit']">
           Mes paniers
         </h1>
         @if (servicePanier.nombrePaniersActifs() > 0) {
@@ -86,7 +86,7 @@
     <!-- LISTE DES PANIERS PAR RESTAURANT (GRILLE RESPONSIVE 1 COL MOBILE / 2 DESK)-->
     <!-- Conforme au design de la carte Chez Fatou / Chez Aissatou                 -->
     <!-- ========================================================================= -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
       @for (panier of paniersAffiches(); track panier.identifiantRestaurant) {
         <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 flex flex-col justify-between space-y-5">
           

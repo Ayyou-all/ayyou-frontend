@@ -9,11 +9,11 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div class="w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-10 space-y-6 md:space-y-8">
       
       <!-- En-tête de la page -->
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-extrabold text-slate-900 font-['Outfit']">Mon Profil</h1>
+        <h1 class="text-2xl md:text-[28px] font-extrabold text-slate-900 font-['Outfit']">Mon Profil</h1>
         
         <!-- Indicateur de statut -->
         @if (serviceAuthentification.estVisiteur()) {
