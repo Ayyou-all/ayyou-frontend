@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
+import { map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 
@@ -36,6 +36,7 @@ export class GerantMenuComponent {
   // Recherche textuelle
   readonly rechercheTexte = signal<string>('');
   readonly chargementEnCours = signal<boolean>(false);
+  readonly messageErreur = signal<string | null>(null);
 
   // Notification Toast
   readonly notificationSucces = signal<string | null>(null);
@@ -112,14 +113,16 @@ export class GerantMenuComponent {
           photoUrl: item.adresse_image || '/images/plat-accueil.jpg',
           badges: []
         }))
-      ),
-      catchError(() => of([]))
+      )
     ).subscribe({
       next: (plats) => {
         this.listePlats.set(plats);
         this.chargementEnCours.set(false);
       },
-      error: () => this.chargementEnCours.set(false)
+      error: () => {
+        this.chargementEnCours.set(false);
+        this.messageErreur.set('Impossible de charger les données. Vérifiez votre connexion puis réessayez.');
+      }
     });
   }
 
