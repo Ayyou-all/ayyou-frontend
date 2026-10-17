@@ -25,11 +25,9 @@ export class PanierComponent {
     const tousPaniers = this.servicePanier.listePaniersRestaurants();
     const filtre = this.filtreRestaurant();
 
-    if (filtre === 'TOUS') {
-      return tousPaniers;
-    }
-
-    return tousPaniers.filter((p) => p.identifiantRestaurant === filtre);
+    const paniersFiltres = tousPaniers.filter((p) => p.identifiantRestaurant === filtre);
+    // « Tous », ou restaurant dont le panier vient d'être vidé : on affiche tous les paniers.
+    return filtre === 'TOUS' || paniersFiltres.length === 0 ? tousPaniers : paniersFiltres;
   });
 
   /**

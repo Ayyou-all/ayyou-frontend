@@ -145,10 +145,6 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
     const ctx = this.canvasRevenusRef.nativeElement.getContext('2d');
     if (!ctx) return;
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 240);
-    gradient.addColorStop(0, 'rgba(229, 24, 36, 0.22)');
-    gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
-    gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
 
     const donnees = this.calculerPointsRevenus();
 
@@ -162,7 +158,7 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
             data: donnees.valeurs,
             borderColor: '#E51824',
             borderWidth: 3,
-            backgroundColor: gradient,
+            backgroundColor: 'rgba(229, 24, 36, 0.08)', // couleur unie (pas de dégradé)
             fill: true,
             tension: 0.4,
             pointBackgroundColor: '#ffffff',

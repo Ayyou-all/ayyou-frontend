@@ -19,19 +19,19 @@
             <!-- Cercle pointillé doré -->
             <div class="w-36 h-36 rounded-full border-2 border-dashed border-amber-300 bg-amber-50/40 flex items-center justify-center">
               <!-- Cercle intérieur blanc avec ombre -->
-              <div class="w-24 h-24 rounded-full bg-white shadow-md flex items-center justify-center">
+              <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center">
                 <i class="fa-solid fa-clock-rotate-left text-amber-500 text-3xl"></i>
               </div>
             </div>
 
             <!-- Petit badge circulaire blanc en bas à droite avec avion rouge -->
-            <div class="absolute bottom-1 right-2 w-10 h-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center">
+            <div class="absolute bottom-1 right-2 w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center">
               <i class="fa-solid fa-paper-plane text-red-600 text-xs"></i>
             </div>
           </div>
 
           <!-- Badge statut orange : En attente de validation -->
-          <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#f59e0b] text-slate-900 font-extrabold text-xs shadow-xs mb-5">
+          <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#f59e0b] text-slate-900 font-extrabold text-xs mb-5">
             <span class="w-2 h-2 rounded-full bg-slate-900"></span>
             <span>En attente de validation</span>
           </div>
@@ -47,7 +47,7 @@
           </p>
 
           <!-- Carte d'information : Restez à l'écoute -->
-          <div class="w-full bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3.5 mb-8 text-left">
+          <div class="w-full bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3.5 mb-8 text-left">
             <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
               <i class="fa-solid fa-bell text-red-500 text-sm"></i>
             </div>
@@ -63,7 +63,7 @@
           <button
             type="button"
             (click)="retournerAccueil()"
-            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base shadow-xl shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Retour à l'accueil</span>
             <i class="fa-solid fa-house text-sm ml-1"></i>
@@ -92,22 +92,22 @@
           <div class="relative w-44 h-44 flex items-center justify-center mb-8 select-none">
             
             <!-- Grand cercle vert émeraude -->
-            <div class="w-32 h-32 rounded-full bg-[#22c55e] flex items-center justify-center shadow-2xl shadow-green-500/30">
+            <div class="w-32 h-32 rounded-full bg-[#22c55e] flex items-center justify-center">
               <i class="fa-solid fa-check text-4xl text-white"></i>
             </div>
 
             <!-- Badge flottant 1 : Pizza en haut à droite -->
-            <div class="absolute top-2 right-4 w-10 h-10 rounded-2xl bg-white shadow-lg shadow-slate-200/80 flex items-center justify-center transform rotate-6 border border-slate-100/60">
+            <div class="absolute top-2 right-4 w-10 h-10 rounded-2xl bg-white flex items-center justify-center transform rotate-6 border border-slate-100/60">
               <i class="fa-solid fa-pizza-slice text-red-500 text-sm"></i>
             </div>
 
             <!-- Badge flottant 2 : Glace à droite -->
-            <div class="absolute right-0 top-1/2 w-10 h-10 rounded-2xl bg-white shadow-lg shadow-slate-200/80 flex items-center justify-center -translate-y-2 transform -rotate-6 border border-slate-100/60">
+            <div class="absolute right-0 top-1/2 w-10 h-10 rounded-2xl bg-white flex items-center justify-center -translate-y-2 transform -rotate-6 border border-slate-100/60">
               <i class="fa-solid fa-ice-cream text-pink-400 text-sm"></i>
             </div>
 
             <!-- Badge flottant 3 : Burger en bas à gauche -->
-            <div class="absolute bottom-2 left-4 w-10 h-10 rounded-2xl bg-white shadow-lg shadow-slate-200/80 flex items-center justify-center transform -rotate-12 border border-slate-100/60">
+            <div class="absolute bottom-2 left-4 w-10 h-10 rounded-2xl bg-white flex items-center justify-center transform -rotate-12 border border-slate-100/60">
               <i class="fa-solid fa-burger text-amber-500 text-sm"></i>
             </div>
           </div>
@@ -126,7 +126,7 @@
           <button
             type="button"
             (click)="allerVersDecouvrirRestaurants()"
-            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base shadow-xl shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Découvrir les restaurants</span>
             <i class="fa-solid fa-utensils text-sm ml-1"></i>
@@ -156,7 +156,7 @@
           <button
             type="button"
             (click)="revenirEtapePrecedente()"
-            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Retour"
           >
             <i class="fa-solid fa-arrow-left text-sm text-slate-700"></i>
@@ -200,7 +200,7 @@
             [value]="chiffresCode()[0]"
             (input)="saisirChiffre(0, $event, caseMobile2)"
             (keydown)="gererToucheCode(0, $event)"
-            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile2
@@ -210,7 +210,7 @@
             [value]="chiffresCode()[1]"
             (input)="saisirChiffre(1, $event, caseMobile3)"
             (keydown)="gererToucheCode(1, $event, caseMobile1)"
-            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile3
@@ -220,7 +220,7 @@
             [value]="chiffresCode()[2]"
             (input)="saisirChiffre(2, $event, caseMobile4)"
             (keydown)="gererToucheCode(2, $event, caseMobile2)"
-            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile4
@@ -230,7 +230,7 @@
             [value]="chiffresCode()[3]"
             (input)="saisirChiffre(3, $event, caseMobile5)"
             (keydown)="gererToucheCode(3, $event, caseMobile3)"
-            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile5
@@ -240,7 +240,7 @@
             [value]="chiffresCode()[4]"
             (input)="saisirChiffre(4, $event, caseMobile6)"
             (keydown)="gererToucheCode(4, $event, caseMobile4)"
-            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
           <input
             #caseMobile6
@@ -250,7 +250,7 @@
             [value]="chiffresCode()[5]"
             (input)="saisirChiffre(5, $event)"
             (keydown)="gererToucheCode(5, $event, caseMobile5)"
-            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+            class="w-11 h-14 sm:w-12 sm:h-16 rounded-xl border border-slate-200 bg-white text-center text-xl sm:text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
           />
         </div>
 
@@ -279,7 +279,7 @@
         <button
           type="button"
           (click)="validerCodeVerification()"
-          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <span>Valider</span>
           <i class="fa-solid fa-arrow-right text-sm ml-1"></i>
@@ -303,7 +303,7 @@
             <img
               src="/images/plat-accueil.jpg"
               alt="Bol gourmand AYYOU"
-              class="w-full h-full object-contain rounded-2xl drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] select-none pointer-events-none"
+              class="w-full h-full object-contain rounded-2xl select-none pointer-events-none"
             />
           </div>
         </div>
@@ -328,7 +328,7 @@
           <button
             type="button"
             (click)="revenirEtapePrecedente()"
-            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Retour"
           >
             <i class="fa-solid fa-arrow-left text-sm text-slate-700"></i>
@@ -372,7 +372,7 @@
               [value]="chiffresCode()[0]"
               (input)="saisirChiffre(0, $event, caseDesk2)"
               (keydown)="gererToucheCode(0, $event)"
-              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk2
@@ -382,7 +382,7 @@
               [value]="chiffresCode()[1]"
               (input)="saisirChiffre(1, $event, caseDesk3)"
               (keydown)="gererToucheCode(1, $event, caseDesk1)"
-              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk3
@@ -392,7 +392,7 @@
               [value]="chiffresCode()[2]"
               (input)="saisirChiffre(2, $event, caseDesk4)"
               (keydown)="gererToucheCode(2, $event, caseDesk2)"
-              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk4
@@ -402,7 +402,7 @@
               [value]="chiffresCode()[3]"
               (input)="saisirChiffre(3, $event, caseDesk5)"
               (keydown)="gererToucheCode(3, $event, caseDesk3)"
-              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk5
@@ -412,7 +412,7 @@
               [value]="chiffresCode()[4]"
               (input)="saisirChiffre(4, $event, caseDesk6)"
               (keydown)="gererToucheCode(4, $event, caseDesk4)"
-              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
             <input
               #caseDesk6
@@ -422,7 +422,7 @@
               [value]="chiffresCode()[5]"
               (input)="saisirChiffre(5, $event)"
               (keydown)="gererToucheCode(5, $event, caseDesk5)"
-              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 shadow-2xs focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
+              class="w-14 h-16 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-bold text-slate-900 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none transition-all"
             />
           </div>
 
@@ -447,7 +447,7 @@
           <button
             type="button"
             (click)="validerCodeVerification()"
-            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Valider</span>
             <i class="fa-solid fa-circle-check ml-1.5 text-white"></i>
@@ -482,7 +482,7 @@
           <button
             type="button"
             (click)="revenirEtapePrecedente()"
-            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Retour"
           >
             <i class="fa-solid fa-arrow-left text-sm text-slate-700"></i>
@@ -527,8 +527,8 @@
                 <div
                   (click)="selectionnerRole(option.role)"
                   [class]="roleChoisi() === option.role
-                    ? 'border-2 border-red-600 bg-white ring-2 ring-red-500/10 shadow-sm'
-                    : 'border border-slate-200/80 bg-white hover:border-slate-300 shadow-xs'"
+                    ? 'border-2 border-red-600 bg-white ring-2 ring-red-500/10 '
+                    : 'border border-slate-200/80 bg-white hover:border-slate-300 '"
                   class="w-full p-4 rounded-2xl flex items-center justify-between transition-all cursor-pointer select-none"
                 >
                   <div class="flex items-center gap-3.5">
@@ -543,7 +543,7 @@
 
                   <div class="shrink-0 ml-3">
                     @if (roleChoisi() === option.role) {
-                      <div class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs shadow-xs">
+                      <div class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs">
                         <i class="fa-solid fa-check text-[11px]"></i>
                       </div>
                     } @else {
@@ -626,7 +626,7 @@
                     </button>
 
                     @if (menuIndicatifsOuvert()) {
-                      <div class="absolute left-0 top-full mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animation-apparition">
+                      <div class="absolute left-0 top-full mt-1.5 w-48 bg-white rounded-xl border border-slate-100 py-1.5 z-50 animation-apparition">
                         @for (item of listeIndicatifs; track item.code) {
                           <button
                             type="button"
@@ -789,7 +789,7 @@
               </button>
 
               @if (menuCategoriesOuvert()) {
-                <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
+                <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-2xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
                   @for (cat of listeCategories; track cat) {
                     <button
                       type="button"
@@ -845,7 +845,7 @@
                         type="button"
                         (click)="basculerJourSemaine(idx)"
                         [class]="jour.actif
-                          ? 'bg-[#E51824] text-white font-extrabold shadow-xs'
+                          ? 'bg-[#E51824] text-white font-extrabold '
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-bold'"
                         class="w-8 h-8 rounded-xl text-xs flex items-center justify-center transition-all cursor-pointer"
                       >
@@ -913,14 +913,14 @@
             <!-- Photo de profil -->
             <div class="flex flex-col items-center justify-center my-2">
               <label class="relative cursor-pointer group">
-                <div class="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center shadow-inner overflow-hidden border-2 border-slate-200">
+                <div class="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-slate-200">
                   @if (photoProfilUrl()) {
                     <img [src]="photoProfilUrl()" alt="Photo de profil" class="w-full h-full object-cover" />
                   } @else {
                     <i class="fa-solid fa-user text-4xl text-slate-300"></i>
                   }
                 </div>
-                <div class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md border-2 border-white group-hover:bg-red-700 transition-colors">
+                <div class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center border-2 border-white group-hover:bg-red-700 transition-colors">
                   <i class="fa-solid fa-camera text-xs"></i>
                 </div>
                 <input type="file" accept="image/*" (change)="selectionnerPhotoProfil($event)" class="hidden" />
@@ -937,7 +937,7 @@
                   type="button"
                   (click)="selectionnerTypeVehicule('MOTO')"
                   [class]="typeVehiculeChoisi() === 'MOTO'
-                    ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20 border-transparent'
+                    ? 'bg-[#E51824] text-white   border-transparent'
                     : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300'"
                   class="flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer"
                 >
@@ -950,7 +950,7 @@
                   type="button"
                   (click)="selectionnerTypeVehicule('VELO')"
                   [class]="typeVehiculeChoisi() === 'VELO'
-                    ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20 border-transparent'
+                    ? 'bg-[#E51824] text-white   border-transparent'
                     : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300'"
                   class="flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer"
                 >
@@ -963,7 +963,7 @@
                   type="button"
                   (click)="selectionnerTypeVehicule('VOITURE')"
                   [class]="typeVehiculeChoisi() === 'VOITURE'
-                    ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20 border-transparent'
+                    ? 'bg-[#E51824] text-white   border-transparent'
                     : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300'"
                   class="flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer"
                 >
@@ -1041,7 +1041,7 @@
               </button>
 
               @if (menuVillesOuvert()) {
-                <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
+                <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-2xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
                   @for (ville of listeVilles; track ville) {
                     <button
                       type="button"
@@ -1116,14 +1116,14 @@
             </p>
 
             <div class="flex flex-col items-center justify-center mb-6">
-              <div class="relative w-28 h-28 rounded-full bg-slate-100 flex items-center justify-center shadow-inner">
+              <div class="relative w-28 h-28 rounded-full bg-slate-100 flex items-center justify-center">
                 @if (photoProfilUrl()) {
                   <img [src]="photoProfilUrl()" alt="Photo de profil" class="w-full h-full rounded-full object-cover" />
                 } @else {
                   <i class="fa-solid fa-user text-5xl text-slate-300"></i>
                 }
                 
-                <label class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center border-2 border-white shadow-md cursor-pointer hover:bg-red-700 transition-colors">
+                <label class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center border-2 border-white cursor-pointer hover:bg-red-700 transition-colors">
                   <i class="fa-solid fa-camera text-xs"></i>
                   <input type="file" accept="image/*" (change)="selectionnerPhotoProfil($event)" class="hidden" />
                 </label>
@@ -1173,7 +1173,7 @@
           type="button"
           (click)="passerEtapeSuivante()"
           [disabled]="serviceAuthentification.chargementEnCours()"
-          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
         >
           @if (serviceAuthentification.chargementEnCours()) {
             <i class="fa-solid fa-circle-notch fa-spin text-white"></i>
@@ -1228,7 +1228,7 @@
             <img
               src="/images/plat-accueil.jpg"
               alt="Bol gourmand de riz et poulet AYYOU"
-              class="w-full h-full object-contain rounded-2xl drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] select-none pointer-events-none"
+              class="w-full h-full object-contain rounded-2xl select-none pointer-events-none"
             />
           </div>
         </div>
@@ -1253,7 +1253,7 @@
           <button
             type="button"
             (click)="revenirEtapePrecedente()"
-            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            class="w-10 h-10 rounded-full bg-white border border-slate-200/90 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             aria-label="Retour"
           >
             <i class="fa-solid fa-arrow-left text-sm text-slate-700"></i>
@@ -1302,8 +1302,8 @@
                   <div
                     (click)="selectionnerRole(option.role)"
                     [class]="roleChoisi() === option.role
-                      ? 'border-2 border-red-600 bg-white ring-2 ring-red-500/10 shadow-sm'
-                      : 'border border-slate-200/80 bg-white hover:border-slate-300 shadow-xs'"
+                      ? 'border-2 border-red-600 bg-white ring-2 ring-red-500/10 '
+                      : 'border border-slate-200/80 bg-white hover:border-slate-300 '"
                     class="w-full p-4 rounded-2xl flex items-center justify-between transition-all cursor-pointer select-none"
                   >
                     <div class="flex items-center gap-4">
@@ -1318,7 +1318,7 @@
 
                     <div class="shrink-0 ml-3">
                       @if (roleChoisi() === option.role) {
-                        <div class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs shadow-xs">
+                        <div class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs">
                           <i class="fa-solid fa-check text-[11px]"></i>
                         </div>
                       } @else {
@@ -1401,7 +1401,7 @@
                       </button>
 
                       @if (menuIndicatifsOuvert()) {
-                        <div class="absolute left-0 top-full mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animation-apparition">
+                        <div class="absolute left-0 top-full mt-1.5 w-48 bg-white rounded-xl border border-slate-100 py-1.5 z-50 animation-apparition">
                           @for (item of listeIndicatifs; track item.code) {
                             <button
                               type="button"
@@ -1571,7 +1571,7 @@
                     </button>
 
                     @if (menuCategoriesOuvert()) {
-                      <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
+                      <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
                         @for (cat of listeCategories; track cat) {
                           <button
                             type="button"
@@ -1647,7 +1647,7 @@
                         type="button"
                         (click)="basculerJourSemaine(idx)"
                         [class]="jour.actif
-                          ? 'bg-[#E51824] text-white font-extrabold shadow-xs'
+                          ? 'bg-[#E51824] text-white font-extrabold '
                           : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 font-bold'"
                         class="w-8 h-8 rounded-lg text-xs flex items-center justify-center transition-all cursor-pointer"
                         [title]="jour.libelle"
@@ -1703,14 +1703,14 @@
                 <!-- Photo avatar avec badge caméra -->
                 <div class="flex flex-col items-center shrink-0">
                   <label class="relative cursor-pointer group">
-                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center shadow-inner overflow-hidden border-2 border-slate-200">
+                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-slate-200">
                       @if (photoProfilUrl()) {
                         <img [src]="photoProfilUrl()" alt="Photo de profil" class="w-full h-full object-cover" />
                       } @else {
                         <i class="fa-solid fa-user text-3xl text-slate-300"></i>
                       }
                     </div>
-                    <div class="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md border-2 border-white group-hover:bg-red-700 transition-colors">
+                    <div class="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center border-2 border-white group-hover:bg-red-700 transition-colors">
                       <i class="fa-solid fa-camera text-[11px]"></i>
                     </div>
                     <input type="file" accept="image/*" (change)="selectionnerPhotoProfil($event)" class="hidden" />
@@ -1726,7 +1726,7 @@
                       type="button"
                       (click)="selectionnerTypeVehicule('MOTO')"
                       [class]="typeVehiculeChoisi() === 'MOTO'
-                        ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20 border-transparent'
+                        ? 'bg-[#E51824] text-white   border-transparent'
                         : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300'"
                       class="flex flex-col items-center justify-center py-3 px-3 rounded-2xl border transition-all cursor-pointer"
                     >
@@ -1738,7 +1738,7 @@
                       type="button"
                       (click)="selectionnerTypeVehicule('VELO')"
                       [class]="typeVehiculeChoisi() === 'VELO'
-                        ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20 border-transparent'
+                        ? 'bg-[#E51824] text-white   border-transparent'
                         : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300'"
                       class="flex flex-col items-center justify-center py-3 px-3 rounded-2xl border transition-all cursor-pointer"
                     >
@@ -1750,7 +1750,7 @@
                       type="button"
                       (click)="selectionnerTypeVehicule('VOITURE')"
                       [class]="typeVehiculeChoisi() === 'VOITURE'
-                        ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20 border-transparent'
+                        ? 'bg-[#E51824] text-white   border-transparent'
                         : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300'"
                       class="flex flex-col items-center justify-center py-3 px-3 rounded-2xl border transition-all cursor-pointer"
                     >
@@ -1795,7 +1795,7 @@
                   </button>
 
                   @if (menuVillesOuvert()) {
-                    <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
+                    <div class="absolute left-0 top-full mt-1 w-full bg-white rounded-2xl border border-slate-100 py-1.5 z-50 animation-apparition max-h-48 overflow-y-auto">
                       @for (ville of listeVilles; track ville) {
                         <button
                           type="button"
@@ -1907,14 +1907,14 @@
               </p>
 
               <div class="flex flex-col items-center justify-center mb-8">
-                <div class="relative w-32 h-32 rounded-full bg-slate-100 flex items-center justify-center shadow-inner">
+                <div class="relative w-32 h-32 rounded-full bg-slate-100 flex items-center justify-center">
                   @if (photoProfilUrl()) {
                     <img [src]="photoProfilUrl()" alt="Photo de profil" class="w-full h-full rounded-full object-cover" />
                   } @else {
                     <i class="fa-solid fa-user text-5xl text-slate-300"></i>
                   }
 
-                  <label class="absolute bottom-0 right-1 w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center border-2 border-white shadow-md cursor-pointer hover:bg-red-700 transition-colors">
+                  <label class="absolute bottom-0 right-1 w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center border-2 border-white cursor-pointer hover:bg-red-700 transition-colors">
                     <i class="fa-solid fa-camera text-xs"></i>
                     <input type="file" accept="image/*" (change)="selectionnerPhotoProfil($event)" class="hidden" />
                   </label>
@@ -1943,7 +1943,7 @@
                   type="button"
                   (click)="utiliserMaPositionActuelle()"
                   [disabled]="positionEnCours()"
-                  class="w-full py-3.5 px-4 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-2xs"
+                  class="w-full py-3.5 px-4 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   @if (positionEnCours()) {
                     <i class="fa-solid fa-circle-notch fa-spin text-red-600"></i>
@@ -1962,7 +1962,7 @@
             type="button"
             (click)="passerEtapeSuivante()"
             [disabled]="serviceAuthentification.chargementEnCours()"
-            class="w-full py-4 px-6 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-8"
+            class="w-full py-4 px-6 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-8"
           >
             @if (serviceAuthentification.chargementEnCours()) {
               <i class="fa-solid fa-circle-notch fa-spin text-white"></i>

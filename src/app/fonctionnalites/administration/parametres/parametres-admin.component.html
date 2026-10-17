@@ -2,7 +2,7 @@
 
   <!-- Notification Toast -->
   @if (notificationSucces()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationSucces() }}</span>
     </div>
@@ -25,7 +25,7 @@
     <button
       type="button"
       (click)="enregistrerModifications()"
-      class="px-6 py-2.5 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs sm:text-sm font-black shadow-md transition-all cursor-pointer shrink-0 active:scale-95"
+      class="px-6 py-2.5 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs sm:text-sm font-black transition-all cursor-pointer shrink-0 active:scale-95"
     >
       Enregistrer les modifications
     </button>
@@ -100,7 +100,7 @@
     <div class="lg:col-span-8 space-y-6">
       
       <!-- Carte 1 : Informations de la Plateforme -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-2xs space-y-6">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 space-y-6">
         <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
           Informations de la Plateforme
         </h3>
@@ -132,7 +132,7 @@
           <div class="p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center gap-4">
             
             <!-- Vignette du logo AYYOU -->
-            <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 p-2 flex items-center justify-center shrink-0 shadow-2xs">
+            <div class="w-16 h-16 rounded-xl bg-white border border-slate-200 p-2 flex items-center justify-center shrink-0">
               <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="w-full h-auto object-contain" />
             </div>
 
@@ -198,9 +198,9 @@
       </div>
 
       <!-- Carte 2 : Mode Maintenance -->
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs flex items-center justify-between gap-4">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
-          <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shadow-2xs shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shrink-0">
             <i class="fa-solid fa-wrench"></i>
           </div>
           <div>
@@ -221,7 +221,7 @@
         >
           <div
             [class]="modeMaintenanceActif() ? 'translate-x-6' : 'translate-x-0'"
-            class="w-5 h-5 rounded-full bg-white shadow-sm transition-transform"
+            class="w-5 h-5 rounded-full bg-white transition-transform"
           ></div>
         </button>
       </div>
@@ -232,7 +232,7 @@
     <div class="lg:col-span-4 space-y-6">
       
       <!-- Carte 1 : Aperçu Sécurité (Sombre navy) -->
-      <div class="bg-slate-900 text-white rounded-3xl p-6 space-y-5 shadow-xl border border-slate-800">
+      <div class="bg-slate-900 text-white rounded-3xl p-6 space-y-5 border border-slate-800">
         <div class="flex items-center gap-2.5">
           <i class="fa-solid fa-shield-halved text-red-500 text-sm"></i>
           <h4 class="text-sm font-black text-white font-['Outfit']">
@@ -270,7 +270,7 @@
       </div>
 
       <!-- Carte 2 : Santé du Système -->
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-5">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 space-y-5">
         <h4 class="text-sm font-black text-slate-900 font-['Outfit']">
           Santé du Système
         </h4>
@@ -322,7 +322,7 @@
       (click)="fermerGestionSecurite()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 relative"
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 border border-slate-100 space-y-5 relative"
         (click)="$event.stopPropagation()"
       >
         <button
@@ -368,7 +368,7 @@
           <button
             type="button"
             (click)="sauvegarderSecurite()"
-            class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-xs shadow-md"
+            class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-xs"
           >
             Enregistrer
           </button>

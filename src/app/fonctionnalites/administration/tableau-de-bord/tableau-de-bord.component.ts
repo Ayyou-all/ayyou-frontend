@@ -136,10 +136,6 @@ export class TableauDeBordComponent implements AfterViewInit, OnDestroy {
     if (!ctx) return;
 
     // Création d'un dégradé rouge doux sous la courbe
-    const gradient = ctx.createLinearGradient(0, 0, 0, 260);
-    gradient.addColorStop(0, 'rgba(229, 24, 36, 0.22)');
-    gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
-    gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
 
     const donnees = this.donneesBrutesSemaine();
     const labels = donnees.length > 0 ? donnees.map((p) => p.jour) : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -155,7 +151,7 @@ export class TableauDeBordComponent implements AfterViewInit, OnDestroy {
             data: valeurs,
             borderColor: '#E51824',
             borderWidth: 3,
-            backgroundColor: gradient,
+            backgroundColor: 'rgba(229, 24, 36, 0.08)', // couleur unie (pas de dégradé)
             fill: true,
             tension: 0.4,
             pointBackgroundColor: '#ffffff',

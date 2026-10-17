@@ -10,7 +10,7 @@
       <button
         type="button"
         (click)="retourner()"
-        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         aria-label="Retour aux commandes"
       >
         <i class="fa-solid fa-chevron-left text-sm font-bold"></i>
@@ -24,7 +24,7 @@
       <!-- Bouton support audio / service client -->
       <button
         type="button"
-        class="w-10 h-10 rounded-full bg-rose-50/80 hover:bg-rose-100 text-[#E51824] flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        class="w-10 h-10 rounded-full bg-rose-50/80 hover:bg-rose-100 text-[#E51824] flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         title="Contacter le support AYYOU"
       >
         <i class="fa-solid fa-headset text-sm"></i>
@@ -35,14 +35,14 @@
     <!-- BANNIÈRE DE SUCCÈS APRÈS PAIEMENT PAYTECH (WAVE / ORANGE MONEY)           -->
     <!-- ========================================================================= -->
     @if (alertePaiementSucces()) {
-      <div class="mb-5 sm:mb-6 rounded-[28px] sm:rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-5 sm:p-6 shadow-xl shadow-emerald-600/20 border border-emerald-400/40 relative overflow-hidden transition-all duration-300">
+      <div class="mb-5 sm:mb-6 rounded-[28px] sm:rounded-3xl bg-emerald-600 text-white p-5 sm:p-6 border border-emerald-400/40 relative overflow-hidden transition-all duration-300">
         <!-- Décorations lumineuses d'arrière-plan -->
         <div class="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
         <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-400/20 rounded-full blur-xl pointer-events-none"></div>
 
         <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div class="flex items-start gap-4">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center text-2xl shrink-0 shadow-md">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center text-2xl shrink-0">
               <i class="fa-solid fa-circle-check text-white"></i>
             </div>
             <div class="space-y-1">
@@ -63,7 +63,7 @@
           <button
             type="button"
             (click)="fermerAlerteSucces()"
-            class="self-end sm:self-center px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-2xs active:scale-95"
+            class="self-end sm:self-center px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95"
             title="Fermer cette notification"
           >
             <span>Fermer</span>
@@ -106,9 +106,9 @@
 
         <!-- BANNIÈRE DE PAIEMENT EN ATTENTE (WAVE / ORANGE MONEY) -->
         @if (estEnAttentePaiement()) {
-          <div class="bg-gradient-to-br from-amber-500/10 via-amber-50/80 to-orange-500/10 rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border-2 border-amber-300 shadow-md space-y-4">
+          <div class="bg-amber-50 rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border-2 border-amber-300 space-y-4">
             <div class="flex items-start gap-3.5">
-              <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shrink-0 shadow-md shadow-amber-500/30">
+              <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shrink-0">
                 <i class="fa-solid fa-clock-rotate-left"></i>
               </div>
               <div class="flex-1 space-y-1 text-left">
@@ -137,7 +137,7 @@
                 type="button"
                 (click)="reprendrePaiement()"
                 [disabled]="chargementPaiement()"
-                class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-sm shadow-lg shadow-red-500/25 flex items-center justify-center gap-2.5 transition-all cursor-pointer disabled:opacity-50"
+                class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer disabled:opacity-50"
               >
                 @if (chargementPaiement()) {
                   <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>
@@ -152,7 +152,7 @@
               <button
                 type="button"
                 (click)="retourner()"
-                class="w-full sm:w-auto py-3.5 px-5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-xs transition-all cursor-pointer shadow-2xs"
+                class="w-full sm:w-auto py-3.5 px-5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-xs transition-all cursor-pointer"
               >
                 Retour aux commandes
               </button>
@@ -209,7 +209,7 @@
         }
 
         <!-- CARTE DE STATUT : STEPPER 4 ÉTAPES RÉELLES DE LA BASE + HEURE ESTIMÉE -->
-        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-xs space-y-6 text-center">
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-6 text-center">
           
           <!-- Stepper horizontal à 4 étapes réelles de la base de données -->
           <div class="relative flex items-center justify-between px-3 sm:px-6 select-none">
@@ -224,7 +224,7 @@
             <!-- Étape 1 : Reçue / Payée -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
               <div
-                [class]="estEnAttentePaiement() ? 'bg-amber-100 text-amber-600 ring-4 ring-amber-200/50' : (etape1Active() ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20' : 'bg-slate-100 text-slate-400')"
+                [class]="estEnAttentePaiement() ? 'bg-amber-100 text-amber-600 ring-4 ring-amber-200/50' : (etape1Active() ? 'bg-[#E51824] text-white  ' : 'bg-slate-100 text-slate-400')"
                 class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
               >
                 @if (estEnAttentePaiement()) {
@@ -241,7 +241,7 @@
             <!-- Étape 2 : Préparation cuisine -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
               <div
-                [class]="etape2Active() ? 'bg-[#E51824] text-white shadow-md shadow-red-500/20' : 'bg-slate-100 text-slate-400'"
+                [class]="etape2Active() ? 'bg-[#E51824] text-white  ' : 'bg-slate-100 text-slate-400'"
                 class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
               >
                 <i class="fa-solid fa-utensils text-xs"></i>
@@ -252,7 +252,7 @@
             <!-- Étape 3 : En route avec coursier -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
               <div
-                [class]="etape3Active() ? 'bg-[#E51824] text-white shadow-lg shadow-red-500/40 ring-4 ring-rose-100 animate-pulse' : 'bg-slate-100 text-slate-400'"
+                [class]="etape3Active() ? 'bg-[#E51824] text-white   ring-4 ring-rose-100 animate-pulse' : 'bg-slate-100 text-slate-400'"
                 class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
               >
                 <i class="fa-solid fa-motorcycle text-xs"></i>
@@ -263,7 +263,7 @@
             <!-- Étape 4 : Livrée -->
             <div class="relative z-10 flex flex-col items-center gap-1.5">
               <div
-                [class]="etape4Active() ? 'bg-[#E51824] text-white shadow-md' : 'bg-slate-100 text-slate-400'"
+                [class]="etape4Active() ? 'bg-[#E51824] text-white ' : 'bg-slate-100 text-slate-400'"
                 class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
               >
                 <i class="fa-solid fa-house text-xs"></i>
@@ -289,12 +289,12 @@
 
           <!-- Pastille statut en direct -->
           @if (estEnAttentePaiement()) {
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs font-black tracking-wider uppercase shadow-2xs">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs font-black tracking-wider uppercase">
               <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
               <span>PAIEMENT EN ATTENTE</span>
             </div>
           } @else {
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#e8faf0] text-[#16a34a] text-xs font-black tracking-wider uppercase shadow-2xs">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#e8faf0] text-[#16a34a] text-xs font-black tracking-wider uppercase">
               <span class="w-2 h-2 rounded-full bg-[#16a34a] animate-ping"></span>
               <span>{{ commande().statutLibelle || 'SUIVI EN DIRECT' }}</span>
             </div>
@@ -305,13 +305,13 @@
         <!-- ===================================================================== -->
         <!-- CARTE GPS RÉELLE DE DAKAR : OPENSTREETMAP / CARTO AVEC SUIVI EN DIRECT -->
         <!-- ===================================================================== -->
-        <div class="relative w-full h-80 sm:h-96 rounded-[32px] overflow-hidden border border-slate-200/80 shadow-md select-none group">
+        <div class="relative w-full h-80 sm:h-96 rounded-[32px] overflow-hidden border border-slate-200/80 select-none group">
           
           <!-- Conteneur Leaflet de la carte réelle de Dakar -->
           <div id="carte-suivi-commande" class="w-full h-full z-0"></div>
 
           <!-- Badge supérieur : État GPS en direct -->
-          <div class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border border-slate-100 flex items-center gap-2 text-slate-800 text-xs font-black">
+          <div class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-100 flex items-center gap-2 text-slate-800 text-xs font-black">
             <span
               class="w-2.5 h-2.5 rounded-full"
               [class.bg-emerald-500]="statutGpsLivreur().niveau === 'direct'"
@@ -325,7 +325,7 @@
 
           <!-- Badge inférieur : Télémétrie en temps réel (distance et temps restant calculés via OSRM) -->
           @if (distanceRestanteKm() !== null) {
-            <div class="absolute bottom-3 left-3 z-20 px-3.5 py-2 rounded-2xl bg-slate-900/90 backdrop-blur-md text-white shadow-lg flex items-center gap-3 text-xs font-bold border border-white/10">
+            <div class="absolute bottom-3 left-3 z-20 px-3.5 py-2 rounded-2xl bg-slate-900/90 backdrop-blur-md text-white flex items-center gap-3 text-xs font-bold border border-white/10">
               <div class="flex items-center gap-1.5 text-rose-400">
                 <i class="fa-solid fa-route"></i>
                 <span class="font-['Outfit']">{{ distanceRestanteKm() }} km</span>
@@ -348,7 +348,7 @@
             <button
               type="button"
               (click)="recentrerSurCourse()"
-              class="w-10 h-10 rounded-2xl bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-transform active:scale-95 cursor-pointer border border-slate-100"
+              class="w-10 h-10 rounded-2xl bg-white/95 hover:bg-white text-slate-800 flex items-center justify-center transition-transform active:scale-95 cursor-pointer border border-slate-100"
               title="Ajuster la vue sur toute la course"
             >
               <i class="fa-solid fa-expand text-xs"></i>
@@ -356,7 +356,7 @@
             <button
               type="button"
               (click)="recentrerSurLivreur()"
-              class="w-10 h-10 rounded-2xl bg-white/95 hover:bg-white text-[#E51824] shadow-md flex items-center justify-center transition-transform active:scale-95 cursor-pointer border border-slate-100"
+              class="w-10 h-10 rounded-2xl bg-white/95 hover:bg-white text-[#E51824] flex items-center justify-center transition-transform active:scale-95 cursor-pointer border border-slate-100"
               title="Recentrer sur le livreur"
             >
               <i class="fa-solid fa-crosshairs text-sm"></i>
@@ -365,7 +365,7 @@
         </div>
 
         <!-- TIMELINE DÉTAILLÉE DU PARCOURS DE LIVRAISON (100% HORODATAGES RÉELS BACKEND) -->
-        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-xs space-y-5">
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-5">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-xl bg-rose-50 text-[#E51824] flex items-center justify-center text-xs">
@@ -385,7 +385,7 @@
               <div class="relative flex items-start justify-between gap-3 group">
                 <!-- Puce d'étape -->
                 <div
-                  class="absolute -left-6 top-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] border-2 border-white shadow-xs transition-colors"
+                  class="absolute -left-6 top-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] border-2 border-white transition-colors"
                   [class.bg-[#E51824]]="etape.etat === 'termine'"
                   [class.text-white]="etape.etat === 'termine'"
                   [class.bg-rose-500]="etape.etat === 'en_cours'"
@@ -443,7 +443,7 @@
       <div class="lg:col-span-5 space-y-5">
 
         <!-- CARTE CODE DE LIVRAISON (CONFORME À L'IMAGE 1) -->
-        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-3">
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 flex items-center justify-between gap-3">
           
           <!-- Intitulé à gauche -->
           <div class="space-y-0.5">
@@ -459,7 +459,7 @@
           <div class="flex items-center gap-2 shrink-0">
             @if (commande().codeLivraison && commande().codeLivraison!.length === 4) {
               @for (chiffre of commande().codeLivraison; track $index) {
-                <div class="w-10 h-12 rounded-2xl bg-white border-2 border-[#E51824] text-[#E51824] font-black text-xl flex items-center justify-center font-['Outfit'] shadow-2xs">
+                <div class="w-10 h-12 rounded-2xl bg-white border-2 border-[#E51824] text-[#E51824] font-black text-xl flex items-center justify-center font-['Outfit']">
                   {{ chiffre }}
                 </div>
               }
@@ -476,10 +476,10 @@
 
         <!-- CARTE DU LIVREUR OU ASSIGNATION EN COURS (100% DONNÉES RÉELLES DB) -->
         @if (commande().livreur) {
-          <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs flex items-center justify-between gap-4">
+          <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3.5 min-w-0">
               <!-- Photo du livreur -->
-              <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-900 border border-slate-100 shadow-xs shrink-0 flex items-center justify-center">
+              <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-900 border border-slate-100 shrink-0 flex items-center justify-center">
                 @if (commande().livreur?.adressePhoto) {
                   <img
                     [src]="commande().livreur?.adressePhoto"
@@ -507,7 +507,7 @@
               <button
                 type="button"
                 (click)="appelerLivreur()"
-                class="w-12 h-12 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-red-500/25 transition-all cursor-pointer shrink-0"
+                class="w-12 h-12 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
                 [title]="'Appeler ' + (commande().livreur?.nom || 'le coursier')"
               >
                 <i class="fa-solid fa-phone text-base"></i>
@@ -515,7 +515,7 @@
             }
           </div>
         } @else {
-          <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-xs flex items-center gap-4">
+          <div class="bg-white rounded-[28px] sm:rounded-3xl p-4 sm:p-5 border border-slate-100 flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 border border-amber-100/80 flex items-center justify-center shrink-0">
               <i class="fa-solid fa-clock-rotate-left text-lg animate-pulse"></i>
             </div>
@@ -531,7 +531,7 @@
         }
 
         <!-- CARTE ACCORDÉON : DÉTAILS DE LA COMMANDE (CONFORME À L'IMAGE 1) -->
-        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs space-y-4">
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 space-y-4">
           
           <!-- En-tête de l'accordéon -->
           <div
@@ -654,7 +654,7 @@
     (click)="fermerAppel()"
   >
     <div
-      class="w-full max-w-sm bg-white rounded-3xl p-6 text-center space-y-4 shadow-2xl animation-glissement-haut"
+      class="w-full max-w-sm bg-white rounded-3xl p-6 text-center space-y-4 animation-glissement-haut"
       (click)="$event.stopPropagation()"
     >
       <div class="w-16 h-16 rounded-full bg-rose-50 text-[#E51824] flex items-center justify-center text-2xl mx-auto">
@@ -684,7 +684,7 @@
         </button>
         <a
           [href]="'tel:' + commande().livreur?.numeroTelephone"
-          class="flex-1 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+          class="flex-1 py-3 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <i class="fa-solid fa-phone text-xs"></i>
           <span>Appeler</span>
