@@ -1,22 +1,34 @@
 /**
- * Service gérant l'état et le flux de travail du livreur AYYOU.
- * Consomme l'API Django REST Framework sans données mockées statiques.
- * Réception en temps réel des commandes clients avec alerte sonore.
+ * Service de l'espace livreur AYYOU.
+ *
+ * Règles :
+ * - Le serveur décide de tout (courses proposées, gagnant d'une course, étapes, PIN) :
+ *   l'écran ne change d'étape qu'APRÈS la confirmation du serveur.
+ * - La position GPS réelle du téléphone est envoyée régulièrement tant que le livreur
+ *   est en ligne ou en course (le dispatch et le suivi client en dépendent).
+ * - Aucune valeur n'est inventée : une donnée absente est affichée comme absente.
  */
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import {
-  ActiviteJourLivreur,
-  DetailGainJournalier,
-  EtapeCourseLivreur,
-  LivreurProfil,
-  PropositionLivraison,
-  ResultatValidationCode
-} from '../modeles/livreur.modele';
+import { ActiviteJourLivreur, DetailGainJournalier, EtapeCourseLivreur, LivreurProfil, PropositionLivraison } from '../modeles/livreur.modele';
 import { ServiceAuthentification } from './service-authentification.service';
+
+/** Durée (secondes) pendant laquelle une proposition reste affichée avant d'être considérée comme refusée. */
+const DUREE_PROPOSITION_SECONDES = 30;
+/** Intervalle minimum entre deux envois de position GPS au serveur. */
+const INTERVALLE_ENVOI_GPS_MS = 10000;
+
+/** Raisons d'échec acceptées par le serveur (applications/livraisons/models.py → MotifEchecLivraison). */
+export const MOTIFS_ECHEC_LIVRAISON = [
+  { valeur: 'CLIENT_ABSENT', libelle: 'Client absent' },
+  { valeur: 'CLIENT_INJOIGNABLE', libelle: 'Client injoignable' },
+  { valeur: 'ADRESSE_INCORRECTE', libelle: 'Adresse incorrecte' },
+  { valeur: 'PROBLEME_VEHICULE', libelle: 'Problème de véhicule' },
+  { valeur: 'PROBLEME_RESTAURANT', libelle: 'Problème avec le restaurant' }
+];
 
 @Injectable({
   providedIn: 'root'
@@ -24,442 +36,273 @@ import { ServiceAuthentification } from './service-authentification.service';
 export class ServiceLivreurService {
   private readonly http = inject(HttpClient);
   private readonly serviceAuth = inject(ServiceAuthentification);
+  private readonly urlLivraisons = `${environment.apiUrl}/livraisons/`;
 
-  // Profil réel du livreur connecté (initialisé sans fausses données)
   readonly profilLivreur = signal<LivreurProfil>({
     nomComplet: '',
     adressePhoto: '',
     vehicule: '',
-    estDisponible: true,
+    estDisponible: false,
     gainsDuJourFcfa: 0,
     nombreLivraisonsJour: 0,
-    typeVehicule: 'MOTO',
+    typeVehicule: '',
     nomVehicule: '',
     immatriculation: '',
     zonePrincipale: ''
   });
 
-  // Gains réels de la semaine issus de la base de données
-  readonly gainsSemaine = signal({
-    montantTotalFcfa: 0,
-    pourcentageEvolution: 0,
-    livraisonsSemaine: 0,
-    heuresEnLigne: '0h'
-  });
-
-  // Activité hebdomadaire réelle pour le graphique
-  readonly activiteHebdomadaire = signal<ActiviteJourLivreur[]>([
-    { jour: 'Lun', montantFcfa: 0, hauteurPourcentage: 6 },
-    { jour: 'Mar', montantFcfa: 0, hauteurPourcentage: 6 },
-    { jour: 'Mer', montantFcfa: 0, hauteurPourcentage: 6 },
-    { jour: 'Jeu', montantFcfa: 0, hauteurPourcentage: 6 },
-    { jour: 'Ven', montantFcfa: 0, hauteurPourcentage: 6 },
-    { jour: 'Sam', montantFcfa: 0, hauteurPourcentage: 6 },
-    { jour: 'Dim', montantFcfa: 0, hauteurPourcentage: 6 }
-  ]);
-
-  // Détails quotidiens réels
+  readonly gainsSemaine = signal({ montantTotalFcfa: 0, pourcentageEvolution: 0, livraisonsSemaine: 0, heuresEnLigne: '' });
+  readonly activiteHebdomadaire = signal<ActiviteJourLivreur[]>([]);
   readonly detailsQuotidiens = signal<DetailGainJournalier[]>([]);
 
-  // Proposition de course en attente de réponse (temps réel)
+  // Course proposée (en attente de réponse) et course acceptée
   readonly propositionActive = signal<PropositionLivraison | null>(null);
-
-  // Course en cours acceptée
   readonly courseEnCours = signal<PropositionLivraison | null>(null);
-
-  // Étape actuelle dans la livraison acceptée
   readonly etapeCourse = signal<EtapeCourseLivreur>('VERS_RESTAURANT');
-
-  // Compte à rebours de la proposition en secondes
-  readonly secondesRestantes = signal<number>(30);
-
-  // Indicateur d'état de connectivité réseau
+  readonly secondesRestantes = signal<number>(DUREE_PROPOSITION_SECONDES);
+  readonly messageErreur = signal<string | null>(null);
   readonly estEnLigne = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
-  // Suivi de géolocalisation réelle du coursier
+  // GPS réel du téléphone
   readonly positionGpsActuelle = signal<{ latitude: number; longitude: number } | null>(null);
   readonly statutTransmissionGps = signal<'ACTIF' | 'EN_PAUSE' | 'ERREUR' | 'INACTIF'>('INACTIF');
   readonly messageErreurGps = signal<string | null>(null);
   readonly dateDernierePositionGps = signal<Date | null>(null);
 
   private intervalleCompteARebours?: any;
-  private intervalleEcouteTempsReel?: any;
-  private intervalleEnvoiPosition?: any;
+  private intervalleEcoute?: any;
+  private identifiantSuiviGps: number | null = null;
+  private dernierEnvoiGps = 0;
 
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
         this.estEnLigne.set(true);
-        if (this.profilLivreur().estDisponible) {
-          this.chargerMissionEnCours();
-          this.verifierNouvellesPropositions();
-        }
+        if (this.estLivreurConnecte()) this.chargerMissionEnCours();
       });
-      window.addEventListener('offline', () => {
-        this.estEnLigne.set(false);
-      });
+      window.addEventListener('offline', () => this.estEnLigne.set(false));
     }
-
-    this.initialiserDonneesLivreur();
-    this.demarrerEcouteTempsReel();
+    if (this.estLivreurConnecte()) {
+      this.initialiserDonneesLivreur();
+      this.demarrerEcouteTempsReel();
+    }
   }
 
-  /**
-   * Initialise les données et charge la mission active si existante.
-   */
+  private estLivreurConnecte(): boolean {
+    return this.serviceAuth.utilisateurConnecte()?.role === 'LIVREUR';
+  }
+
+  private messageServeur(erreur: any, parDefaut: string): string {
+    if (erreur?.status === 0) return 'Connexion perdue. Vérifiez votre réseau puis réessayez.';
+    return erreur?.error?.message || erreur?.error?.detail || parDefaut;
+  }
+
   initialiserDonneesLivreur(): void {
-    const user = this.serviceAuth.utilisateurConnecte();
-    if (user && user.role === 'LIVREUR') {
-      const nomCompletCalcule = `${user.prenom || ''} ${user.nom || ''}`.trim() || user.courriel || '';
-      this.profilLivreur.update((p) => ({
-        ...p,
-        nomComplet: nomCompletCalcule || p.nomComplet,
-        prenom: user.prenom || p.prenom || '',
-        nom: user.nom || p.nom || '',
-        courriel: user.courriel || p.courriel || '',
-        telephone: user.telephone || p.telephone || '',
-        adresse: user.adresse || p.adresse || '',
-        adressePhoto: user.adressePhoto || p.adressePhoto || '',
-        typeVehicule: user.typeVehicule || p.typeVehicule || 'MOTO',
-        nomVehicule: user.nomVehicule || p.nomVehicule || '',
-        immatriculation: user.immatriculation || p.immatriculation || '',
-        zonePrincipale: user.zonePrincipale || p.zonePrincipale || ''
-      }));
-    }
     this.chargerProfilLivreur();
     this.chargerMissionEnCours();
-    this.verifierNouvellesPropositions();
   }
 
-  /**
-   * Récupère le profil réel du livreur et ses gains depuis Django REST Framework (retourne l'Observable).
-   */
+  // ---------------------------------------------------------------------------
+  // Profil et gains
+  // ---------------------------------------------------------------------------
+
   recupererProfilLivreur(): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/livraisons/profil/`).pipe(
+    return this.http.get<any>(`${this.urlLivraisons}profil/`).pipe(
       tap((data) => {
-        if (data) {
-          const nomCompletCalcule =
-            data.nomComplet ||
-            data.nom_complet ||
-            `${data.prenom || ''} ${data.nom || ''}`.trim() ||
-            this.profilLivreur().nomComplet;
-
-          this.profilLivreur.update((p) => ({
-            ...p,
-            nomComplet: nomCompletCalcule,
-            prenom: data.prenom ?? p.prenom ?? '',
-            nom: data.nom ?? p.nom ?? '',
-            courriel: data.courriel ?? p.courriel ?? '',
-            telephone: data.telephone ?? p.telephone ?? '',
-            adresse: data.adresse ?? p.adresse ?? '',
-            adressePhoto: data.adressePhoto || data.adresse_photo || p.adressePhoto,
-            vehicule: data.nomVehicule || data.nom_vehicule || (data.typeVehicule || data.type_vehicule ? `${data.typeVehicule || data.type_vehicule}` : p.vehicule),
-            typeVehicule: data.typeVehicule || data.type_vehicule || p.typeVehicule || 'MOTO',
-            nomVehicule: data.nomVehicule ?? data.nom_vehicule ?? p.nomVehicule ?? '',
-            immatriculation: data.immatriculation ?? p.immatriculation ?? '',
-            zonePrincipale: data.zonePrincipale ?? data.zone_principale ?? p.zonePrincipale ?? '',
-            statutValidation: data.statutValidation || data.statut_validation || p.statutValidation || '',
-            estDisponible: data.estDisponible ?? data.est_disponible ?? (data.disponibilite === 'EN_LIGNE'),
-            gainsDuJourFcfa: Number(data.gains_du_jour_fcfa ?? 0),
-            nombreLivraisonsJour: Number(data.nombre_livraisons_jour ?? 0)
-          }));
-
-          if (data.gains_semaine) {
-            this.gainsSemaine.set({
-              montantTotalFcfa: Number(data.gains_semaine.montantTotalFcfa ?? 0),
-              pourcentageEvolution: Number(data.gains_semaine.pourcentageEvolution ?? 0),
-              livraisonsSemaine: Number(data.gains_semaine.livraisonsSemaine ?? 0),
-              heuresEnLigne: String(data.gains_semaine.heuresEnLigne ?? '0h')
-            });
-          }
-
-          if (data.activite_hebdomadaire && Array.isArray(data.activite_hebdomadaire)) {
-            this.activiteHebdomadaire.set(data.activite_hebdomadaire);
-          }
-
-          if (data.details_quotidiens && Array.isArray(data.details_quotidiens)) {
-            this.detailsQuotidiens.set(data.details_quotidiens);
-          }
-        }
+        this.profilLivreur.update((p) => ({
+          ...p,
+          nomComplet: data.nom_complet || '',
+          prenom: data.prenom || '',
+          nom: data.nom || '',
+          courriel: data.courriel || '',
+          telephone: data.telephone || '',
+          adresse: data.adresse || '',
+          adressePhoto: data.adresse_photo || '',
+          vehicule: data.nom_vehicule || data.type_vehicule || '',
+          typeVehicule: data.type_vehicule || '',
+          nomVehicule: data.nom_vehicule || '',
+          immatriculation: data.immatriculation || '',
+          zonePrincipale: data.zone_principale || '',
+          statutValidation: data.statut_validation || '',
+          estDisponible: data.disponibilite === 'EN_LIGNE' || data.disponibilite === 'OCCUPE',
+          gainsDuJourFcfa: Number(data.gains_du_jour_fcfa ?? 0),
+          nombreLivraisonsJour: Number(data.nombre_livraisons_jour ?? 0)
+        }));
+        if (data.gains_semaine) this.gainsSemaine.set(data.gains_semaine);
+        if (Array.isArray(data.activite_hebdomadaire)) this.activiteHebdomadaire.set(data.activite_hebdomadaire);
+        if (Array.isArray(data.details_quotidiens)) this.detailsQuotidiens.set(data.details_quotidiens);
+        if (this.profilLivreur().estDisponible) this.demarrerSuiviGps();
       })
     );
   }
 
-  /**
-   * Charge le profil réel du livreur et ses gains depuis Django REST Framework.
-   */
   chargerProfilLivreur(): void {
     this.recupererProfilLivreur().subscribe({
-      next: () => {},
-      error: () => {}
+      error: (erreur) => this.messageErreur.set(this.messageServeur(erreur, 'Impossible de charger votre profil.'))
     });
   }
 
-  /**
-   * Met à jour les informations du profil livreur (véhicule, immatriculation, zone, etc.).
-   */
   mettreAJourProfilLivreur(donnees: FormData | any): Observable<any> {
-    return this.http.patch<any>(`${environment.apiUrl}/livraisons/profil/`, donnees).pipe(
-      tap((data) => {
-        if (data) {
-          this.chargerProfilLivreur();
+    return this.http.patch<any>(`${this.urlLivraisons}profil/`, donnees).pipe(tap(() => this.chargerProfilLivreur()));
+  }
+
+  /** Interrupteur En ligne / Hors ligne : l'écran change seulement si le serveur accepte. */
+  basculerDisponibilite(): void {
+    const nouvelleValeur = this.profilLivreur().estDisponible ? 'HORS_LIGNE' : 'EN_LIGNE';
+    this.http.patch<any>(`${this.urlLivraisons}disponibilite/`, { disponibilite: nouvelleValeur }).subscribe({
+      next: () => {
+        const enLigne = nouvelleValeur === 'EN_LIGNE';
+        this.profilLivreur.update((p) => ({ ...p, estDisponible: enLigne }));
+        this.messageErreur.set(null);
+        if (enLigne) {
+          this.demarrerSuiviGps();
+          this.verifierNouvellesPropositions();
+        } else if (!this.courseEnCours()) {
+          this.arreterSuiviGps();
         }
-      })
+      },
+      error: (erreur) => this.messageErreur.set(this.messageServeur(erreur, 'Impossible de changer votre disponibilité.'))
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // GPS réel
+  // ---------------------------------------------------------------------------
+
+  /** Suit la position du téléphone et l'envoie au serveur (au plus toutes les 10 secondes). */
+  demarrerSuiviGps(): void {
+    if (this.identifiantSuiviGps !== null) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.statutTransmissionGps.set('ERREUR');
+      this.messageErreurGps.set("Ce téléphone ne permet pas la géolocalisation : impossible de recevoir des courses.");
+      return;
+    }
+    this.statutTransmissionGps.set('ACTIF');
+    this.messageErreurGps.set(null);
+    this.identifiantSuiviGps = navigator.geolocation.watchPosition(
+      (position) => this.surNouvellePosition(position.coords.latitude, position.coords.longitude),
+      (erreur) => {
+        this.statutTransmissionGps.set('ERREUR');
+        this.messageErreurGps.set(
+          erreur.code === erreur.PERMISSION_DENIED
+            ? 'Autorisez la localisation pour recevoir des courses et être suivi par le client.'
+            : 'Position GPS introuvable. Activez la localisation de votre téléphone.'
+        );
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
     );
   }
 
-  /**
-   * Écoute en continu les commandes passées par les clients (polling toutes les 3 secondes).
-   */
+  arreterSuiviGps(): void {
+    if (this.identifiantSuiviGps !== null && typeof navigator !== 'undefined') {
+      navigator.geolocation.clearWatch(this.identifiantSuiviGps);
+    }
+    this.identifiantSuiviGps = null;
+    this.statutTransmissionGps.set('INACTIF');
+  }
+
+  private surNouvellePosition(latitude: number, longitude: number): void {
+    this.positionGpsActuelle.set({ latitude, longitude });
+    this.dateDernierePositionGps.set(new Date());
+    const maintenant = Date.now();
+    if (maintenant - this.dernierEnvoiGps < INTERVALLE_ENVOI_GPS_MS) return;
+    this.dernierEnvoiGps = maintenant;
+
+    this.http.patch(`${this.urlLivraisons}position-gps/`, { latitude: latitude.toFixed(6), longitude: longitude.toFixed(6) }).subscribe({
+      next: () => this.statutTransmissionGps.set('ACTIF'),
+      error: () => this.statutTransmissionGps.set('EN_PAUSE') // nouvel essai à la prochaine position
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Propositions de course
+  // ---------------------------------------------------------------------------
+
+  /** Interroge le serveur régulièrement (voir phase 9 : temps réel). */
   demarrerEcouteTempsReel(): void {
     this.arreterEcouteTempsReel();
-    this.intervalleEcouteTempsReel = setInterval(() => {
-      if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        this.estEnLigne.set(false);
-        return;
-      }
+    this.intervalleEcoute = setInterval(() => {
       if (this.profilLivreur().estDisponible && !this.courseEnCours() && !this.propositionActive()) {
         this.verifierNouvellesPropositions();
       }
-    }, 3000);
+    }, 5000);
   }
 
   arreterEcouteTempsReel(): void {
-    if (this.intervalleEcouteTempsReel) {
-      clearInterval(this.intervalleEcouteTempsReel);
-      this.intervalleEcouteTempsReel = undefined;
-    }
+    if (this.intervalleEcoute) clearInterval(this.intervalleEcoute);
+    this.intervalleEcoute = undefined;
   }
 
-  /**
-   * Joue une alerte sonore (double carillon harmonieux) dès qu'une nouvelle commande client arrive.
-   */
-  jouerAlerteSonore(): void {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const maintenant = ctx.currentTime;
-
-      // Note 1 (880 Hz - La 5)
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(880, maintenant);
-      gain1.gain.setValueAtTime(0.2, maintenant);
-      gain1.gain.exponentialRampToValueAtTime(0.001, maintenant + 0.28);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start(maintenant);
-      osc1.stop(maintenant + 0.28);
-
-      // Note 2 (1320 Hz - Mi 6)
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1320, maintenant + 0.16);
-      gain2.gain.setValueAtTime(0.25, maintenant + 0.16);
-      gain2.gain.exponentialRampToValueAtTime(0.001, maintenant + 0.55);
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.start(maintenant + 0.16);
-      osc2.stop(maintenant + 0.55);
-    } catch {
-      // Navigateur en mode silencieux
-    }
-  }
-
-  /**
-   * Bascule le statut Disponible / Hors-ligne du livreur via l'API Django.
-   */
-  basculerDisponibilite(): void {
-    const nouveauStatut = !this.profilLivreur().estDisponible;
-    this.profilLivreur.update((p) => ({ ...p, estDisponible: nouveauStatut }));
-
-    const statutDjango = nouveauStatut ? 'EN_LIGNE' : 'HORS_LIGNE';
-    this.http
-      .patch(`${environment.apiUrl}/livraisons/disponibilite/`, {
-        disponibilite: statutDjango
-      })
-      .subscribe({
-        next: () => {
-          if (nouveauStatut) {
-            this.demarrerEcouteTempsReel();
-            this.verifierNouvellesPropositions();
-          } else {
-            this.arreterEcouteTempsReel();
-            this.arreterSuiviGpsLivreur();
-          }
-        },
-        error: () => {}
-      });
-  }
-
-  /**
-   * Vérifie si des courses sont disponibles pour le livreur et affiche la modale en temps réel.
-   */
   verifierNouvellesPropositions(): void {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       this.estEnLigne.set(false);
       return;
     }
+    if (!this.profilLivreur().estDisponible || this.courseEnCours() || this.propositionActive()) return;
 
-    if (!this.profilLivreur().estDisponible || this.courseEnCours() || this.propositionActive()) {
-      return;
-    }
-
-    this.http.get<any[]>(`${environment.apiUrl}/livraisons/propositions/`).subscribe({
+    this.http.get<any[]>(`${this.urlLivraisons}propositions/`).subscribe({
       next: (propositions) => {
         this.estEnLigne.set(true);
-        if (propositions && propositions.length > 0) {
-          const premiere = propositions[0];
-          const tempsRestant = Number(
-            premiere.tempsRestantSec ?? premiere.temps_restant_secondes ?? 30
-          );
-          this.secondesRestantes.set(tempsRestant);
-
-          this.propositionActive.set({
-            identifiantCommande: String(
-              premiere.identifiantCommande ??
-                premiere.commande_id ??
-                premiere.id ??
-                premiere.reference ??
-                ''
-            ),
-            restaurantNom:
-              premiere.restaurantNom ??
-              premiere.restaurant_nom ??
-              premiere.etablissement_nom ??
-              'Restaurant Partenaire',
-            restaurantAdresse:
-              premiere.restaurantAdresse ??
-              premiere.restaurant_adresse ??
-              'Dakar',
-            restaurantTelephone:
-              premiere.restaurantTelephone ??
-              premiere.restaurant_telephone ??
-              '',
-            comptoirRetrait: 'Comptoir de retrait AYYOU',
-            clientNom:
-              premiere.clientNom ?? premiere.client_nom ?? 'Client',
-            clientTelephone:
-              premiere.clientTelephone ??
-              premiere.client_telephone ??
-              '',
-            clientAdresse:
-              premiere.clientAdresse ??
-              premiere.client_adresse ??
-              'Adresse client',
-            clientInstructions:
-              premiere.clientInstructions ??
-              premiere.instructions_client ??
-              premiere.instructions ??
-              '',
-            distanceKm: Number(
-              premiere.distanceKm ?? premiere.distance_km ?? 2.5
-            ),
-            gainFcfa: Number(
-              premiere.gainFcfa ?? premiere.gain_livreur_fcfa ?? 1000
-            ),
-            tempsRestantSec: tempsRestant,
-            tempsTrajetMin: Number(
-              premiere.tempsTrajetMin ?? premiere.temps_trajet_minutes ?? 10
-            ),
-            codeValidation: '',
-            restaurantLatitude: Number(premiere.restaurantLatitude ?? premiere.restaurant_latitude ?? 14.6710),
-            restaurantLongitude: Number(premiere.restaurantLongitude ?? premiere.restaurant_longitude ?? -17.4320),
-            clientLatitude: Number(premiere.clientLatitude ?? premiere.client_latitude ?? 14.6850),
-            clientLongitude: Number(premiere.clientLongitude ?? premiere.client_longitude ?? -17.4520),
-            articles: (premiere.articles || []).map((art: any) => ({
-              id: art.id ? Number(art.id) : undefined,
-              nom: art.nom ?? art.nom_plat ?? 'Article',
-              quantite: Number(art.quantite || 1),
-              format: art.format || 'Standard',
-              instructions: art.instructions || '',
-              estVerifie: false
-            })),
-            photoCommande:
-              premiere.photoCommande ||
-              'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
-          });
-
-          this.jouerAlerteSonore();
-          this.demarrerCompteARebours();
-        }
+        if (propositions.length === 0) return;
+        this.propositionActive.set(this.adapterProposition(propositions[0]));
+        this.secondesRestantes.set(DUREE_PROPOSITION_SECONDES);
+        this.jouerAlerteSonore();
+        this.demarrerCompteARebours();
       },
-      error: (err: any) => {
-        if (err?.status === 0) {
-          this.estEnLigne.set(false);
-        } else if (err?.status === 401 || err?.status === 403) {
-          this.arreterEcouteTempsReel();
-        }
+      error: (erreur) => {
+        if (erreur?.status === 0) this.estEnLigne.set(false);
+        if (erreur?.status === 401 || erreur?.status === 403) this.arreterEcouteTempsReel();
       }
     });
   }
 
-  /**
-   * Charge la mission active depuis l'API Django.
-   */
-  chargerMissionEnCours(): void {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      this.estEnLigne.set(false);
-      return;
+  /** Proposition telle que renvoyée par le serveur : pas de données du client avant acceptation. */
+  private adapterProposition(p: any): PropositionLivraison {
+    return {
+      identifiantCommande: String(p.commande_id),
+      restaurantNom: p.restaurant_nom || '',
+      restaurantAdresse: p.restaurant_adresse || '',
+      restaurantTelephone: p.restaurant_telephone || '',
+      comptoirRetrait: '',
+      clientNom: '',
+      clientTelephone: '',
+      clientAdresse: '',
+      distanceKm: p.distance_km ?? null,
+      gainFcfa: Number(p.gain_livreur_fcfa ?? 0),
+      tempsRestantSec: DUREE_PROPOSITION_SECONDES,
+      tempsTrajetMin: 0,
+      restaurantLatitude: p.restaurant_latitude ?? undefined,
+      restaurantLongitude: p.restaurant_longitude ?? undefined,
+      articles: (p.articles || []).map((a: any) => ({
+        id: a.id,
+        nom: a.nom_plat,
+        quantite: a.quantite,
+        instructions: a.instructions_speciales || '',
+        estVerifie: false
+      }))
+    };
+  }
+
+  jouerAlerteSonore(): void {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      [880, 1320].forEach((frequence, index) => {
+        const oscillateur = ctx.createOscillator();
+        const volume = ctx.createGain();
+        const debut = ctx.currentTime + index * 0.16;
+        oscillateur.frequency.setValueAtTime(frequence, debut);
+        volume.gain.setValueAtTime(0.25, debut);
+        volume.gain.exponentialRampToValueAtTime(0.001, debut + 0.4);
+        oscillateur.connect(volume);
+        volume.connect(ctx.destination);
+        oscillateur.start(debut);
+        oscillateur.stop(debut + 0.4);
+      });
+    } catch {
+      // Son bloqué par le navigateur : la proposition reste visible à l'écran.
     }
-    this.http.get<any>(`${environment.apiUrl}/livraisons/mission-en-cours/`).subscribe({
-      next: (reponse) => {
-        this.estEnLigne.set(true);
-        if (reponse?.mission_active && reponse?.livraison) {
-          const l = reponse.livraison;
-          this.courseEnCours.set({
-            identifiantCommande: String(l.commande_id || l.commande_reference || l.reference || l.id || ''),
-            restaurantNom: l.restaurant_nom || '',
-            restaurantAdresse: l.restaurant_adresse || '',
-            restaurantTelephone: l.restaurant_telephone || '',
-            comptoirRetrait: 'Comptoir de retrait AYYOU',
-            clientNom: l.client_nom || '',
-            clientTelephone: l.client_telephone || '',
-            clientAdresse: l.client_adresse || '',
-            clientInstructions: l.instructions_client || l.client_instructions || '',
-            distanceKm: Number(l.distance_km || 2.5),
-            gainFcfa: Number(l.gain_livreur_fcfa || 1000),
-            tempsRestantSec: 0,
-            tempsTrajetMin: 10,
-            codeValidation: '',
-            restaurantLatitude: Number(l.restaurant_latitude || 14.6710),
-            restaurantLongitude: Number(l.restaurant_longitude || -17.4320),
-            clientLatitude: Number(l.client_latitude || 14.6850),
-            clientLongitude: Number(l.client_longitude || -17.4520),
-            articles: (l.articles || []).map((art: any) => ({
-              id: art.id ? Number(art.id) : undefined,
-              nom: art.nom_plat || art.nom || 'Article',
-              quantite: Number(art.quantite || 1),
-              format: art.format || 'Standard',
-              instructions: art.instructions || '',
-              estVerifie: art.est_verifie || false
-            })),
-            photoCommande: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400'
-          });
-
-          // Étape de livraison
-          if (l.etape === 'VERS_RESTAURANT') this.etapeCourse.set('VERS_RESTAURANT');
-          else if (l.etape === 'VERIFICATION_ARTICLES' || l.etape === 'AU_RESTAURANT')
-            this.etapeCourse.set('ARRIVE_RESTAURANT');
-          else if (l.etape === 'VERS_CLIENT') this.etapeCourse.set('VERS_CLIENT');
-          else if (l.etape === 'ARRIVE_CLIENT') this.etapeCourse.set('ARRIVE_CLIENT');
-
-          this.demarrerSuiviGpsLivreur();
-        }
-      },
-      error: (err: any) => {
-        if (err?.status === 0) {
-          this.estEnLigne.set(false);
-        }
-      }
-    });
-  }
-
-  declencherNouvelleProposition(): void {
-    this.verifierNouvellesPropositions();
   }
 
   private demarrerCompteARebours(): void {
@@ -475,10 +318,8 @@ export class ServiceLivreurService {
   }
 
   private arreterCompteARebours(): void {
-    if (this.intervalleCompteARebours) {
-      clearInterval(this.intervalleCompteARebours);
-      this.intervalleCompteARebours = undefined;
-    }
+    if (this.intervalleCompteARebours) clearInterval(this.intervalleCompteARebours);
+    this.intervalleCompteARebours = undefined;
   }
 
   accepterProposition(surSucces?: () => void, surErreur?: (message: string) => void): void {
@@ -489,341 +330,177 @@ export class ServiceLivreurService {
     this.refuserCourse();
   }
 
-  /**
-   * Accepte la proposition de course via l'API Django.
-   */
+  /** Le serveur verrouille la commande : si un autre livreur a été plus rapide, on reçoit une erreur. */
   accepterCourse(surSucces?: () => void, surErreur?: (message: string) => void): void {
     this.arreterCompteARebours();
-    const prop = this.propositionActive();
-    if (prop) {
-      this.http
-        .post(`${environment.apiUrl}/livraisons/${prop.identifiantCommande}/accepter/`, {})
-        .subscribe({
-          next: () => {
-            this.courseEnCours.set(prop);
-            this.propositionActive.set(null);
-            this.etapeCourse.set('VERS_RESTAURANT');
-            this.demarrerSuiviGpsLivreur();
-            if (surSucces) {
-              surSucces();
-            }
-          },
-          error: (err) => {
-            this.propositionActive.set(null);
-            const message =
-              err.error?.detail ||
-              err.error?.message ||
-              "Cette mission n'est plus disponible ou a été acceptée par un autre coursier.";
-            if (surErreur) {
-              surErreur(message);
-            }
-          }
-        });
+    const proposition = this.propositionActive();
+    if (!proposition) return;
+    this.http.post(`${this.urlLivraisons}${proposition.identifiantCommande}/accepter/`, {}).subscribe({
+      next: () => {
+        this.propositionActive.set(null);
+        this.chargerMissionEnCours(surSucces);
+      },
+      error: (erreur) => {
+        this.propositionActive.set(null);
+        surErreur?.(this.messageServeur(erreur, "Cette course n'est plus disponible."));
+      }
+    });
+  }
+
+  /** Refus mémorisé par le serveur : la même course ne vous sera plus proposée. */
+  refuserCourse(): void {
+    this.arreterCompteARebours();
+    const proposition = this.propositionActive();
+    this.propositionActive.set(null);
+    if (proposition) {
+      this.http.post(`${this.urlLivraisons}${proposition.identifiantCommande}/refuser/`, {}).subscribe({
+        error: () => {
+          // Si le refus n'a pas pu être envoyé, la course pourra être reproposée : ce n'est pas bloquant.
+        }
+      });
     }
   }
 
-  refuserCourse(): void {
-    this.arreterCompteARebours();
-    this.arreterSuiviGpsLivreur();
-    this.propositionActive.set(null);
+  // ---------------------------------------------------------------------------
+  // Course en cours (chaque étape est confirmée par le serveur)
+  // ---------------------------------------------------------------------------
+
+  readonly remiseConfirmee = signal<boolean>(false);
+  readonly livraisonBloquee = signal<boolean>(false);
+
+  /** Charge la course active depuis le serveur et en déduit l'étape à afficher. */
+  chargerMissionEnCours(surSucces?: () => void): void {
+    this.http.get<any>(`${this.urlLivraisons}mission-en-cours/`).subscribe({
+      next: (reponse) => {
+        this.estEnLigne.set(true);
+        if (!reponse.mission_active) {
+          this.courseEnCours.set(null);
+          return;
+        }
+        const l = reponse.livraison;
+        this.courseEnCours.set({
+          identifiantCommande: String(l.commande_id),
+          referenceCommande: l.commande_reference,
+          restaurantNom: l.restaurant_nom,
+          restaurantAdresse: l.restaurant_adresse,
+          restaurantTelephone: l.restaurant_telephone,
+          comptoirRetrait: '',
+          clientNom: l.client_nom,
+          clientTelephone: l.client_telephone,
+          clientAdresse: l.client_adresse,
+          clientInstructions: l.client_instructions,
+          clientRepere: l.client_repere,
+          distanceKm: l.distance_km ?? null,
+          gainFcfa: l.gain_livreur_fcfa,
+          tempsRestantSec: 0,
+          tempsTrajetMin: 0,
+          restaurantLatitude: l.restaurant_latitude ?? undefined,
+          restaurantLongitude: l.restaurant_longitude ?? undefined,
+          clientLatitude: l.client_latitude ?? undefined,
+          clientLongitude: l.client_longitude ?? undefined,
+          articles: (l.articles || []).map((a: any) => ({
+            id: a.id,
+            nom: a.nom_plat,
+            quantite: a.quantite,
+            instructions: a.instructions_speciales || '',
+            estVerifie: Boolean(a.est_verifie)
+          }))
+        });
+        this.remiseConfirmee.set(Boolean(reponse.remise_confirmee));
+        this.livraisonBloquee.set(Boolean(reponse.est_bloquee));
+        this.etapeCourse.set(this.etapeDepuisStatut(l.statut_commande));
+        this.demarrerSuiviGps();
+        surSucces?.();
+      },
+      error: (erreur) => {
+        if (erreur?.status === 0) this.estEnLigne.set(false);
+      }
+    });
   }
 
+  private etapeDepuisStatut(statut: string): EtapeCourseLivreur {
+    switch (statut) {
+      case 'EN_VERIFICATION':
+        return 'ARRIVE_RESTAURANT';
+      case 'EN_LIVRAISON':
+        return 'VERS_CLIENT';
+      case 'ARRIVE_CLIENT':
+        return 'VALIDATION_CODE';
+      default:
+        return 'VERS_RESTAURANT';
+    }
+  }
+
+  /** Étape purement visuelle : le livreur annonce qu'il est devant le restaurant. */
   avancerEtapeCourse(etape: EtapeCourseLivreur): void {
     this.etapeCourse.set(etape);
   }
 
-  arriverAuRestaurant(): void {
-    this.etapeCourse.set('ARRIVE_RESTAURANT');
-  }
-
-  basculerArticleVerifie(indexArticle: number): void {
-    this.basculerVerificationArticle(indexArticle);
-  }
-
-  basculerVerificationArticle(indexArticle: number): void {
+  /** Coche / décoche un article : l'écran est mis à jour après la réponse du serveur. */
+  basculerArticleVerifie(index: number): void {
     const course = this.courseEnCours();
-    if (!course || !course.articles[indexArticle]) return;
-
-    const article = course.articles[indexArticle];
+    const article = course?.articles[index];
+    if (!course || !article?.id) return;
     const nouvelEtat = !article.estVerifie;
-    const ligneIdReelle = article.id ?? (indexArticle + 1);
-
-    this.courseEnCours.update((c) => {
-      if (!c) return null;
-      const nouveauxArticles = [...c.articles];
-      nouveauxArticles[indexArticle] = {
-        ...nouveauxArticles[indexArticle],
-        estVerifie: nouvelEtat
-      };
-      return { ...c, articles: nouveauxArticles };
-    });
-
-    this.http
-      .post(`${environment.apiUrl}/livraisons/mission-en-cours/pointer-article/`, {
-        ligne_id: ligneIdReelle,
-        est_verifie: nouvelEtat
-      })
-      .subscribe({
-        next: () => {},
-        error: () => {}
-      });
-  }
-
-  cocherTousArticles(): void {
-    this.courseEnCours.update((c) => {
-      if (!c) return null;
-      return {
-        ...c,
-        articles: c.articles.map((a) => ({ ...a, estVerifie: true }))
-      };
+    this.http.post(`${this.urlLivraisons}mission-en-cours/pointer-article/`, { ligne_id: article.id, est_verifie: nouvelEtat }).subscribe({
+      next: () => {
+        this.courseEnCours.update((c) =>
+          c ? { ...c, articles: c.articles.map((a, i) => (i === index ? { ...a, estVerifie: nouvelEtat } : a)) } : c
+        );
+        this.etapeCourse.set('ARRIVE_RESTAURANT');
+      },
+      error: (erreur) => this.messageErreur.set(this.messageServeur(erreur, "Impossible d'enregistrer la vérification."))
     });
   }
 
   tousArticlesVerifies(): boolean {
     const course = this.courseEnCours();
-    if (!course || course.articles.length === 0) return true;
-    return course.articles.every((a) => a.estVerifie);
+    return !!course && course.articles.length > 0 && course.articles.every((a) => a.estVerifie);
   }
 
-  confirmerVerificationEtPartir(): void {
-    this.etapeCourse.set('VERS_CLIENT');
-    this.http
-      .post(`${environment.apiUrl}/livraisons/mission-en-cours/depart-client/`, {})
-      .subscribe({
-        next: () => {},
-        error: () => {}
-      });
+  /** Départ vers le client : exige tous les articles vérifiés ET la remise confirmée par le restaurant. */
+  partirVersClient(): Observable<any> {
+    return this.http.post(`${this.urlLivraisons}mission-en-cours/depart-client/`, {}).pipe(tap(() => this.etapeCourse.set('VERS_CLIENT')));
   }
 
-  arriverChezClient(): void {
-    this.etapeCourse.set('VALIDATION_CODE');
-    this.http
-      .post(`${environment.apiUrl}/livraisons/mission-en-cours/arrivee-client/`, {})
-      .subscribe({
-        next: () => {},
-        error: () => {}
-      });
+  signalerArriveeClient(): Observable<any> {
+    return this.http.post(`${this.urlLivraisons}mission-en-cours/arrivee-client/`, {}).pipe(tap(() => this.etapeCourse.set('VALIDATION_CODE')));
   }
 
-  /**
-   * Valide le code PIN à 4 chiffres fourni par le client auprès de Django REST Framework.
-   * C'est la méthode de référence asynchrone sécurisée pour la clôture de course en direct.
-   */
-  validerCodeAsync(codeSaisi: string, identifiantCommande?: string): Observable<ResultatValidationCode> {
-    if (this.etapeCourse() === 'LIVRE' || !this.courseEnCours()) {
-      return of({
-        valide: false,
-        message: 'Cette livraison a déjà été validée et clôturée.'
-      });
-    }
-
-    if (!codeSaisi || codeSaisi.length !== 4) {
-      return of({
-        valide: false,
-        message: 'Veuillez saisir un code PIN à 4 chiffres.'
-      });
-    }
-
-    if (!/^\d{4}$/.test(codeSaisi)) {
-      return of({
-        valide: false,
-        message: 'Le code de confirmation doit comporter uniquement des chiffres.'
-      });
-    }
-
-    const payload: any = { code_pin: codeSaisi };
-    if (identifiantCommande) {
-      payload.commande_reference = identifiantCommande;
-    }
-
-    return this.http
-      .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
-      .pipe(
-        map((res) => {
-          this.terminerLivraison(res?.gain_fcfa);
-          return {
-            valide: true,
-            message: res?.message || 'Code validé avec succès. Course terminée !'
-          };
-        }),
-        catchError((err) => {
-          const detail =
-            err.error?.detail ||
-            err.error?.message ||
-            (typeof err.error === 'string' ? err.error : 'Code PIN invalide. Demandez le code au client.');
-          return of({
-            valide: false,
-            message: detail
-          });
-        })
-      );
+  /** Le PIN est vérifié UNIQUEMENT par le serveur (nombre d'essais limité). */
+  validerCode(codePin: string): Observable<{ gain: number }> {
+    return this.http.post<any>(`${this.urlLivraisons}mission-en-cours/valider-pin/`, { code_pin: codePin }).pipe(
+      map((reponse) => ({ gain: Number(reponse.gain_fcfa) })),
+      tap(() => this.terminerLivraison())
+    );
   }
 
-  /**
-   * Méthode de validation synchrone pour les tests unitaires et les scénarios avec PIN en mémoire.
-   * Pour l'application en ligne, utiliser impérativement validerCodeAsync().
-   */
-  verifierCodeValidation(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
-    return this.validerCode(codeSaisi, identifiantCommande);
+  /** Annulation avant récupération : la course est reproposée à un autre livreur. */
+  annulerCourse(motif: string): Observable<any> {
+    return this.http.post(`${this.urlLivraisons}mission-en-cours/annuler/`, { motif }).pipe(tap(() => this.libererApresCourse()));
   }
 
-  /**
-   * Valide localement le code saisi et déclenche la synchronisation serveur si possible.
-   */
-  validerCode(codeSaisi: string, identifiantCommande?: string): ResultatValidationCode {
-    if (this.etapeCourse() === 'LIVRE' || !this.courseEnCours()) {
-      return {
-        valide: false,
-        message: 'Cette livraison a déjà été validée et clôturée.'
-      };
-    }
-
-    if (!codeSaisi || codeSaisi.length !== 4) {
-      return {
-        valide: false,
-        message: 'Veuillez saisir un code à 4 chiffres.'
-      };
-    }
-
-    if (!/^\d{4}$/.test(codeSaisi)) {
-      return {
-        valide: false,
-        message: 'Le code de confirmation doit comporter uniquement des chiffres.'
-      };
-    }
-
-    const course = this.courseEnCours();
-    if (course && course.codeValidation && course.codeValidation === codeSaisi) {
-      const payload: any = { code_pin: codeSaisi };
-      if (identifiantCommande) {
-        payload.commande_reference = identifiantCommande;
-      }
-
-      this.http
-        .post<any>(`${environment.apiUrl}/livraisons/mission-en-cours/valider-pin/`, payload)
-        .subscribe({
-          next: (res) => {
-            this.terminerLivraison(res?.gain_fcfa);
-          },
-          error: () => {}
-        });
-
-      return { valide: true, message: 'Code validé avec succès.' };
-    }
-
-    return {
-      valide: false,
-      message: 'Code de sécurité incorrect. Demandez le code PIN au client.'
-    };
+  /** Échec de livraison (client absent, injoignable...) : le support prend le relais. */
+  declarerEchec(motif: string): Observable<any> {
+    return this.http.post(`${this.urlLivraisons}mission-en-cours/echec/`, { motif }).pipe(tap(() => this.libererApresCourse()));
   }
 
-  terminerCourse(): void {
-    this.terminerLivraison();
-  }
-
-  terminerLivraison(gainRecu?: number): void {
-    this.arreterSuiviGpsLivreur();
-    const course = this.courseEnCours();
-    const gain = gainRecu ?? course?.gainFcfa ?? 1000;
-
-    this.profilLivreur.update((p) => ({
-      ...p,
-      gainsDuJourFcfa: p.gainsDuJourFcfa + gain,
-      nombreLivraisonsJour: p.nombreLivraisonsJour + 1
-    }));
-
+  private libererApresCourse(): void {
     this.courseEnCours.set(null);
-    this.etapeCourse.set('LIVRE');
+    this.etapeCourse.set('VERS_RESTAURANT');
+    this.remiseConfirmee.set(false);
+    this.livraisonBloquee.set(false);
     this.chargerProfilLivreur();
   }
 
+  terminerLivraison(): void {
+    this.courseEnCours.set(null);
+    this.etapeCourse.set('LIVRE');
+    this.chargerProfilLivreur(); // gains du jour recalculés par le serveur
+  }
+
   recommencerMission(): void {
-    this.arreterSuiviGpsLivreur();
     this.etapeCourse.set('VERS_RESTAURANT');
     this.courseEnCours.set(null);
-  }
-
-  /**
-   * Démarre la transmission périodique et sécurisée de la position GPS réelle du coursier vers le backend Django.
-   */
-  demarrerSuiviGpsLivreur(): void {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.geolocation) {
-      this.statutTransmissionGps.set('ERREUR');
-      this.messageErreurGps.set("La géolocalisation n'est pas supportée par cet appareil.");
-      return;
-    }
-
-    this.arreterSuiviGpsLivreur();
-    this.statutTransmissionGps.set('ACTIF');
-    this.messageErreurGps.set(null);
-
-    const envoyerPosition = (coords: GeolocationCoordinates) => {
-      const lat = coords.latitude;
-      const lng = coords.longitude;
-      this.positionGpsActuelle.set({ latitude: lat, longitude: lng });
-      this.dateDernierePositionGps.set(new Date());
-
-      this.http
-        .patch(`${environment.apiUrl}/livraisons/position/`, {
-          latitude: lat,
-          longitude: lng
-        })
-        .subscribe({
-          next: () => {
-            this.statutTransmissionGps.set('ACTIF');
-            this.messageErreurGps.set(null);
-          },
-          error: (err) => {
-            if (err?.status === 401 || err?.status === 403) {
-              this.arreterSuiviGpsLivreur();
-            }
-          }
-        });
-    };
-
-    // Première lecture immédiate
-    navigator.geolocation.getCurrentPosition(
-      (pos) => envoyerPosition(pos.coords),
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          this.statutTransmissionGps.set('ERREUR');
-          this.messageErreurGps.set("Veuillez autoriser l'accès à votre position GPS pour que le client suive la livraison.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-
-    // Émission périodique toutes les 8 secondes pendant la mission active
-    this.intervalleEnvoiPosition = setInterval(() => {
-      if (!this.courseEnCours()) {
-        this.arreterSuiviGpsLivreur();
-        return;
-      }
-      if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        this.statutTransmissionGps.set('EN_PAUSE');
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => envoyerPosition(pos.coords),
-        (err) => {
-          if (err.code === err.PERMISSION_DENIED) {
-            this.statutTransmissionGps.set('ERREUR');
-            this.messageErreurGps.set('Accès GPS refusé.');
-          }
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 4000 }
-      );
-    }, 8000);
-  }
-
-  /**
-   * Arrête le suivi GPS dès que la course est terminée, annulée ou que le livreur se déconnecte.
-   */
-  arreterSuiviGpsLivreur(): void {
-    if (this.intervalleEnvoiPosition) {
-      clearInterval(this.intervalleEnvoiPosition);
-      this.intervalleEnvoiPosition = undefined;
-    }
-    this.statutTransmissionGps.set('INACTIF');
   }
 }

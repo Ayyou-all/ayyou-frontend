@@ -118,12 +118,8 @@
           <span class="block text-[10px] font-bold text-slate-400 tracking-wider uppercase">
             CLIENT
           </span>
-          <h4 class="text-sm font-extrabold text-slate-900 truncate">
-            {{ proposition.clientNom }}
-          </h4>
-          <p class="text-xs text-slate-400 truncate">
-            {{ proposition.clientAdresse }}
-          </p>
+          <!-- Les coordonnées du client ne sont envoyées qu'au livreur qui accepte la course. -->
+          <p class="text-xs text-slate-400">Adresse communiquée après acceptation de la course</p>
         </div>
       </div>
 
@@ -136,7 +132,7 @@
           </div>
           <div>
             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">DISTANCE</span>
-            <span class="text-sm font-extrabold text-slate-900">{{ proposition.distanceKm }} km</span>
+            <span class="text-sm font-extrabold text-slate-900">{{ proposition.distanceKm !== null ? proposition.distanceKm + ' km' : '—' }}</span>
           </div>
         </div>
 
