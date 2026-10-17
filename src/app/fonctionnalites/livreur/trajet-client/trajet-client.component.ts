@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
 import { ServiceCarteDakarService } from '../../../socle/services/service-carte-dakar.service';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
+import { SignalerProblemeComponent } from '../signaler-probleme/signaler-probleme.component';
 
 @Component({
   selector: 'app-trajet-client',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './trajet-client.component.html'
 })
 export class TrajetClientComponent implements AfterViewInit, OnDestroy {
@@ -17,6 +18,7 @@ export class TrajetClientComponent implements AfterViewInit, OnDestroy {
   readonly routeur = inject(Router);
 
   private carteLeaflet?: L.Map;
+  private marqueurLivreur?: L.Marker;
   private coucheActuelle?: L.TileLayer;
   private modeSombre: boolean = false;
 
@@ -33,56 +35,54 @@ export class TrajetClientComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  constructor() {
+    // Le marqueur du livreur suit sa position GPS réelle.
+    effect(() => {
+      const position = this.serviceLivreur.positionGpsActuelle();
+      if (position && this.carteLeaflet) this.placerMarqueurLivreur([position.latitude, position.longitude]);
+    });
+  }
+
   /**
-   * Initialise la carte réelle de Dakar reliant le Plateau / Corniche aux Almadies.
+   * Carte du trajet vers le client : adresse de livraison choisie par le client (API)
+   * et position GPS réelle du livreur. Aucune coordonnée n'est inventée.
    */
   private initialiserCarte(): void {
-    const conteneur = document.getElementById('carte-trajet-client');
-    if (!conteneur) return;
-
-    // Coordonnées réelles à Dakar
+    if (!document.getElementById('carte-trajet-client')) return;
     const course = this.serviceLivreur.courseEnCours();
-    const coordClient: [number, number] = (course?.clientLatitude && course?.clientLongitude)
-      ? [course.clientLatitude, course.clientLongitude]
-      : this.serviceCarteDakar.clientAlmadies;
-    const coordLivreur: [number, number] = this.serviceCarteDakar.livreurVersAlmadies;
-    const miTrajet: [number, number] = [
-      (coordLivreur[0] + coordClient[0]) / 2,
-      (coordLivreur[1] + coordClient[1]) / 2
-    ];
-    const trajet: [number, number][] = [coordLivreur, miTrajet, coordClient];
+    const client: [number, number] | null =
+      course?.clientLatitude != null && course?.clientLongitude != null ? [course.clientLatitude, course.clientLongitude] : null;
+    const gps = this.serviceLivreur.positionGpsActuelle();
+    const livreur: [number, number] | null = gps ? [gps.latitude, gps.longitude] : null;
 
-    this.carteLeaflet = L.map('carte-trajet-client', {
-      zoomControl: false,
-      attributionControl: false
-    }).setView(coordLivreur, 13);
-
-    // Couche de tuiles réelles de Dakar
+    this.carteLeaflet = L.map('carte-trajet-client', { zoomControl: false, attributionControl: false })
+      .setView(client ?? livreur ?? this.serviceCarteDakar.centreDakar, 14);
     this.coucheActuelle = this.serviceCarteDakar.creerCoucheTuilesVoyager();
     this.coucheActuelle.addTo(this.carteLeaflet);
 
-    // Tracé de la route réelle le long de la Corniche et VDN
-    L.polyline(trajet, {
-      color: '#0284c7',
-      weight: 7,
-      lineCap: 'round',
-      lineJoin: 'round',
-      opacity: 0.95
-    }).addTo(this.carteLeaflet);
+    if (client) {
+      L.marker(client, { icon: this.serviceCarteDakar.creerIconeClient(course?.clientNom || 'Client') }).addTo(this.carteLeaflet);
+    }
+    if (livreur) {
+      this.placerMarqueurLivreur(livreur);
+    }
+    if (client && livreur) {
+      this.carteLeaflet.fitBounds([livreur, client], { padding: [50, 50], maxZoom: 16 });
+      this.serviceCarteDakar.obtenirItineraireRoutier(livreur, client).then((points) => {
+        if (this.carteLeaflet) {
+          L.polyline(points, { color: '#0284c7', weight: 7, lineCap: 'round', lineJoin: 'round', opacity: 0.95 }).addTo(this.carteLeaflet);
+        }
+      });
+    }
+  }
 
-    // Marqueur Maison Client
-    L.marker(coordClient, {
-      icon: this.serviceCarteDakar.creerIconeClient(course?.clientNom || 'Client')
-    }).addTo(this.carteLeaflet);
-
-    // Marqueur Moto Livreur en direct
-    const nomLivreur = this.serviceLivreur.profilLivreur().prenom || 'Vous';
-    L.marker(coordLivreur, {
-      icon: this.serviceCarteDakar.creerIconeMotoLivreur(nomLivreur)
-    }).addTo(this.carteLeaflet);
-
-    if (this.carteLeaflet) {
-      this.carteLeaflet.fitBounds([coordLivreur, coordClient], { padding: [50, 50], maxZoom: 16 });
+  private placerMarqueurLivreur(position: [number, number]): void {
+    if (!this.carteLeaflet) return;
+    if (this.marqueurLivreur) {
+      this.marqueurLivreur.setLatLng(position);
+    } else {
+      const nom = this.serviceLivreur.profilLivreur().prenom || 'Vous';
+      this.marqueurLivreur = L.marker(position, { icon: this.serviceCarteDakar.creerIconeMotoLivreur(nom) }).addTo(this.carteLeaflet);
     }
   }
 
@@ -106,17 +106,33 @@ export class TrajetClientComponent implements AfterViewInit, OnDestroy {
    * Recentre la carte sur le livreur et son trajet vers Almadies.
    */
   recentrerPosition(): void {
-    if (this.carteLeaflet) {
-      this.carteLeaflet.setView(this.serviceCarteDakar.livreurVersAlmadies, 14, { animate: true });
+    const gps = this.serviceLivreur.positionGpsActuelle();
+    if (this.carteLeaflet && gps) {
+      this.carteLeaflet.setView([gps.latitude, gps.longitude], 15, { animate: true });
     }
   }
 
-  /**
-   * Arrivé chez le client : bascule vers la saisie du code de sécurité (Image 3).
-   */
+  readonly arriveeEnCours = signal<boolean>(false);
+  readonly messageErreur = signal<string | null>(null);
+
+  /** Arrivé chez le client : l'écran du PIN s'ouvre seulement si le serveur a enregistré l'arrivée. */
   arriverChezClient(): void {
-    this.serviceLivreur.avancerEtapeCourse('VALIDATION_CODE');
-    this.routeur.navigate(['/livreur/validation-code']);
+    this.arriveeEnCours.set(true);
+    this.messageErreur.set(null);
+    this.serviceLivreur.signalerArriveeClient().subscribe({
+      next: () => {
+        this.arriveeEnCours.set(false);
+        this.routeur.navigate(['/livreur/validation-code']);
+      },
+      error: (erreur) => {
+        this.arriveeEnCours.set(false);
+        this.messageErreur.set(erreur?.error?.message || 'Impossible de signaler votre arrivée. Vérifiez votre connexion.');
+      }
+    });
+  }
+
+  retourAccueil(): void {
+    this.routeur.navigate(['/livreur']);
   }
 
   /**

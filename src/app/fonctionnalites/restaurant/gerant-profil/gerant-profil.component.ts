@@ -38,6 +38,22 @@ export class GerantProfilComponent implements OnInit {
   readonly apercuCouverture = signal<string | null>(null);
   fichierCouverture: File | null = null;
 
+  // Fonctionnement du restaurant (enregistré en base, utilisé pour les horaires et les frais)
+  telephoneRestaurant = '';
+  specialite = '';
+  quartierVille = '';
+  description = '';
+  delaiLivraisonTexte = '';
+  heureOuverture = '';
+  heureFermeture = '';
+  readonly joursOuverture = signal<boolean[]>([true, true, true, true, true, true, true]);
+  readonly nomsJours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  readonly latitude = signal<number | null>(null);
+  readonly longitude = signal<number | null>(null);
+  readonly localisationEnCours = signal<boolean>(false);
+  numeroReversement = '';
+  operateurReversement: '' | 'WAVE' | 'ORANGE_MONEY' = '';
+
   readonly urlLogo = signal<string | null>(null);
   readonly apercuLogo = signal<string | null>(null);
   fichierLogo: File | null = null;
@@ -84,6 +100,19 @@ export class GerantProfilComponent implements OnInit {
           this.adresseRestaurant = etab.adresse || '';
           this.urlLogo.set(etab.adresse_logo || null);
           this.urlCouverture.set(etab.adresse_couverture || null);
+          this.telephoneRestaurant = etab.telephone || '';
+          this.specialite = etab.specialite || '';
+          this.quartierVille = etab.quartier_ville || '';
+          this.description = etab.description || '';
+          this.delaiLivraisonTexte = etab.delai_livraison_texte || '';
+          this.heureOuverture = etab.heure_ouverture ? String(etab.heure_ouverture).slice(0, 5) : '';
+          this.heureFermeture = etab.heure_fermeture ? String(etab.heure_fermeture).slice(0, 5) : '';
+          const jours = String(etab.jours_ouverture || '').split(',');
+          this.joursOuverture.set(this.nomsJours.map((_, index) => jours.includes(String(index))));
+          this.latitude.set(etab.latitude != null ? Number(etab.latitude) : null);
+          this.longitude.set(etab.longitude != null ? Number(etab.longitude) : null);
+          this.numeroReversement = etab.numero_reversement || '';
+          this.operateurReversement = etab.operateur_reversement || '';
         }
         this.chargementInitial.set(false);
       },
@@ -128,6 +157,31 @@ export class GerantProfilComponent implements OnInit {
       reader.onload = () => this.apercuLogo.set(reader.result as string);
       reader.readAsDataURL(file);
     }
+  }
+
+  basculerJour(index: number): void {
+    this.joursOuverture.update((jours) => jours.map((actif, i) => (i === index ? !actif : actif)));
+  }
+
+  /** Enregistre la position GPS réelle du restaurant (le gérant doit être sur place). */
+  localiserRestaurant(): void {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      this.messageErreur.set("La géolocalisation n'est pas disponible sur cet appareil.");
+      return;
+    }
+    this.localisationEnCours.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.localisationEnCours.set(false);
+        this.latitude.set(Number(position.coords.latitude.toFixed(6)));
+        this.longitude.set(Number(position.coords.longitude.toFixed(6)));
+      },
+      () => {
+        this.localisationEnCours.set(false);
+        this.messageErreur.set("Impossible d'obtenir la position. Autorisez la localisation puis réessayez.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }
 
   // =========================================================================
@@ -190,6 +244,23 @@ export class GerantProfilComponent implements OnInit {
     if (this.adresseRestaurant) {
       formEtab.append('adresse', this.adresseRestaurant.trim());
     }
+    formEtab.append('telephone', this.telephoneRestaurant.trim());
+    formEtab.append('specialite', this.specialite.trim());
+    formEtab.append('quartier_ville', this.quartierVille.trim());
+    formEtab.append('description', this.description.trim());
+    if (this.delaiLivraisonTexte.trim()) formEtab.append('delai_livraison_texte', this.delaiLivraisonTexte.trim());
+    if (this.heureOuverture) formEtab.append('heure_ouverture', this.heureOuverture);
+    if (this.heureFermeture) formEtab.append('heure_fermeture', this.heureFermeture);
+    formEtab.append(
+      'jours_ouverture',
+      this.joursOuverture().map((actif, index) => (actif ? String(index) : '')).filter(Boolean).join(',')
+    );
+    if (this.latitude() !== null && this.longitude() !== null) {
+      formEtab.append('latitude', String(this.latitude()));
+      formEtab.append('longitude', String(this.longitude()));
+    }
+    formEtab.append('numero_reversement', this.numeroReversement.replace(/\s+/g, ''));
+    if (this.operateurReversement) formEtab.append('operateur_reversement', this.operateurReversement);
     if (this.fichierLogo) {
       formEtab.append('logo', this.fichierLogo);
     }

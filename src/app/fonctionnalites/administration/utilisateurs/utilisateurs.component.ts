@@ -80,7 +80,7 @@ export class UtilisateursComponent implements OnInit {
           role: (u.role as any) || 'Utilisateur',
           iconeRole: u.iconeRole || 'fa-solid fa-user',
           couleurIconeRole: u.couleurIconeRole || 'text-slate-500',
-          dateInscription: u.dateInscription || 'Récent',
+          dateInscription: u.dateInscription || '',
           statut: (u.statut as StatutUtilisateur) || 'ACTIF',
           photoUrl: u.photoUrl || undefined,
           iconeLogo: u.role === 'Restaurant' ? 'fa-solid fa-utensils' : undefined,

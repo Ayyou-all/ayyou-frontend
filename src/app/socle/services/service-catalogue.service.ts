@@ -5,7 +5,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, tap } from 'rxjs';
+import { EMPTY, Observable, expand, forkJoin, map, reduce, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PublicationFil } from '../modeles/fil-actualite.modele';
 import { Plat } from '../modeles/plat.modele';
@@ -82,8 +82,24 @@ export class ServiceCatalogueService {
           couleurFond: cat.couleur_fond || cat.couleurFond || 'bg-rose-50',
           couleurTexte: cat.couleur_texte || cat.couleurTexte || 'text-[#E51824]'
         }));
+      })
+    );
+  }
+
+  /**
+   * Lit TOUTES les pages d'une liste paginée de l'API ({ results, next }) en suivant `next`.
+   * Limite de sécurité : `pagesMax` pages (20 éléments par page côté serveur).
+   * Une erreur est transmise à l'appelant (elle n'est plus remplacée par une liste vide).
+   */
+  private chargerToutesLesPages(url: string, pagesMax: number = 25): Observable<any[]> {
+    let pagesLues = 0;
+    return this.http.get<any>(url).pipe(
+      expand((reponse) => {
+        pagesLues += 1;
+        return reponse?.next && pagesLues < pagesMax ? this.http.get<any>(reponse.next) : EMPTY;
       }),
-      catchError(() => of([]))
+      map((reponse) => (Array.isArray(reponse) ? reponse : reponse?.results || [])),
+      reduce((tous: any[], page: any[]) => [...tous, ...page], [])
     );
   }
 
@@ -91,12 +107,8 @@ export class ServiceCatalogueService {
    * Récupère les restaurants partenaires et leurs plats associés depuis Django.
    */
   chargerRestaurants(): Observable<Restaurant[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/etablissements/`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((resto: any) => this.adapterRestaurant(resto));
-      }),
-      catchError(() => of([]))
+    return this.chargerToutesLesPages(`${environment.apiUrl}/etablissements/`).pipe(
+      map((liste) => liste.map((resto: any) => this.adapterRestaurant(resto)))
     );
   }
 
@@ -104,26 +116,17 @@ export class ServiceCatalogueService {
    * Récupère tous les plats réels actifs depuis Django.
    */
   chargerPlats(): Observable<Plat[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/plats/`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((p: any) => this.adapterPlat(p));
-      }),
-      catchError(() => of([]))
-    );
+    return this.chargerToutesLesPages(`${environment.apiUrl}/plats/`).pipe(map((liste) => liste.map((p: any) => this.adapterPlat(p))));
   }
 
   /**
    * Récupère le fil d'actualité des vidéos immersives (Reels culinaires) depuis Django.
    */
   chargerPublicationsFil(): Observable<PublicationFil[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((pub: any) => this.adapterPublication(pub));
-      }),
-      tap((pubs) => this.publicationsFil.set(pubs)),
-      catchError(() => of([]))
+    // Le fil est limité aux 5 premières pages (100 vidéos) : seules les métadonnées sont chargées.
+    return this.chargerToutesLesPages(`${environment.apiUrl}/publications/fil/`, 5).pipe(
+      map((liste) => liste.map((pub: any) => this.adapterPublication(pub))),
+      tap((pubs) => this.publicationsFil.set(pubs))
     );
   }
 
@@ -131,12 +134,8 @@ export class ServiceCatalogueService {
    * Récupère les vidéos publiées par un restaurant spécifique.
    */
   chargerVideosRestaurant(idRestaurant: string | number): Observable<PublicationFil[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/?etablissement=${idRestaurant}`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((pub: any) => this.adapterPublication(pub));
-      }),
-      catchError(() => of([]))
+    return this.chargerToutesLesPages(`${environment.apiUrl}/publications/fil/?etablissement=${idRestaurant}`, 5).pipe(
+      map((liste) => liste.map((pub: any) => this.adapterPublication(pub)))
     );
   }
 
@@ -153,7 +152,8 @@ export class ServiceCatalogueService {
       adresseMedia: pub.adresseMedia || pub.image_miniature || pub.fichier_media || '',
       adresseVideo: pub.adresseVideo || (pub.type_media === 'VIDEO' ? pub.fichier_media : '') || '',
       typeMedia: pub.typeMedia || pub.type_media || 'VIDEO',
-      nombreJeaime: String(pub.nombreJeaime ?? pub.nombre_jaime ?? '0'),
+      nombreJeaime: String(pub.nombreJeaime ?? '0'),
+      nombreVues: Number(pub.nombreVues ?? 0),
       estAime: pub.estAime ?? pub.est_aime ?? false,
       nombrePartages: Number(pub.nombrePartages ?? pub.nombre_partages ?? 0)
     };
@@ -168,17 +168,16 @@ export class ServiceCatalogueService {
       nom: resto.nom,
       nomUtilisateur: resto.nom_utilisateur ? `@${resto.nom_utilisateur}` : `@resto_${resto.id}`,
       description: resto.description || '',
-      specialite: resto.specialite || 'Restauration',
+      specialite: resto.specialite || '',
       adresse: resto.adresse || '',
-      quartierVille: resto.quartier_ville || resto.quartierVille || 'Dakar',
-      heureFermeture: resto.heure_fermeture ? String(resto.heure_fermeture).slice(0, 5) : '23:30',
-      estOuvert: resto.est_ouvert ?? true,
-      noteMoyenne: resto.note_moyenne ? Number(resto.note_moyenne) : 4.8,
-      nombreAvis: resto.nombre_avis ? Number(resto.nombre_avis) : 0,
+      quartierVille: resto.quartier_ville || '',
+      heureFermeture: resto.heure_fermeture ? String(resto.heure_fermeture).slice(0, 5) : '',
+      // Vrai seulement si le restaurant prend des commandes MAINTENANT (validé + ouvert + dans ses horaires)
+      estOuvert: Boolean(resto.accepte_commandes),
       adresseLogo: resto.adresse_logo || resto.logo || '',
       adresseCouverture: resto.adresse_couverture || resto.couverture || '',
-      delaiLivraisonMinutes: resto.delai_livraison_estime_minutes || resto.delaiLivraisonMinutes || 30,
-      fraisLivraisonFcfa: Number(resto.frais_livraison_base_fcfa || resto.fraisLivraisonFcfa || 1000),
+      delaiLivraisonTexte: resto.delai_livraison_texte || '',
+      fraisLivraisonFcfa: Number(resto.frais_livraison_fcfa ?? 0),
       estAbonne: Boolean(resto.est_abonne),
       estAime: Boolean(resto.est_aime),
       nombreAbonnes: Number(resto.nombre_abonnes || 0),
@@ -215,8 +214,7 @@ export class ServiceCatalogueService {
       adresseImage: p.adresse_image || p.adresseImage || p.image || '',
       categorie: p.categorie?.nom || p.categorie || 'Plats',
       statut: (p.est_disponible ?? (p.statut === 'DISPONIBLE')) ? 'DISPONIBLE' : 'INDISPONIBLE',
-      tempsPreparationMinutes: p.temps_preparation_minutes || p.tempsPreparationMinutes || 25,
-      noteMoyenne: p.note_moyenne || p.noteMoyenne || 4.8,
+      tempsPreparationMinutes: p.temps_preparation_minutes ?? undefined,
       nombreCommandes: p.nombre_commandes || p.nombreCommandes || 0
     };
   }
@@ -266,7 +264,7 @@ export class ServiceCatalogueService {
           )
         );
       },
-      error: () => {}
+      error: () => this.messageErreur.set("Impossible de modifier l'abonnement. Vérifiez votre connexion.")
     });
   }
 
@@ -308,26 +306,40 @@ export class ServiceCatalogueService {
     );
   }
 
+  /** Met à jour une publication du fil avec les valeurs renvoyées par le serveur. */
+  private mettreAJourPublication(identifiant: string, changements: Partial<PublicationFil>): void {
+    this.publicationsFil.update((pubs) => pubs.map((p) => (p.identifiant === identifiant ? { ...p, ...changements } : p)));
+  }
+
   /**
-   * Bascule le "J'aime" sur une publication via l'API Django.
+   * J'aime / je n'aime plus : le compteur affiché est celui renvoyé par le serveur
+   * (un seul like par personne, contrôlé en base).
    */
-  basculerJaimePublication(identifiantPublication: string): void {
-    this.http
-      .post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/aimer/`, {})
-      .subscribe({
-        next: (reponse) => {
-          const estAime = reponse?.est_aime ?? true;
-          const totalJeaime = reponse?.total_jaime !== undefined ? String(reponse.total_jaime) : '1';
-          this.publicationsFil.update((pubs) =>
-            pubs.map((p) =>
-              p.identifiant === identifiantPublication
-                ? { ...p, estAime, nombreJeaime: totalJeaime }
-                : p
-            )
-          );
-        },
-        error: () => {}
-      });
+  basculerJaimePublication(identifiantPublication: string): Observable<{ estAime: boolean; nombreJeaime: string }> {
+    return this.http.post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/like/`, {}).pipe(
+      map((reponse) => ({ estAime: Boolean(reponse.estAime), nombreJeaime: String(reponse.nombreJeaime) })),
+      tap((resultat) => this.mettreAJourPublication(identifiantPublication, resultat))
+    );
+  }
+
+  /** Enregistre une vue (le serveur ne compte qu'une vue par personne toutes les 6 heures). */
+  enregistrerVue(identifiantPublication: string): void {
+    this.http.post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/vue/`, {}).subscribe({
+      next: (reponse) => this.mettreAJourPublication(identifiantPublication, { nombreVues: Number(reponse.nombreVues) }),
+      error: () => {
+        // Une vue non enregistrée n'empêche pas de regarder la vidéo : pas de message à l'utilisateur.
+      }
+    });
+  }
+
+  /** Enregistre un partage réellement effectué (après le partage ou la copie du lien). */
+  enregistrerPartage(identifiantPublication: string): void {
+    this.http.post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/partage/`, {}).subscribe({
+      next: (reponse) => this.mettreAJourPublication(identifiantPublication, { nombrePartages: Number(reponse.nombrePartages) }),
+      error: () => {
+        // Le partage a eu lieu ; seul le compteur n'a pas pu être mis à jour.
+      }
+    });
   }
 
   /**

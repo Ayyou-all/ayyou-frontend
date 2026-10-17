@@ -8,6 +8,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CommandeClient, EtapeSuiviLivraison, StatutCommande } from '../modeles/commande.modele';
+import { EstimationCommande } from '../modeles/panier.modele';
+import { ServiceAuthentification } from './service-authentification.service';
 
 @Injectable({
   providedIn: 'root'
@@ -38,22 +40,49 @@ export class ServiceCommandesService {
     return this.listeCommandes().filter((c) => !c.estEnCours);
   });
 
+  // URL de la page suivante renvoyée par l'API paginée (null s'il n'y a plus rien à charger)
+  readonly urlPageSuivante = signal<string | null>(null);
+  // Vrai quand le dernier rafraîchissement du suivi a échoué faute de réseau
+  readonly connexionPerdue = signal<boolean>(false);
+
+  private readonly serviceAuth = inject(ServiceAuthentification);
+
   constructor() {
-    this.chargerCommandes();
+    // Seul un client possède des commandes « client » : inutile d'appeler l'API pour les autres rôles.
+    if (this.serviceAuth.utilisateurConnecte()?.role === 'CLIENT') {
+      this.chargerCommandes();
+    }
+  }
+
+  /**
+   * Traduit le statut détaillé du serveur en statut d'affichage de la liste.
+   * Le libellé exact affiché reste celui du serveur (statut_libelle).
+   */
+  private convertirStatut(statutServeur: string): StatutCommande {
+    switch (statutServeur) {
+      case 'EN_ATTENTE_PAIEMENT':
+        return 'EN_ATTENTE_PAIEMENT';
+      case 'CREEE_EN_ATTENTE':
+      case 'EN_PREPARATION':
+        return 'PREPARATION';
+      case 'PRETE_POUR_RETRAIT':
+        return 'PRET';
+      case 'LIVREE':
+        return 'LIVRE';
+      case 'REFUSEE_ANNULEE':
+      case 'ECHEC_LIVRAISON':
+        return 'REFUSE';
+      default:
+        // COURSE_ASSIGNEE, EN_VERIFICATION, EN_LIVRAISON, ARRIVE_CLIENT
+        return 'EN_LIVRAISON';
+    }
   }
 
   /**
    * Adapte un objet Commande Django vers l'interface CommandeClient Angular.
    */
   adapterCommande(c: any): CommandeClient {
-    // Normalisation du statut
-    let statut: StatutCommande = 'EN_LIVRAISON';
-    if (c.statut === 'EN_ATTENTE_PAIEMENT') statut = 'EN_ATTENTE_PAIEMENT';
-    else if (c.statut === 'LIVREE') statut = 'LIVRE';
-    else if (c.statut === 'EN_PREPARATION') statut = 'PREPARATION';
-    else if (c.statut === 'PRETE_POUR_RETRAIT') statut = 'PRET';
-    else if (c.statut === 'REFUSEE_ANNULEE') statut = 'REFUSE';
-    else if (c.statut === 'EN_LIVRAISON') statut = 'EN_LIVRAISON';
+    const statut = this.convertirStatut(c.statut);
 
     // Normalisation de l'étape de suivi
     let etapeSuivi: EtapeSuiviLivraison = 'EN_ROUTE';
@@ -72,24 +101,24 @@ export class ServiceCommandesService {
     return {
       identifiant: String(c.identifiant || c.reference || c.id || ''),
       idNumerique: c.id ? Number(c.id) : undefined,
-      nomRestaurant: c.nom_restaurant || c.nomRestaurant || c.etablissement?.nom || 'Restaurant partenaire',
+      nomRestaurant: c.nom_restaurant || '',
       adresseImageRestaurant: c.adresse_image_restaurant || c.adresseImageRestaurant || c.etablissement?.logo || '',
-      dateHeureTexte: c.date_heure_texte || c.dateHeureTexte || 'Aujourd\'hui',
+      dateHeureTexte: c.date_heure_texte || '',
       statut,
-      delaiOuRemarque: c.statut === 'EN_ATTENTE_PAIEMENT' ? 'Paiement en attente' : (c.delai_ou_remarque || c.delaiOuRemarque || '20-30 min'),
+      delaiOuRemarque: c.statut === 'EN_ATTENTE_PAIEMENT' ? 'Paiement en attente' : (c.delai_ou_remarque || ''),
       montantTotalFcfa: Number(c.montant_total_fcfa || c.total_fcfa || c.montantTotalFcfa || 0),
       sousTotalFcfa: Number(c.sous_total_fcfa || 0),
       fraisLivraisonFcfa: Number(c.frais_livraison_fcfa || 0),
-      statutPaiement: c.statut_paiement || (c.statut === 'EN_ATTENTE_PAIEMENT' ? 'EN_ATTENTE' : 'PAYE'),
-      modePaiement: c.mode_paiement || 'WAVE',
+      statutPaiement: c.statut_paiement || '',
+      modePaiement: c.mode_paiement || '',
       codeLivraison: codePin,
       etapeSuivi,
       heureArriveeEstimee: c.heure_arrivee_estimee || c.heureArriveeEstimee || '',
       messageProximite: c.messageProximite || (statut === 'EN_LIVRAISON' ? 'LE LIVREUR EST EN ROUTE' : undefined),
-      estEnCours: c.est_en_cours ?? (statut !== 'LIVRE' && statut !== 'REFUSE'),
+      estEnCours: Boolean(c.est_en_cours),
       livreur: c.livreur ? {
-        nom: c.livreur.nom || 'Livreur',
-        vehicule: c.livreur.vehicule || 'Moto',
+        nom: c.livreur.nom || '',
+        vehicule: c.livreur.vehicule || '',
         adressePhoto: c.livreur.adressePhoto || c.livreur.adresse_photo || '',
         numeroTelephone: c.livreur.numeroTelephone || c.livreur.telephone || '',
         latitude: c.livreur.latitude !== null && c.livreur.latitude !== undefined ? Number(c.livreur.latitude) : null,
@@ -97,13 +126,13 @@ export class ServiceCommandesService {
         dateDernierePosition: c.livreur.dateDernierePosition || c.livreur.date_derniere_position || null,
       } : undefined,
       articles: (c.articles || []).map((art: any) => ({
-        nomPlat: art.nom_plat || art.nomPlat || 'Plat',
+        nomPlat: art.nom_plat || '',
         quantite: Number(art.quantite || 1),
         prixUnitaireFcfa: Number(art.prix_unitaire_fcfa || (art.total_ligne_fcfa && art.quantite ? Math.round(art.total_ligne_fcfa / art.quantite) : 0)),
         prixTotalFcfa: Number(art.total_ligne_fcfa || art.prixTotalFcfa || (art.prix_unitaire_fcfa * art.quantite) || 0)
       })),
       statutBrut: c.statut || '',
-      statutLibelle: c.statut === 'EN_ATTENTE_PAIEMENT' ? 'Paiement en attente' : (c.statut_libelle || (statut === 'PREPARATION' ? 'En préparation' : statut === 'LIVRE' ? 'Livrée' : statut === 'REFUSE' ? 'Refusée' : 'En livraison')),
+      statutLibelle: c.statut_libelle || '',
       adresseLivraison: c.adresse_livraison || '',
       latitudeLivraison: c.latitude_livraison ? Number(c.latitude_livraison) : undefined,
       longitudeLivraison: c.longitude_livraison ? Number(c.longitude_livraison) : undefined,
@@ -118,22 +147,40 @@ export class ServiceCommandesService {
   }
 
   /**
-   * Charge les commandes réelles du client depuis l'API Django.
+   * Charge la première page des commandes du client.
+   * L'API est paginée : { count, next, previous, results: [...] }.
    */
   chargerCommandes(): void {
     this.chargementEnCours.set(true);
     this.messageErreur.set(null);
-
-    this.http.get<any[]>(`${environment.apiUrl}/commandes/`).pipe(
-      map((commandes) => commandes.map((c) => this.adapterCommande(c))),
-      catchError(() => of([]))
-    ).subscribe({
-      next: (liste) => {
-        this.listeCommandes.set(liste);
+    this.http.get<any>(`${environment.apiUrl}/commandes/`).subscribe({
+      next: (reponse) => {
+        this.listeCommandes.set((reponse.results || []).map((c: any) => this.adapterCommande(c)));
+        this.urlPageSuivante.set(reponse.next || null);
         this.chargementEnCours.set(false);
       },
       error: () => {
         this.chargementEnCours.set(false);
+        this.messageErreur.set('Impossible de charger vos commandes. Veuillez réessayer.');
+      }
+    });
+  }
+
+  /** Ajoute la page suivante de l'historique (bouton « Voir plus »). */
+  chargerPlusDeCommandes(): void {
+    const url = this.urlPageSuivante();
+    if (!url || this.chargementEnCours()) return;
+    this.chargementEnCours.set(true);
+    this.http.get<any>(url).subscribe({
+      next: (reponse) => {
+        const suivantes = (reponse.results || []).map((c: any) => this.adapterCommande(c));
+        this.listeCommandes.update((actuelles) => [...actuelles, ...suivantes]);
+        this.urlPageSuivante.set(reponse.next || null);
+        this.chargementEnCours.set(false);
+      },
+      error: () => {
+        this.chargementEnCours.set(false);
+        this.messageErreur.set('Impossible de charger plus de commandes. Veuillez réessayer.');
       }
     });
   }
@@ -189,11 +236,12 @@ export class ServiceCommandesService {
   creerCommande(payload: {
     etablissement_id: number;
     adresse_livraison: string;
+    repere_livraison?: string;
+    latitude_livraison: number;
+    longitude_livraison: number;
     telephone_contact?: string;
     instructions_livraison?: string;
     mode_paiement?: string;
-    latitude_livraison?: number | null;
-    longitude_livraison?: number | null;
     source_video_id?: string;
     articles?: { plat_id: number; quantite: number; instructions_speciales?: string }[];
   }): Observable<any> {
@@ -202,6 +250,36 @@ export class ServiceCommandesService {
         const adaptee = this.adapterCommande(res);
         this.ajouterCommande(adaptee);
       })
+    );
+  }
+
+  /**
+   * Demande au serveur les montants exacts (sous-total, frais, total) pour une position de livraison.
+   * Le total renvoyé est exactement celui qui sera payé sur PayTech.
+   */
+  estimerCommande(payload: {
+    etablissement_id: number;
+    latitude_livraison: number;
+    longitude_livraison: number;
+    articles: { plat_id: number; quantite: number }[];
+  }): Observable<EstimationCommande> {
+    return this.http.post<any>(`${environment.apiUrl}/commandes/estimation/`, payload).pipe(
+      map((reponse) => ({
+        sousTotalFcfa: reponse.sous_total_fcfa,
+        fraisLivraisonFcfa: reponse.frais_livraison_fcfa,
+        totalFcfa: reponse.total_fcfa
+      }))
+    );
+  }
+
+  /**
+   * Annule la commande (autorisé par le serveur seulement avant l'acceptation du restaurant).
+   * Si elle était payée, le serveur demande aussi le remboursement à PayTech.
+   */
+  annulerCommande(identifiant: string | number, motif: string = ''): Observable<CommandeClient> {
+    return this.http.post<any>(`${environment.apiUrl}/commandes/${identifiant}/annuler/`, { motif }).pipe(
+      map((reponse) => this.adapterCommande(reponse)),
+      tap((commande) => this.ajouterCommande(commande))
     );
   }
 
@@ -237,10 +315,11 @@ export class ServiceCommandesService {
   rechargerCommande(identifiant: string): void {
     this.http.get<any>(`${environment.apiUrl}/commandes/${identifiant}/`).subscribe({
       next: (c) => {
-        const adaptee = this.adapterCommande(c);
-        this.ajouterCommande(adaptee);
+        this.connexionPerdue.set(false);
+        this.ajouterCommande(this.adapterCommande(c));
       },
-      error: () => {}
+      // Pas de réseau : on garde le dernier état connu et on le signale (nouvel essai automatique).
+      error: (erreur) => this.connexionPerdue.set(erreur?.status === 0)
     });
   }
 

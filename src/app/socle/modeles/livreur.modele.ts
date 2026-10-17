@@ -21,7 +21,8 @@ export interface ArticleVerification {
 }
 
 export interface PropositionLivraison {
-  identifiantCommande: string; // Ex: "4521"
+  identifiantCommande: string; // identifiant numérique de la commande
+  referenceCommande?: string; // ex : ORD-7K2P9QXA
   restaurantNom: string; // Ex: "Le Teranga"
   restaurantAdresse: string; // Ex: "Plateau, Dakar"
   restaurantTelephone: string; // Ex: "+221 33 821 00 11"
@@ -29,14 +30,14 @@ export interface PropositionLivraison {
   clientNom: string; // Ex: "Amadou Sow" ou "Moussa Diop"
   clientTelephone: string; // Ex: "+221 77 821 44 90"
   clientAdresse: string; // Ex: "Almadies, Villa 45"
-  clientInstructions?: string; // Ex: "Sonner à l'entrée, 2ème étage à droite."
-  distanceKm: number; // Ex: 3.2
+  clientInstructions?: string;
+  clientRepere?: string; // point de repère donné par le client // Ex: "Sonner à l'entrée, 2ème étage à droite."
+  distanceKm: number | null; // Distance restaurant → client (null si une position manque)
   gainFcfa: number; // Ex: 1500
   tempsRestantSec: number; // Ex: 22
   tempsTrajetMin: number; // Ex: 6
   codeValidation?: string; // Ex: "8245"
   articles: ArticleVerification[];
-  photoCommande?: string;
   restaurantLatitude?: number;
   restaurantLongitude?: number;
   clientLatitude?: number;

@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, computed, inject, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, inject, OnDestroy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
 import { ServiceCarteDakarService } from '../../../socle/services/service-carte-dakar.service';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
+import { SignalerProblemeComponent } from '../signaler-probleme/signaler-probleme.component';
 
 @Component({
   selector: 'app-navigation-livraison',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './navigation-livraison.component.html'
 })
 export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
@@ -64,54 +65,54 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  constructor() {
+    // Le marqueur du livreur suit sa position GPS réelle (envoyée aussi au serveur).
+    effect(() => {
+      const position = this.serviceLivreur.positionGpsActuelle();
+      if (position && this.carteLeaflet) this.placerMarqueurLivreur([position.latitude, position.longitude]);
+    });
+  }
+
   /**
-   * Initialise la carte réelle de Dakar centrée sur l'itinéraire du livreur vers le restaurant.
+   * Carte de navigation vers le restaurant : position réelle du restaurant (API)
+   * et position GPS réelle du livreur. Aucune coordonnée n'est inventée.
    */
   private initialiserCarte(): void {
-    const conteneur = document.getElementById('carte-navigation-livreur');
-    if (!conteneur) return;
-
-    // Coordonnées réelles à Dakar
+    if (!document.getElementById('carte-navigation-livreur')) return;
     const course = this.serviceLivreur.courseEnCours();
-    const coordRestaurant: [number, number] = (course?.restaurantLatitude && course?.restaurantLongitude)
-      ? [course.restaurantLatitude, course.restaurantLongitude]
-      : this.serviceCarteDakar.restaurantTeranga;
-    const coordLivreur = this.serviceCarteDakar.livreurVersRestaurant;
-    const miTrajet: [number, number] = [
-      (coordLivreur[0] + coordRestaurant[0]) / 2,
-      (coordLivreur[1] + coordRestaurant[1]) / 2
-    ];
-    const trajet: [number, number][] = [coordLivreur, miTrajet, coordRestaurant];
+    const restaurant: [number, number] | null =
+      course?.restaurantLatitude != null && course?.restaurantLongitude != null
+        ? [course.restaurantLatitude, course.restaurantLongitude]
+        : null;
+    const gps = this.serviceLivreur.positionGpsActuelle();
+    const livreur: [number, number] | null = gps ? [gps.latitude, gps.longitude] : null;
 
-    this.carteLeaflet = L.map('carte-navigation-livreur', {
-      zoomControl: false,
-      attributionControl: false
-    }).setView(coordLivreur, 14);
-
-    // Couche de tuiles réelles de Dakar
+    this.carteLeaflet = L.map('carte-navigation-livreur', { zoomControl: false, attributionControl: false })
+      .setView(restaurant ?? livreur ?? this.serviceCarteDakar.centreDakar, 14);
     this.serviceCarteDakar.creerCoucheTuilesVoyager().addTo(this.carteLeaflet);
 
-    // Tracé de navigation GPS bleu vif (conforme maquette)
-    L.polyline(trajet, {
-      color: '#00a3ff',
-      weight: 7,
-      lineCap: 'round',
-      lineJoin: 'round',
-      opacity: 0.95
-    }).addTo(this.carteLeaflet);
+    if (restaurant) {
+      L.marker(restaurant, { icon: this.serviceCarteDakar.creerGrandPinDestination() }).addTo(this.carteLeaflet);
+    }
+    if (livreur) {
+      this.placerMarqueurLivreur(livreur);
+    }
+    if (restaurant && livreur) {
+      this.carteLeaflet.fitBounds([livreur, restaurant], { padding: [50, 50], maxZoom: 16 });
+      this.serviceCarteDakar.obtenirItineraireRoutier(livreur, restaurant).then((points) => {
+        if (this.carteLeaflet) {
+          L.polyline(points, { color: '#00a3ff', weight: 7, lineCap: 'round', lineJoin: 'round', opacity: 0.95 }).addTo(this.carteLeaflet);
+        }
+      });
+    }
+  }
 
-    // Grand Pin rouge de destination sur le restaurant partenaire
-    L.marker(coordRestaurant, {
-      icon: this.serviceCarteDakar.creerGrandPinDestination()
-    }).addTo(this.carteLeaflet);
-
-    // Marqueur live du livreur (Moto)
-    this.marqueurLivreur = L.marker(coordLivreur, {
-      icon: this.serviceCarteDakar.creerIconeMotoLivreur('Vous')
-    }).addTo(this.carteLeaflet);
-
-    if (this.carteLeaflet) {
-      this.carteLeaflet.fitBounds([coordLivreur, coordRestaurant], { padding: [50, 50], maxZoom: 16 });
+  private placerMarqueurLivreur(position: [number, number]): void {
+    if (!this.carteLeaflet) return;
+    if (this.marqueurLivreur) {
+      this.marqueurLivreur.setLatLng(position);
+    } else {
+      this.marqueurLivreur = L.marker(position, { icon: this.serviceCarteDakar.creerIconeMotoLivreur('Vous') }).addTo(this.carteLeaflet);
     }
   }
 
@@ -133,8 +134,9 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
    * Recentre la carte sur la position actuelle du livreur.
    */
   recentrerPosition(): void {
-    if (this.carteLeaflet) {
-      this.carteLeaflet.setView(this.serviceCarteDakar.livreurVersRestaurant, 16, { animate: true });
+    const gps = this.serviceLivreur.positionGpsActuelle();
+    if (this.carteLeaflet && gps) {
+      this.carteLeaflet.setView([gps.latitude, gps.longitude], 16, { animate: true });
     }
   }
 
@@ -144,6 +146,11 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
   effectuerActionEtape(): void {
     this.serviceLivreur.avancerEtapeCourse('ARRIVE_RESTAURANT');
     this.routeur.navigate(['/livreur/verification']);
+  }
+
+  /** Après une annulation acceptée par le serveur. */
+  retourAccueil(): void {
+    this.routeur.navigate(['/livreur']);
   }
 
   /**

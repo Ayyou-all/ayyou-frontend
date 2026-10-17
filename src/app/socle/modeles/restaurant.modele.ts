@@ -23,11 +23,9 @@ export interface Restaurant {
   quartierVille: string; // Ex: Keur Massar, Plateau Dakar
   heureFermeture: string; // Ex: 23h30
   estOuvert: boolean;
-  noteMoyenne: number;
-  nombreAvis: number;
   adresseLogo: string;
   adresseCouverture: string;
-  delaiLivraisonMinutes?: number;
+  delaiLivraisonTexte?: string; // Délai annoncé par le restaurant, ex : "25-35 min"
   fraisLivraisonFcfa?: number;
   estAbonne?: boolean;
   estAime?: boolean;
