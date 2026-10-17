@@ -5,7 +5,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, tap } from 'rxjs';
+import { EMPTY, Observable, catchError, expand, forkJoin, map, of, reduce, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PublicationFil } from '../modeles/fil-actualite.modele';
 import { Plat } from '../modeles/plat.modele';
@@ -88,15 +88,28 @@ export class ServiceCatalogueService {
   }
 
   /**
+   * Lit TOUTES les pages d'une liste paginée de l'API ({ results, next }) en suivant `next`.
+   * Limite de sécurité : `pagesMax` pages (20 éléments par page côté serveur).
+   * Une erreur est transmise à l'appelant (elle n'est plus remplacée par une liste vide).
+   */
+  private chargerToutesLesPages(url: string, pagesMax: number = 25): Observable<any[]> {
+    let pagesLues = 0;
+    return this.http.get<any>(url).pipe(
+      expand((reponse) => {
+        pagesLues += 1;
+        return reponse?.next && pagesLues < pagesMax ? this.http.get<any>(reponse.next) : EMPTY;
+      }),
+      map((reponse) => (Array.isArray(reponse) ? reponse : reponse?.results || [])),
+      reduce((tous: any[], page: any[]) => [...tous, ...page], [])
+    );
+  }
+
+  /**
    * Récupère les restaurants partenaires et leurs plats associés depuis Django.
    */
   chargerRestaurants(): Observable<Restaurant[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/etablissements/`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((resto: any) => this.adapterRestaurant(resto));
-      }),
-      catchError(() => of([]))
+    return this.chargerToutesLesPages(`${environment.apiUrl}/etablissements/`).pipe(
+      map((liste) => liste.map((resto: any) => this.adapterRestaurant(resto)))
     );
   }
 
@@ -104,26 +117,17 @@ export class ServiceCatalogueService {
    * Récupère tous les plats réels actifs depuis Django.
    */
   chargerPlats(): Observable<Plat[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/plats/`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((p: any) => this.adapterPlat(p));
-      }),
-      catchError(() => of([]))
-    );
+    return this.chargerToutesLesPages(`${environment.apiUrl}/plats/`).pipe(map((liste) => liste.map((p: any) => this.adapterPlat(p))));
   }
 
   /**
    * Récupère le fil d'actualité des vidéos immersives (Reels culinaires) depuis Django.
    */
   chargerPublicationsFil(): Observable<PublicationFil[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((pub: any) => this.adapterPublication(pub));
-      }),
-      tap((pubs) => this.publicationsFil.set(pubs)),
-      catchError(() => of([]))
+    // Le fil est limité aux 5 premières pages (100 vidéos) : seules les métadonnées sont chargées.
+    return this.chargerToutesLesPages(`${environment.apiUrl}/publications/fil/`, 5).pipe(
+      map((liste) => liste.map((pub: any) => this.adapterPublication(pub))),
+      tap((pubs) => this.publicationsFil.set(pubs))
     );
   }
 
@@ -131,12 +135,8 @@ export class ServiceCatalogueService {
    * Récupère les vidéos publiées par un restaurant spécifique.
    */
   chargerVideosRestaurant(idRestaurant: string | number): Observable<PublicationFil[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/publications/fil/?etablissement=${idRestaurant}`).pipe(
-      map((reponse) => {
-        const liste = Array.isArray(reponse) ? reponse : ((reponse as any)?.results || []);
-        return liste.map((pub: any) => this.adapterPublication(pub));
-      }),
-      catchError(() => of([]))
+    return this.chargerToutesLesPages(`${environment.apiUrl}/publications/fil/?etablissement=${idRestaurant}`, 5).pipe(
+      map((liste) => liste.map((pub: any) => this.adapterPublication(pub)))
     );
   }
 

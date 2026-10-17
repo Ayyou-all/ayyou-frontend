@@ -31,7 +31,9 @@ export class AccueilComponent implements OnInit {
 
   ngOnInit(): void {
     // Actualisation automatique du fil d'actualité pour récupérer les nouveaux Reels
-    this.serviceCatalogue.chargerPublicationsFil().subscribe();
+    this.serviceCatalogue.chargerPublicationsFil().subscribe({
+      error: () => this.serviceCatalogue.messageErreur.set('Impossible de charger les vidéos. Vérifiez votre connexion.')
+    });
   }
 
   // Plat actuellement en consultation via le modal (Image 1)
