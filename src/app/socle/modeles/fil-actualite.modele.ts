@@ -16,7 +16,8 @@ export interface PublicationFil {
   adresseMedia: string; // Image d'affiche ou de repli
   adresseVideo?: string; // Lien vidéo MP4
   typeMedia: 'IMAGE' | 'VIDEO';
-  nombreJeaime: string; // Ex: 1.2k
+  nombreJeaime: string; // Ex: 1.2k (compteur de la base)
   estAime: boolean;
   nombrePartages: number;
+  nombreVues: number;
 }

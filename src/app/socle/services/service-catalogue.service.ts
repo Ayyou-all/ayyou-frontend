@@ -153,7 +153,8 @@ export class ServiceCatalogueService {
       adresseMedia: pub.adresseMedia || pub.image_miniature || pub.fichier_media || '',
       adresseVideo: pub.adresseVideo || (pub.type_media === 'VIDEO' ? pub.fichier_media : '') || '',
       typeMedia: pub.typeMedia || pub.type_media || 'VIDEO',
-      nombreJeaime: String(pub.nombreJeaime ?? pub.nombre_jaime ?? '0'),
+      nombreJeaime: String(pub.nombreJeaime ?? '0'),
+      nombreVues: Number(pub.nombreVues ?? 0),
       estAime: pub.estAime ?? pub.est_aime ?? false,
       nombrePartages: Number(pub.nombrePartages ?? pub.nombre_partages ?? 0)
     };
@@ -306,26 +307,40 @@ export class ServiceCatalogueService {
     );
   }
 
+  /** Met à jour une publication du fil avec les valeurs renvoyées par le serveur. */
+  private mettreAJourPublication(identifiant: string, changements: Partial<PublicationFil>): void {
+    this.publicationsFil.update((pubs) => pubs.map((p) => (p.identifiant === identifiant ? { ...p, ...changements } : p)));
+  }
+
   /**
-   * Bascule le "J'aime" sur une publication via l'API Django.
+   * J'aime / je n'aime plus : le compteur affiché est celui renvoyé par le serveur
+   * (un seul like par personne, contrôlé en base).
    */
-  basculerJaimePublication(identifiantPublication: string): void {
-    this.http
-      .post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/aimer/`, {})
-      .subscribe({
-        next: (reponse) => {
-          const estAime = reponse?.est_aime ?? true;
-          const totalJeaime = reponse?.total_jaime !== undefined ? String(reponse.total_jaime) : '1';
-          this.publicationsFil.update((pubs) =>
-            pubs.map((p) =>
-              p.identifiant === identifiantPublication
-                ? { ...p, estAime, nombreJeaime: totalJeaime }
-                : p
-            )
-          );
-        },
-        error: () => {}
-      });
+  basculerJaimePublication(identifiantPublication: string): Observable<{ estAime: boolean; nombreJeaime: string }> {
+    return this.http.post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/like/`, {}).pipe(
+      map((reponse) => ({ estAime: Boolean(reponse.estAime), nombreJeaime: String(reponse.nombreJeaime) })),
+      tap((resultat) => this.mettreAJourPublication(identifiantPublication, resultat))
+    );
+  }
+
+  /** Enregistre une vue (le serveur ne compte qu'une vue par personne toutes les 6 heures). */
+  enregistrerVue(identifiantPublication: string): void {
+    this.http.post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/vue/`, {}).subscribe({
+      next: (reponse) => this.mettreAJourPublication(identifiantPublication, { nombreVues: Number(reponse.nombreVues) }),
+      error: () => {
+        // Une vue non enregistrée n'empêche pas de regarder la vidéo : pas de message à l'utilisateur.
+      }
+    });
+  }
+
+  /** Enregistre un partage réellement effectué (après le partage ou la copie du lien). */
+  enregistrerPartage(identifiantPublication: string): void {
+    this.http.post<any>(`${environment.apiUrl}/publications/${identifiantPublication}/partage/`, {}).subscribe({
+      next: (reponse) => this.mettreAJourPublication(identifiantPublication, { nombrePartages: Number(reponse.nombrePartages) }),
+      error: () => {
+        // Le partage a eu lieu ; seul le compteur n'a pas pu être mis à jour.
+      }
+    });
   }
 
   /**
