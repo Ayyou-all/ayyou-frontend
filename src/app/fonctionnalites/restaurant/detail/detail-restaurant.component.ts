@@ -33,6 +33,7 @@ export class DetailRestaurantComponent implements OnInit {
   readonly estAime = signal<boolean>(false);
   readonly nombreAbonnes = signal<number>(0);
   readonly nombreLikes = signal<number>(0);
+  readonly messageErreurLike = signal<string | null>(null);
   readonly nombreLikesVideos = signal<number>(0);
 
   // Vidéos publiées par ce restaurant
@@ -323,18 +324,12 @@ export class DetailRestaurantComponent implements OnInit {
       return;
     }
 
-    this.serviceCatalogue.basculerJaimePublication(video.identifiant);
-    this.videosRestaurant.update((vids) =>
-      vids.map((v) =>
-        v.identifiant === video.identifiant
-          ? {
-              ...v,
-              estAime: !v.estAime,
-              nombreJeaime: String(Math.max(0, Number(v.nombreJeaime || 0) + (v.estAime ? -1 : 1)))
-            }
-          : v
-      )
-    );
+    // Le compteur affiché est celui renvoyé par le serveur (pas de +1 / −1 calculé ici).
+    this.serviceCatalogue.basculerJaimePublication(video.identifiant).subscribe({
+      next: (resultat) =>
+        this.videosRestaurant.update((vids) => vids.map((v) => (v.identifiant === video.identifiant ? { ...v, ...resultat } : v))),
+      error: () => this.messageErreurLike.set("Impossible d'enregistrer votre j'aime. Vérifiez votre connexion.")
+    });
   }
 
   /**
