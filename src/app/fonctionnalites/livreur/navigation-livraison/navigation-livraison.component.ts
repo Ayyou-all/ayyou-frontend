@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, computed, effect, inject, OnDestroy } from '@angular/core';
+import { MenuLivreurComponent } from '../../../partages/composants/menu-livreur/menu-livreur.component';
+import { AfterViewInit, Component, computed, effect, inject, OnDestroy, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
 import { ServiceCarteDakarService } from '../../../socle/services/service-carte-dakar.service';
@@ -9,7 +10,7 @@ import { SignalerProblemeComponent } from '../signaler-probleme/signaler-problem
 @Component({
   selector: 'app-navigation-livraison',
   standalone: true,
-  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
+  imports: [MenuLivreurComponent, CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './navigation-livraison.component.html'
 })
 export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
@@ -19,6 +20,8 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
 
   private carteLeaflet?: L.Map;
   private marqueurLivreur?: L.Marker;
+  readonly distanceVersRestaurantKm = signal<number | null>(null);
+  readonly dureeVersRestaurantMinutes = signal<number | null>(null);
 
   // Libellé du bouton d'action principal selon l'étape de livraison
   readonly libelleActionBouton = computed(() => {
@@ -99,9 +102,13 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
     }
     if (restaurant && livreur) {
       this.carteLeaflet.fitBounds([livreur, restaurant], { padding: [50, 50], maxZoom: 16 });
-      this.serviceCarteDakar.obtenirItineraireRoutier(livreur, restaurant).then((points) => {
-        if (this.carteLeaflet) {
-          L.polyline(points, { color: '#00a3ff', weight: 7, lineCap: 'round', lineJoin: 'round', opacity: 0.95 }).addTo(this.carteLeaflet);
+      this.serviceCarteDakar.obtenirItineraireDetaille(livreur, restaurant).then((itineraire) => {
+        if (!this.carteLeaflet) return;
+        L.polyline(itineraire.points, { color: '#00a3ff', weight: 7, lineCap: 'round', lineJoin: 'round', opacity: 0.95 }).addTo(this.carteLeaflet);
+        // Distance et durée affichées seulement si l'itinéraire routier a réellement été calculé
+        if (itineraire.succesRoutage) {
+          this.distanceVersRestaurantKm.set(itineraire.distanceKm);
+          this.dureeVersRestaurantMinutes.set(itineraire.dureeMinutes);
         }
       });
     }

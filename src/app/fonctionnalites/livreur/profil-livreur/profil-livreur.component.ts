@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MenuLivreurComponent } from '../../../partages/composants/menu-livreur/menu-livreur.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -8,7 +9,7 @@ import { ServiceAuthentification } from '../../../socle/services/service-authent
 @Component({
   selector: 'app-profil-livreur',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [MenuLivreurComponent, CommonModule, FormsModule, RouterModule],
   templateUrl: './profil-livreur.component.html'
 })
 export class ProfilLivreurComponent implements OnInit {

@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MenuLivreurComponent } from '../../../partages/composants/menu-livreur/menu-livreur.component';
 import { AfterViewInit, Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
@@ -9,7 +10,7 @@ import { SignalerProblemeComponent } from '../signaler-probleme/signaler-problem
 @Component({
   selector: 'app-trajet-client',
   standalone: true,
-  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
+  imports: [MenuLivreurComponent, CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './trajet-client.component.html'
 })
 export class TrajetClientComponent implements AfterViewInit, OnDestroy {

@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MenuLivreurComponent } from '../../../partages/composants/menu-livreur/menu-livreur.component';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
@@ -11,7 +12,7 @@ import { SignalerProblemeComponent } from '../signaler-probleme/signaler-problem
 @Component({
   selector: 'app-verification-commande',
   standalone: true,
-  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
+  imports: [MenuLivreurComponent, CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './verification-commande.component.html'
 })
 export class VerificationCommandeComponent implements OnInit, OnDestroy {

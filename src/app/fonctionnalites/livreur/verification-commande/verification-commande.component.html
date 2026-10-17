@@ -1,183 +1,250 @@
-<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between select-none font-['Plus_Jakarta_Sans',sans-serif]">
+<div class="md:pl-64 min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col select-none font-['Plus_Jakarta_Sans',sans-serif]">
+  <!-- Menu latéral livreur (ordinateur et tablette uniquement) -->
+  <app-menu-livreur></app-menu-livreur>
 
-  <!-- ========================================================================= -->
-  <!-- 1. EN-TÊTE RÉCUPÉRATION RESTAURANT (CONFORME À L'IMAGE 1)                 -->
-  <!-- ========================================================================= -->
-  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40">
-    <div class="max-w-xl mx-auto flex items-center justify-between">
-      
-      <!-- Bouton Retour rond -->
-      <button
-        type="button"
-        (click)="retourner()"
-        class="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-        aria-label="Retour"
-      >
-        <i class="fa-solid fa-chevron-left text-sm"></i>
-      </button>
+  @if (serviceLivreur.courseEnCours(); as course) {
+    <!-- ========================================================================= -->
+    <!-- EN-TÊTE : COMMANDE, CLIENT, ÉTAT DE LA REMISE, APPEL DU RESTAURANT        -->
+    <!-- ========================================================================= -->
+    <header class="w-full bg-white border-b border-slate-100 px-4 sm:px-8 md:px-10 py-4 md:py-5 sticky top-0 z-30">
+      <div class="max-w-6xl mx-auto flex items-center gap-3 md:gap-5">
+        <button
+          type="button"
+          (click)="retourner()"
+          class="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          aria-label="Retour"
+        >
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
 
-      <!-- Titre centré -->
-      <div class="text-center">
-        <span class="block text-[10px] font-black text-slate-400 tracking-wider uppercase">
-          RÉCUPÉRATION
-        </span>
-        <h1 class="text-base sm:text-lg font-black text-slate-900 leading-tight font-['Outfit']">
-          {{ serviceLivreur.courseEnCours()?.restaurantNom || 'Restaurant Partenaire' }}
-        </h1>
-      </div>
-
-      <!-- Bouton Appel restaurant rond -->
-      <a
-        [href]="serviceLivreur.courseEnCours()?.restaurantTelephone ? ('tel:' + serviceLivreur.courseEnCours()?.restaurantTelephone) : 'javascript:void(0)'"
-        class="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-        title="Appeler le restaurant"
-      >
-        <i class="fa-solid fa-phone text-sm"></i>
-      </a>
-
-    </div>
-  </header>
-
-  <!-- ========================================================================= -->
-  <!-- 2. CONTENU PRINCIPAL                                                      -->
-  <!-- ========================================================================= -->
-  <main class="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-    <!-- CARTE COMMANDE + STATUT PRÊTE + COMPTOIR -->
-    <div class="bg-white rounded-[32px] p-6 border border-slate-100 space-y-4">
-      
-      <div class="flex items-start justify-between gap-3">
-        <div class="space-y-1">
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
-            Commande #{{ serviceLivreur.courseEnCours()?.identifiantCommande || '...' }}
-          </h2>
-          <p class="text-xs sm:text-sm font-semibold text-slate-400">
-            Client : {{ serviceLivreur.courseEnCours()?.clientNom }}
+        <div class="flex-1 min-w-0">
+          <h1 class="text-base sm:text-lg md:text-2xl font-bold text-slate-900 leading-tight font-['Outfit'] truncate">
+            Récupération de la commande
+          </h1>
+          <p class="text-xs md:text-sm text-slate-400 truncate">
+            Commande {{ course.referenceCommande || ('n° ' + course.identifiantCommande) }}
+            @if (course.clientNom) {
+              · Client : {{ course.clientNom }}
+            }
           </p>
         </div>
 
-        <!-- Badge vert PRÊTE avec point -->
-        <div class="px-3 py-1 rounded-full bg-[#e8faf0] border border-[#bbf7d0] text-[#16a34a] text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
-          <span>PRÊTE</span>
-        </div>
-      </div>
-
-      <!-- Encart Comptoir de retrait -->
-      <div class="bg-[#f8fafc] rounded-2xl p-4 border border-slate-100/90 flex items-center gap-3.5">
-        <div class="w-12 h-12 rounded-2xl bg-[#fee2e2] text-[#E51824] flex items-center justify-center shrink-0">
-          <i class="fa-solid fa-utensils text-base"></i>
-        </div>
-        <div>
-          <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
-            Comptoir de retrait
+        <!-- État réel de la remise par le restaurant -->
+        @if (serviceLivreur.remiseConfirmee()) {
+          <span class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs md:text-sm font-bold shrink-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Remise confirmée
           </span>
-          <span class="text-sm sm:text-base font-extrabold text-slate-900 font-['Outfit']">
-            {{ serviceLivreur.courseEnCours()?.comptoirRetrait || 'Comptoir de retrait AYYOU' }}
+        } @else {
+          <span class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-100 text-amber-700 text-xs md:text-sm font-bold shrink-0">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            En attente du restaurant
           </span>
-        </div>
-      </div>
+        }
 
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION VÉRIFIER LES ARTICLES (CASES À COCHER CONFORMES À L'IMAGE 1)       -->
-    <!-- ========================================================================= -->
-    <div class="space-y-3">
-      
-      <div class="flex items-center justify-between px-1">
-        <h3 class="text-lg font-black text-slate-900 font-['Outfit'] tracking-tight">
-          Vérifier les articles
-        </h3>
-        <span class="text-xs font-bold text-slate-400">
-          {{ serviceLivreur.courseEnCours()?.articles?.length || 0 }} articles
-        </span>
-      </div>
-
-      <!-- Liste des cartes articles avec case à cocher -->
-      <div class="space-y-2.5">
-        @for (art of serviceLivreur.courseEnCours()?.articles; track art.nom; let idx = $index) {
-          <div
-            (click)="basculerArticle(idx)"
-            [class]="art.estVerifie ? 'border-red-200 bg-red-50/20 ' : 'border-slate-100 bg-white'"
-            class="rounded-2xl p-4 border transition-all cursor-pointer flex items-center justify-between gap-3 select-none hover:border-slate-300"
+        @if (course.restaurantTelephone) {
+          <a
+            [href]="'tel:' + course.restaurantTelephone"
+            class="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title="Appeler le restaurant"
           >
-            <!-- Case à cocher personnalisée carrée arrondie -->
-            <div class="flex items-center gap-3.5 min-w-0 flex-1">
-              <div
-                [class]="art.estVerifie ? 'bg-[#E51824] border-[#E51824] text-white ' : 'border-slate-300 bg-white'"
-                class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0"
-              >
-                @if (art.estVerifie) {
-                  <i class="fa-solid fa-check text-xs"></i>
-                }
-              </div>
-
-              <!-- Nom de l'article et détails -->
-              <div class="min-w-0 flex-1">
-                <div class="flex items-baseline justify-between gap-2">
-                  <h4 class="text-sm sm:text-base font-extrabold text-slate-900 truncate">
-                    {{ art.quantite }}x {{ art.nom }}
-                  </h4>
-                  @if (art.format) {
-                    <span class="text-xs font-medium text-slate-400 shrink-0">
-                      {{ art.format }}
-                    </span>
-                  }
-                </div>
-                @if (art.instructions) {
-                  <p class="text-xs text-slate-400 font-medium truncate mt-0.5">
-                    {{ art.instructions }}
-                  </p>
-                }
-              </div>
-            </div>
-
-          </div>
+            <i class="fa-solid fa-phone text-sm"></i>
+          </a>
         }
       </div>
+    </header>
 
-      <!-- Avertissement couverts et serviettes (Image 1) -->
-      <div class="bg-[#fffbeb] border border-[#fef3c7] rounded-2xl p-4 flex items-start gap-3 mt-4">
-        <div class="text-[#f59e0b] mt-0.5 shrink-0">
-          <i class="fa-solid fa-circle-exclamation text-base"></i>
+    <!-- ========================================================================= -->
+    <!-- ORDINATEUR : BANDEAU « ACTION REQUISE » + BOUTON DE CONFIRMATION          -->
+    <!-- ========================================================================= -->
+    <div class="hidden md:block bg-white border-b border-slate-100 px-10 py-5">
+      <div class="max-w-6xl mx-auto flex items-center justify-end gap-6">
+        <div class="text-right">
+          @if (!serviceLivreur.remiseConfirmee()) {
+            <span class="block text-xs font-semibold text-amber-600">En attente de la confirmation du restaurant (« Remis au livreur »)</span>
+          } @else if (!serviceLivreur.tousArticlesVerifies()) {
+            <span class="block text-xs font-semibold text-slate-400">Action requise</span>
+          }
+          <span class="block text-base font-semibold text-slate-800">
+            Vérifiez les {{ course.articles.length }} {{ course.articles.length > 1 ? 'articles' : 'article' }}
+          </span>
         </div>
-        <p class="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
-          N'oubliez pas de demander les couverts et les serviettes avant de quitter le restaurant.
-        </p>
+        <button
+          type="button"
+          (click)="confirmerRecuperation()"
+          [disabled]="departEnCours() || !serviceLivreur.remiseConfirmee() || !serviceLivreur.tousArticlesVerifies()"
+          class="px-8 py-4 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-bold text-lg font-['Outfit'] flex items-center gap-3 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fa-solid fa-box-open"></i>
+          <span>{{ departEnCours() ? 'Envoi...' : 'Confirmer la récupération' }}</span>
+        </button>
       </div>
-
-    </div>
-
-  </main>
-
-  <!-- ========================================================================= -->
-  <!-- 3. BOUTON D'ACTION INFÉRIEUR (COMMANDE RÉCUPÉRÉE)                          -->
-  <!-- Conforme au bas de l'Image 1                                              -->
-  <!-- ========================================================================= -->
-  <div class="w-full bg-white border-t border-slate-100 p-4 sm:p-6 sticky bottom-0 z-40">
-    <div class="max-w-xl mx-auto">
-      @if (!serviceLivreur.remiseConfirmee()) {
-        <p class="mb-3 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3">
-          En attente de la confirmation du restaurant (« Remis au livreur »)…
-        </p>
-      }
       @if (messageErreur()) {
-        <p class="mb-3 text-xs font-semibold text-red-600">{{ messageErreur() }}</p>
+        <p class="max-w-6xl mx-auto text-right text-sm font-semibold text-red-600 mt-2">{{ messageErreur() }}</p>
       }
-      <button
-        type="button"
-        (click)="confirmerRecuperation()"
-        [disabled]="departEnCours() || !serviceLivreur.remiseConfirmee() || !serviceLivreur.tousArticlesVerifies()"
-        class="disabled:opacity-50 disabled:cursor-not-allowed w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-3 transition-all cursor-pointer"
-      >
-        <i class="fa-solid fa-box-open text-lg"></i>
-        <span>{{ departEnCours() ? 'Envoi...' : 'Commande récupérée, je pars' }}</span>
-      </button>
-      <div class="mt-3">
-        <app-signaler-probleme mode="ANNULATION" (termine)="retourAccueil()"></app-signaler-probleme>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- CONTENU : ARTICLES (GAUCHE) + RESTAURANT / CLIENT (DROITE SUR ORDINATEUR) -->
+    <!-- ========================================================================= -->
+    <main class="flex-1 w-full max-w-xl md:max-w-6xl mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 md:gap-8 items-start">
+
+      <!-- Articles à cocher (chaque coche est enregistrée par le serveur) -->
+      <section class="space-y-4">
+        <div class="flex items-center gap-3">
+          <h2 class="text-lg md:text-2xl font-bold text-slate-900 font-['Outfit']">Vérifier les articles</h2>
+          <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-semibold text-slate-500">
+            {{ course.articles.length }} {{ course.articles.length > 1 ? 'articles' : 'article' }}
+          </span>
+        </div>
+
+        <div class="space-y-3">
+          @for (art of course.articles; track art.id ?? art.nom; let idx = $index) {
+            <button
+              type="button"
+              (click)="basculerArticle(idx)"
+              [attr.aria-pressed]="art.estVerifie"
+              [class]="art.estVerifie ? 'border-red-200 bg-white' : 'border-slate-100 bg-white hover:border-slate-200'"
+              class="w-full text-left rounded-2xl md:rounded-3xl p-4 md:p-6 border transition-colors cursor-pointer flex items-center gap-4 md:gap-5"
+            >
+              <span
+                [class]="art.estVerifie ? 'bg-white border-[#E51824] text-[#E51824]' : 'border-slate-300 bg-white text-transparent'"
+                class="w-7 h-7 md:w-8 md:h-8 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors"
+              >
+                <i class="fa-solid fa-check text-xs md:text-sm"></i>
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-baseline justify-between gap-3">
+                  <span class="text-base md:text-xl font-bold text-slate-900 truncate">{{ art.quantite }}x {{ art.nom }}</span>
+                  @if (art.format) {
+                    <span class="text-sm text-slate-400 shrink-0">{{ art.format }}</span>
+                  }
+                </span>
+                @if (art.instructions) {
+                  <span class="block text-sm text-slate-400 truncate mt-0.5">{{ art.instructions }}</span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+
+        <!-- Consigne de retrait -->
+        <div class="bg-amber-50 border border-amber-100 rounded-2xl md:rounded-3xl p-4 md:p-6 flex items-start gap-3">
+          <i class="fa-solid fa-circle-exclamation text-amber-500 text-lg mt-0.5 shrink-0"></i>
+          <div class="text-sm md:text-[15px] leading-relaxed">
+            <p class="font-bold text-amber-800">Consigne importante</p>
+            <p class="text-amber-800/90">
+              Demandez les couverts et les serviettes avant de quitter le restaurant, et vérifiez que les contenants sont bien fermés.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Restaurant, client et gain (données réelles de la course) -->
+      <aside class="space-y-5">
+        <div class="bg-white rounded-3xl border border-slate-100 p-5 md:p-6 space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <span class="block text-xs font-semibold text-slate-400">Restaurant</span>
+              <h3 class="text-xl font-bold text-slate-900 font-['Outfit'] truncate">{{ course.restaurantNom }}</h3>
+              @if (course.restaurantAdresse) {
+                <p class="text-sm text-slate-500">{{ course.restaurantAdresse }}</p>
+              }
+            </div>
+            <span class="w-12 h-12 rounded-2xl bg-[#FFF1F2] text-[#E51824] flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-utensils"></i>
+            </span>
+          </div>
+          @if (course.comptoirRetrait) {
+            <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+              <i class="fa-solid fa-location-dot text-[#E51824]"></i>
+              <div>
+                <span class="block text-xs font-semibold text-slate-400">Comptoir de retrait</span>
+                <span class="text-sm font-bold text-slate-900">{{ course.comptoirRetrait }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (course.clientNom) {
+          <div class="bg-white rounded-3xl border border-slate-100 p-5 md:p-6 space-y-4">
+            <span class="block text-xs font-semibold text-slate-400">Client</span>
+            <div class="flex items-center gap-4">
+              <span class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-user"></i>
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="text-lg font-bold text-slate-900 truncate">{{ course.clientNom }}</div>
+                @if (course.clientAdresse) {
+                  <div class="text-sm text-slate-500 truncate">{{ course.clientAdresse }}</div>
+                }
+              </div>
+              @if (course.clientTelephone) {
+                <a
+                  [href]="'tel:' + course.clientTelephone"
+                  class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer shrink-0"
+                  title="Appeler le client"
+                >
+                  <i class="fa-solid fa-phone text-xs"></i>
+                </a>
+              }
+            </div>
+            @if (course.distanceKm !== null && course.distanceKm !== undefined) {
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <span class="block text-xs font-semibold text-slate-400">Distance</span>
+                <span class="text-base font-bold text-slate-900">{{ course.distanceKm }} km</span>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="flex items-center gap-3 px-2 text-[15px] text-slate-500">
+          <i class="fa-solid fa-motorcycle text-[#E51824]"></i>
+          <span>Gain estimé : <strong class="text-slate-900">{{ course.gainFcfa | number }} FCFA</strong></span>
+        </div>
+
+        <div class="hidden md:block">
+          <app-signaler-probleme mode="ANNULATION" (termine)="retourAccueil()"></app-signaler-probleme>
+        </div>
+      </aside>
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- MOBILE : BOUTON D'ACTION EN BAS DE L'ÉCRAN                                -->
+    <!-- ========================================================================= -->
+    <div class="md:hidden w-full bg-white border-t border-slate-100 p-4 sm:p-6 sticky bottom-0 z-30">
+      <div class="max-w-xl mx-auto">
+        @if (!serviceLivreur.remiseConfirmee()) {
+          <p class="mb-3 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3">
+            En attente de la confirmation du restaurant (« Remis au livreur »)…
+          </p>
+        }
+        @if (messageErreur()) {
+          <p class="mb-3 text-xs font-semibold text-red-600">{{ messageErreur() }}</p>
+        }
+        <button
+          type="button"
+          (click)="confirmerRecuperation()"
+          [disabled]="departEnCours() || !serviceLivreur.remiseConfirmee() || !serviceLivreur.tousArticlesVerifies()"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-3 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fa-solid fa-box-open text-lg"></i>
+          <span>{{ departEnCours() ? 'Envoi...' : 'Commande récupérée, je pars' }}</span>
+        </button>
+        <div class="mt-3">
+          <app-signaler-probleme mode="ANNULATION" (termine)="retourAccueil()"></app-signaler-probleme>
+        </div>
       </div>
     </div>
-  </div>
-
+  } @else {
+    <main class="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
+      <span class="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xl">
+        <i class="fa-solid fa-box-open"></i>
+      </span>
+      <p class="text-sm text-slate-500">Aucune course en cours.</p>
+      <button type="button" (click)="retourAccueil()" class="px-5 py-3 rounded-2xl bg-[#E51824] text-white text-sm font-bold cursor-pointer">
+        Retour à l'accueil
+      </button>
+    </main>
+  }
 </div>

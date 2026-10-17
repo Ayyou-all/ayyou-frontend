@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MenuLivreurComponent } from '../../../partages/composants/menu-livreur/menu-livreur.component';
 import {
   AfterViewInit,
   Component,
@@ -16,7 +17,7 @@ import { ActiviteJourLivreur } from '../../../socle/modeles/livreur.modele';
 @Component({
   selector: 'app-gains-livreur',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [MenuLivreurComponent, CommonModule, RouterModule],
   templateUrl: './gains-livreur.component.html'
 })
 export class GainsLivreurComponent implements AfterViewInit, OnDestroy {
