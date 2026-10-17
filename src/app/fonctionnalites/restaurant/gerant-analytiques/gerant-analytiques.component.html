@@ -52,10 +52,11 @@
         <div class="w-10 h-10 rounded-xl bg-red-50 text-[#E51824] flex items-center justify-center">
           <i class="fa-solid fa-receipt text-base"></i>
         </div>
-        <div class="flex items-center gap-1 text-[11px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-          <i class="fa-solid fa-arrow-up-right text-[10px]"></i>
-          <span>{{ commandesJourProgression() }}</span>
-        </div>
+        @if (commandesJourProgression()) {
+          <div class="flex items-center gap-1 text-[11px] font-black text-slate-600 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+            <span>{{ commandesJourProgression() }}</span>
+          </div>
+        }
       </div>
       <div class="mt-4">
         <span class="text-xs font-semibold text-gray-400 block">Commandes du jour</span>
@@ -71,10 +72,11 @@
         <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
           <i class="fa-solid fa-user text-base"></i>
         </div>
-        <div class="flex items-center gap-1 text-[11px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-          <i class="fa-solid fa-arrow-up-right text-[10px]"></i>
-          <span>{{ clientsProgression() }}</span>
-        </div>
+        @if (clientsProgression()) {
+          <div class="flex items-center gap-1 text-[11px] font-black text-slate-600 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+            <span>{{ clientsProgression() }}</span>
+          </div>
+        }
       </div>
       <div class="mt-4">
         <span class="text-xs font-semibold text-gray-400 block">Clients</span>
@@ -90,13 +92,14 @@
         <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
           <i class="fa-solid fa-coins text-base"></i>
         </div>
-        <div class="flex items-center gap-1 text-[11px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-          <i class="fa-solid fa-arrow-up-right text-[10px]"></i>
-          <span>{{ revenusJourProgression() }}</span>
-        </div>
+        @if (revenusJourProgression()) {
+          <div class="flex items-center gap-1 text-[11px] font-black text-slate-600 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+            <span>{{ revenusJourProgression() }}</span>
+          </div>
+        }
       </div>
       <div class="mt-4">
-        <span class="text-xs font-semibold text-gray-400 block">Revenus du jour</span>
+        <span class="text-xs font-semibold text-gray-400 block">Revenus du jour (plats, hors livraison)</span>
         <span class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight block mt-0.5">
           {{ revenusJour() }}
         </span>
@@ -109,10 +112,12 @@
         <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
           <i class="fa-solid fa-clapperboard text-base"></i>
         </div>
-        <div class="flex items-center gap-1 text-[11px] font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100">
-          <i class="fa-solid fa-bolt text-[10px]"></i>
-          <span>{{ partChiffreAffairesVideos() }}</span>
-        </div>
+        @if (partChiffreAffairesVideos()) {
+          <div class="flex items-center gap-1 text-[11px] font-black text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100">
+            <i class="fa-solid fa-bolt text-[10px]"></i>
+            <span>{{ partChiffreAffairesVideos() }}</span>
+          </div>
+        }
       </div>
       <div class="mt-4">
         <span class="text-xs font-semibold text-gray-400 block">Ventes Studio Vidéo</span>
@@ -123,6 +128,32 @@
     </div>
 
   </div>
+
+  @if (messageErreur()) {
+    <div class="p-3 rounded-2xl bg-red-50 border border-red-200 text-sm font-semibold text-red-700 flex items-center justify-between">
+      <span>{{ messageErreur() }}</span>
+      <button type="button" (click)="chargerAnalytiques()" class="underline cursor-pointer">Réessayer</button>
+    </div>
+  }
+
+  <!-- Indicateurs détaillés du jour (« — » = pas encore de donnée) -->
+  @if (statistiquesJour(); as jour) {
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      @for (indicateur of [
+        { libelle: 'Panier moyen', valeur: jour.panier_moyen_fcfa ? (jour.panier_moyen_fcfa | number) + ' FCFA' : '—' },
+        { libelle: 'Plats vendus', valeur: jour.plats_vendus },
+        { libelle: 'Acceptées', valeur: jour.commandes_acceptees },
+        { libelle: 'Refusées', valeur: jour.commandes_refusees },
+        { libelle: 'Taux d’acceptation', valeur: jour.taux_acceptation_pourcent !== null ? jour.taux_acceptation_pourcent + ' %' : '—' },
+        { libelle: 'Préparation moyenne', valeur: jour.temps_moyen_preparation_minutes !== null ? jour.temps_moyen_preparation_minutes + ' min' : '—' }
+      ]; track indicateur.libelle) {
+        <div class="bg-white rounded-2xl p-3 border border-gray-100">
+          <span class="block text-[11px] font-semibold text-gray-400">{{ indicateur.libelle }}</span>
+          <span class="block text-lg font-black text-gray-900">{{ indicateur.valeur }}</span>
+        </div>
+      }
+    </div>
+  }
 
   <!-- 3. GRAPHIQUE REVENUS (Ligne continue avec aire rouge et filtres 24h / 7 jours / 30 jours) -->
   <div class="bg-white rounded-2xl p-6 border border-gray-100 space-y-6">
@@ -170,14 +201,14 @@
 
     <!-- CARTE GAUCHE : Catégories les plus vendues (Diagramme circulaire Donut) -->
     <div class="bg-white rounded-2xl p-6 border border-gray-100 flex flex-col justify-between">
-      <h2 class="text-base font-black text-gray-900 tracking-tight">Catégories les plus vendues</h2>
+      <h2 class="text-base font-black text-gray-900 tracking-tight">Plats les plus vendus</h2>
 
       <!-- Visualisation Donut Chart.js -->
       <div class="py-4 flex flex-col items-center justify-center">
+        <div class="relative w-44 h-44 flex items-center justify-center" [class.hidden]="categoriesDonut().length === 0">
+          <canvas #canvasCategories class="w-full h-full"></canvas>
+        </div>
         @if (categoriesDonut().length > 0) {
-          <div class="relative w-44 h-44 flex items-center justify-center">
-            <canvas #canvasCategories class="w-full h-full"></canvas>
-          </div>
 
           <!-- Légende en dessous avec pourcentages réels -->
           <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-5">
@@ -193,7 +224,7 @@
             <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mb-2">
               <i class="fa-solid fa-chart-pie text-lg"></i>
             </div>
-            <p class="text-xs font-semibold text-gray-400">Aucune catégorie vendue pour l'instant</p>
+            <p class="text-xs font-semibold text-gray-400">Aucune vente sur la période</p>
           </div>
         }
       </div>

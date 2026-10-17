@@ -14,7 +14,6 @@ import {
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import Chart from 'chart.js/auto';
-import { catchError, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 
@@ -47,7 +46,7 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
   private chartSemaine?: Chart;
 
   // Informations réelles de l'établissement
-  readonly nomRestaurant = signal<string>('Mon Restaurant');
+  readonly nomRestaurant = signal<string>('');
   readonly dateAujourdhuiTexte = signal<string>('');
 
   // Filtre période de revenus actif (24h, 7 jours, 30 jours)
@@ -56,21 +55,25 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
   // Recherche dans l'en-tête
   readonly rechercheTexte = signal<string>('');
   readonly chargementEnCours = signal<boolean>(false);
-  readonly commandesRaw = signal<any[]>([]);
+  readonly messageErreur = signal<string | null>(null);
+  // Données calculées par le serveur (GET /api/commandes/restaurant/statistiques/)
+  readonly statistiquesJour = signal<any | null>(null);
+  readonly courbe = signal<{ libelle: string; chiffre_affaires_fcfa: number; commandes: number }[]>([]);
+  readonly courbe7Jours = signal<{ libelle: string; chiffre_affaires_fcfa: number; commandes: number }[]>([]);
 
   // Statistiques calculées depuis les commandes réelles
   readonly commandesJour = signal<number>(0);
-  readonly commandesJourProgression = signal<string>('+0%');
+  readonly commandesJourProgression = signal<string>('');
 
   readonly clientsNombre = signal<number>(0);
-  readonly clientsProgression = signal<string>('+0%');
+  readonly clientsProgression = signal<string>('');
 
   readonly revenusJour = signal<string>('0 FCFA');
-  readonly revenusJourProgression = signal<string>('+0%');
+  readonly revenusJourProgression = signal<string>('');
 
   // Attribution commerciale des vidéos du Studio
   readonly ventesAttribueesVideos = signal<string>('0 FCFA');
-  readonly partChiffreAffairesVideos = signal<string>('0% du CA');
+  readonly partChiffreAffairesVideos = signal<string>('');
   readonly commandesVideos = signal<number>(0);
 
   // Données de répartition par catégories
@@ -92,21 +95,17 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
       next: (etab) => {
         if (etab?.nom) this.nomRestaurant.set(etab.nom);
       },
-      error: () => {}
+      error: () => this.messageErreur.set('Impossible de charger les informations du restaurant.')
     });
 
     this.chargerAnalytiques();
 
     // Effet réactif pour actualiser les graphiques Chart.js dès que les données arrivent
     effect(() => {
-      const cmds = this.commandesRaw();
-      const periode = this.periodeActive();
-      if (this.chartRevenus) {
-        this.actualiserGraphiqueRevenus(cmds, periode);
-      }
-      if (this.chartSemaine) {
-        this.actualiserGraphiqueSemaine(cmds);
-      }
+      this.courbe();
+      this.courbe7Jours();
+      if (this.chartRevenus) this.actualiserGraphiqueRevenus();
+      if (this.chartSemaine) this.actualiserGraphiqueSemaine();
     });
 
     effect(() => {
@@ -151,7 +150,7 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
     gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
     gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
 
-    const donnees = this.calculerPointsRevenus(this.commandesRaw(), this.periodeActive());
+    const donnees = this.calculerPointsRevenus();
 
     this.chartRevenus = new Chart(ctx, {
       type: 'line',
@@ -225,51 +224,20 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private actualiserGraphiqueRevenus(commandes: any[], periode: FiltrePeriodeRevenu): void {
+  private actualiserGraphiqueRevenus(): void {
     if (!this.chartRevenus) return;
-    const donnees = this.calculerPointsRevenus(commandes, periode);
+    const donnees = this.calculerPointsRevenus();
     this.chartRevenus.data.labels = donnees.labels;
     this.chartRevenus.data.datasets[0].data = donnees.valeurs;
     this.chartRevenus.update();
   }
 
-  private calculerPointsRevenus(commandes: any[], periode: FiltrePeriodeRevenu): { labels: string[]; valeurs: number[] } {
-    if (periode === '24h') {
-      const labels = ['00h-04h', '04h-08h', '08h-12h', '12h-16h', '16h-20h', '20h-24h'];
-      const valeurs = [0, 0, 0, 0, 0, 0];
-      const today = new Date().toISOString().split('T')[0];
-      commandes
-        .filter((c) => (c.date_creation || '').startsWith(today))
-        .forEach((c) => {
-          const h = new Date(c.date_creation).getHours();
-          const idx = Math.min(Math.floor(h / 4), 5);
-          valeurs[idx] += Number(c.total_fcfa || 0);
-        });
-      return { labels, valeurs };
-    }
-
-    if (periode === '30j') {
-      const labels = ['Semaine 1', 'Semaine 2', 'Semaine 3', 'Semaine 4'];
-      const valeurs = [0, 0, 0, 0];
-      commandes.forEach((c) => {
-        const d = new Date(c.date_creation || Date.now());
-        const jourDuMois = d.getDate();
-        const idx = Math.min(Math.floor((jourDuMois - 1) / 7), 3);
-        valeurs[idx] += Number(c.total_fcfa || 0);
-      });
-      return { labels, valeurs };
-    }
-
-    // Par défaut '7j' (Lun..Dim)
-    const labels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    const joursCode = [1, 2, 3, 4, 5, 6, 0];
-    const valeurs = joursCode.map((code) => {
-      return commandes
-        .filter((c) => c.date_creation && new Date(c.date_creation).getDay() === code)
-        .reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
-    });
-
-    return { labels, valeurs };
+  /** Points du graphique des revenus : directement ceux calculés par le serveur. */
+  private calculerPointsRevenus(): { labels: string[]; valeurs: number[] } {
+    return {
+      labels: this.courbe().map((point) => point.libelle),
+      valeurs: this.courbe().map((point) => point.chiffre_affaires_fcfa)
+    };
   }
 
   // =========================================================================
@@ -335,7 +303,7 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
     const ctx = this.canvasSemaineRef.nativeElement.getContext('2d');
     if (!ctx) return;
 
-    const barres = this.calculerBarresSemaine(this.commandesRaw());
+    const barres = this.calculerBarresSemaine();
     const labels = barres.map((b) => b.jour);
     const data = barres.map((b) => b.quantite);
     const maxVal = Math.max(...data, 0);
@@ -396,9 +364,9 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private actualiserGraphiqueSemaine(commandes: any[]): void {
+  private actualiserGraphiqueSemaine(): void {
     if (!this.chartSemaine) return;
-    const barres = this.calculerBarresSemaine(commandes);
+    const barres = this.calculerBarresSemaine();
     const data = barres.map((b) => b.quantite);
     const maxVal = Math.max(...data, 0);
     this.chartSemaine.data.labels = barres.map((b) => b.jour);
@@ -407,154 +375,85 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
     this.chartSemaine.update();
   }
 
-  private calculerBarresSemaine(commandes: any[]): { jour: string; quantite: number }[] {
-    const jours = [
-      { code: 1, jour: 'Lun' },
-      { code: 2, jour: 'Mar' },
-      { code: 3, jour: 'Mer' },
-      { code: 4, jour: 'Jeu' },
-      { code: 5, jour: 'Ven' },
-      { code: 6, jour: 'Sam' },
-      { code: 0, jour: 'Dim' }
-    ];
-
-    const compteurs: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-    commandes.forEach((c) => {
-      if (c.date_creation) {
-        const idx = new Date(c.date_creation).getDay();
-        compteurs[idx] = (compteurs[idx] || 0) + 1;
-      }
-    });
-
-    return jours.map((j) => ({
-      jour: j.jour,
-      quantite: compteurs[j.code] || 0
-    }));
+  /** Nombre de commandes par jour sur les 7 derniers jours (calculé par le serveur). */
+  private calculerBarresSemaine(): { jour: string; quantite: number }[] {
+    return this.courbe7Jours().map((point) => ({ jour: point.libelle, quantite: point.commandes }));
   }
 
   chargerAnalytiques(): void {
     this.chargementEnCours.set(true);
-
-    this.http.get<any>(`${environment.apiUrl}/commandes/restaurant/`).pipe(
-      catchError(() => of([]))
-    ).subscribe({
-      next: (data) => {
-        this.chargementEnCours.set(false);
-        const commandes: any[] = Array.isArray(data) ? data : (data?.results || []);
-        this.commandesRaw.set(commandes);
-
-        if (!commandes || commandes.length === 0) {
-          this.commandesJour.set(0);
-          this.revenusJour.set('0 FCFA');
-          this.clientsNombre.set(0);
-          this.listeCommandes.set([]);
-          this.chargerProportionsMenu();
-          return;
+    this.messageErreur.set(null);
+    this.http
+      .get<any>(`${environment.apiUrl}/commandes/restaurant/statistiques/`, { params: { periode: this.periodeActive() } })
+      .subscribe({
+        next: (stats) => {
+          this.chargementEnCours.set(false);
+          this.appliquerStatistiques(stats);
+        },
+        error: () => {
+          this.chargementEnCours.set(false);
+          this.messageErreur.set('Impossible de charger les statistiques. Veuillez réessayer.');
         }
-
-        const dateAujourdhui = new Date().toISOString().split('T')[0];
-        const cmdsJour = commandes.filter((c) => (c.date_creation || '').startsWith(dateAujourdhui));
-        const totalJour = cmdsJour.reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
-        const totalGlobal = commandes.reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
-
-        this.commandesJour.set(cmdsJour.length || commandes.length);
-        this.revenusJour.set(`${(totalJour || totalGlobal).toLocaleString('fr-FR')} FCFA`);
-
-        const clientsUniques = new Set(commandes.map((c) => c.client_nom).filter(Boolean));
-        this.clientsNombre.set(clientsUniques.size || 1);
-
-        const cmdsVideos = commandes.filter((c) => Boolean(c.source_video_id));
-        const totalVideos = cmdsVideos.reduce((acc, c) => acc + Number(c.total_fcfa || 0), 0);
-        this.commandesVideos.set(cmdsVideos.length);
-        this.ventesAttribueesVideos.set(`${totalVideos.toLocaleString('fr-FR')} FCFA`);
-        if (totalGlobal > 0 && totalVideos > 0) {
-          this.partChiffreAffairesVideos.set(`${Math.round((totalVideos / totalGlobal) * 100)}% du CA`);
-        }
-
-        this.calculerCategoriesReelles(commandes);
-
-        const recentes: CommandeRecenteAnalytique[] = commandes.slice(0, 10).map((c) => {
-          let statutAffiche: 'Préparation' | 'En attente' | 'Livré' = 'En attente';
-          if (c.statut === 'EN_PREPARATION' || c.statut === 'PRETE_POUR_RETRAIT') {
-            statutAffiche = 'Préparation';
-          } else if (c.statut === 'LIVREE') {
-            statutAffiche = 'Livré';
-          }
-
-          const premierPlat = c.articles?.[0]?.nom_plat || 'Commande repas';
-          return {
-            id: `#${c.reference || c.id}`,
-            plat: premierPlat,
-            client: c.client_nom || 'Client AYYOU',
-            statut: statutAffiche,
-            montant: `${Number(c.total_fcfa || 0).toLocaleString('fr-FR')} FCFA`
-          };
-        });
-
-        this.listeCommandes.set(recentes);
-      },
-      error: () => {
-        this.chargementEnCours.set(false);
-        this.chargerProportionsMenu();
-      }
-    });
+      });
+    this.chargerCommandesRecentes();
   }
 
-  private calculerCategoriesReelles(commandes: any[]): void {
-    const compteurCat: Record<string, number> = {};
-    let totalArticles = 0;
+  private appliquerStatistiques(stats: any): void {
+    const jour = stats.aujourdhui;
+    this.statistiquesJour.set(jour);
+    this.commandesJour.set(jour.commandes);
+    this.clientsNombre.set(jour.clients_uniques);
+    this.revenusJour.set(`${jour.chiffre_affaires_fcfa.toLocaleString('fr-FR')} FCFA`);
+    this.commandesJourProgression.set(this.texteEvolution(stats.evolution_vs_hier.commandes));
+    this.clientsProgression.set(this.texteEvolution(stats.evolution_vs_hier.clients));
+    this.revenusJourProgression.set(this.texteEvolution(stats.evolution_vs_hier.chiffre_affaires));
 
-    commandes.forEach((c) => {
-      (c.articles || []).forEach((art: any) => {
-        const cat = art.section_menu || 'Plats';
-        const qte = Number(art.quantite || 1);
-        compteurCat[cat] = (compteurCat[cat] || 0) + qte;
-        totalArticles += qte;
-      });
-    });
+    const periode = stats.resume_periode;
+    this.commandesVideos.set(periode.commandes_via_videos);
+    this.ventesAttribueesVideos.set(`${periode.chiffre_affaires_videos_fcfa.toLocaleString('fr-FR')} FCFA`);
+    this.partChiffreAffairesVideos.set(
+      periode.chiffre_affaires_fcfa > 0
+        ? `${Math.round((periode.chiffre_affaires_videos_fcfa / periode.chiffre_affaires_fcfa) * 100)}% du CA`
+        : ''
+    );
 
-    if (totalArticles === 0) {
-      this.chargerProportionsMenu();
-      return;
-    }
+    this.courbe.set(stats.courbe);
+    this.courbe7Jours.set(stats.courbe_7_jours);
 
+    // Répartition des ventes par plat (les plus vendus sur la période)
+    const totalQuantite = stats.meilleures_ventes.reduce((total: number, plat: any) => total + plat.quantite, 0);
     const couleurs = ['#E51824', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'];
-    const resultat = Object.entries(compteurCat).map(([nom, count], idx) => ({
-      nom,
-      valeur: count,
-      pourcentage: Math.round((count / totalArticles) * 100),
-      couleur: couleurs[idx % couleurs.length]
-    }));
-
-    this.categoriesDonut.set(resultat);
+    this.categoriesDonut.set(
+      stats.meilleures_ventes.map((plat: any, index: number) => ({
+        nom: plat.nom,
+        valeur: plat.quantite,
+        pourcentage: totalQuantite ? Math.round((plat.quantite / totalQuantite) * 100) : 0,
+        couleur: couleurs[index % couleurs.length]
+      }))
+    );
   }
 
-  private chargerProportionsMenu(): void {
-    this.http.get<any[]>(`${environment.apiUrl}/catalogue/mes-plats/`).pipe(
-      catchError(() => of([]))
-    ).subscribe((plats) => {
-      if (!plats || plats.length === 0) {
-        this.categoriesDonut.set([]);
-        return;
-      }
-      const compteur: Record<string, number> = {};
-      plats.forEach((p) => {
-        const section = p.section_menu === 'BOISSONS' ? 'Boissons' : p.section_menu === 'DESSERTS' ? 'Desserts' : 'Plats';
-        compteur[section] = (compteur[section] || 0) + 1;
-      });
-      const total = plats.length;
-      const couleursMap: Record<string, string> = {
-        'Plats': '#E51824',
-        'Boissons': '#3B82F6',
-        'Desserts': '#CBD5E1'
-      };
-      const resultat = Object.entries(compteur).map(([nom, count]) => ({
-        nom,
-        valeur: count,
-        pourcentage: Math.round((count / total) * 100),
-        couleur: couleursMap[nom] || '#E51824'
-      }));
-      this.categoriesDonut.set(resultat);
+  /** « +12 % vs hier », ou rien si hier n'avait aucune donnée à comparer. */
+  private texteEvolution(pourcent: number | null): string {
+    if (pourcent === null || pourcent === undefined) return '';
+    return `${pourcent > 0 ? '+' : ''}${pourcent}% vs hier`;
+  }
+
+  /** Dernières commandes du jour (tableau en bas de page). */
+  private chargerCommandesRecentes(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/commandes/restaurant/`, { params: { vue: 'jour' } }).subscribe({
+      next: (commandes) => {
+        this.listeCommandes.set(
+          commandes.slice(0, 10).map((c) => ({
+            id: `#${c.reference}`,
+            plat: (c.articles || []).map((a: any) => `${a.quantite}x ${a.nom_plat}`).join(', '),
+            client: c.client_nom || '',
+            statut: c.statut === 'LIVREE' ? 'Livré' : ['EN_PREPARATION', 'PRETE_POUR_RETRAIT'].includes(c.statut) ? 'Préparation' : 'En attente',
+            montant: `${Number(c.total_fcfa).toLocaleString('fr-FR')} FCFA`
+          }))
+        );
+      },
+      error: () => this.messageErreur.set('Impossible de charger les commandes récentes.')
     });
   }
 
@@ -572,5 +471,6 @@ export class GerantAnalytiquesComponent implements AfterViewInit, OnDestroy {
 
   definirPeriode(p: FiltrePeriodeRevenu): void {
     this.periodeActive.set(p);
+    this.chargerAnalytiques();
   }
 }

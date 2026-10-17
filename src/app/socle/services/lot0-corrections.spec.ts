@@ -79,6 +79,8 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       statut,
       client_nom: 'Amadou Diallo',
       total_fcfa: 12500,
+      sous_total_fcfa: 11000,
+      commission_plateforme_fcfa: 1000,
       date_creation: '2026-10-16T12:30:00Z',
       articles: [{ nom_plat: 'Thieboudienne', quantite: 2 }],
       ...autres
@@ -106,7 +108,8 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       ]);
       const statuts = serviceRestaurant.historiqueCommandes().map((h) => h.statut);
       expect(statuts).toEqual(['LIVRÉE', 'ANNULÉE']);
-      expect(serviceRestaurant.chiffreAffairesJour()).toBe(12500);
+      // Revenu du restaurant = plats − commission (les frais de livraison ne lui reviennent pas)
+      expect(serviceRestaurant.chiffreAffairesJour()).toBe(10000);
     });
   });
 
