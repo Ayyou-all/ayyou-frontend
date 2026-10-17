@@ -56,13 +56,24 @@
             (click)="regarderVideo(video)"
             class="relative aspect-[9/16] w-full rounded-2xl overflow-hidden bg-black cursor-pointer"
           >
-            <img
-              [src]="video.imageAffiche"
-              [alt]="video.titrePlat"
-              class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-            />
+            <!-- Aperçu : photo, miniature si elle existe, sinon première image de la vidéo elle-même -->
+            @if (video.typeMedia === 'IMAGE') {
+              <img [src]="video.videoUrl" [alt]="video.titrePlat" class="w-full h-full object-cover" />
+            } @else if (video.imageAffiche) {
+              <img [src]="video.imageAffiche" [alt]="video.titrePlat" class="w-full h-full object-cover" />
+            } @else {
+              <!-- « #t=0.5 » : le navigateur affiche l'image de la vidéo à 0,5 s au lieu d'un écran noir -->
+              <video
+                [src]="video.videoUrl + '#t=0.5'"
+                muted
+                playsinline
+                preload="metadata"
+                class="w-full h-full object-cover pointer-events-none"
+              ></video>
+            }
 
             <!-- Bouton central Play pour visionner la vidéo -->
+            @if (video.typeMedia !== 'IMAGE') {
             <button
               type="button"
               (click)="regarderVideo(video); $event.stopPropagation()"
@@ -71,6 +82,7 @@
             >
               <i class="fa-solid fa-play text-sm pl-0.5"></i>
             </button>
+            }
 
             <!-- Dégradé & Informations du plat en bas de la vidéo -->
             <div class="absolute inset-x-0 bottom-0 p-3 pt-10 bg-black/50 text-white pointer-events-none">
@@ -484,16 +496,21 @@
         </div>
 
         <!-- Lecteur Vidéo HTML5 avec contrôles et lecture automatique -->
-        <div class="relative aspect-[9/16] max-h-[70vh] bg-black">
-          <video
-            [src]="videoEnLectureModal()!.videoUrl"
-            [poster]="videoEnLectureModal()!.imageAffiche"
-            controls
-            autoplay
-            playsinline
-            loop
-            class="w-full h-full object-cover"
-          ></video>
+        <div class="relative aspect-[9/16] max-h-[70vh] mx-auto bg-black">
+          @if (videoEnLectureModal()!.typeMedia === 'IMAGE') {
+            <img [src]="videoEnLectureModal()!.videoUrl" [alt]="videoEnLectureModal()!.titrePlat" class="w-full h-full object-contain" />
+          } @else {
+            <!-- object-contain : la vidéo entière est visible, sans être rognée -->
+            <video
+              [src]="videoEnLectureModal()!.videoUrl"
+              [attr.poster]="videoEnLectureModal()!.imageAffiche || null"
+              controls
+              autoplay
+              playsinline
+              loop
+              class="w-full h-full object-contain"
+            ></video>
+          }
         </div>
 
         <!-- Pied de page du lecteur -->
