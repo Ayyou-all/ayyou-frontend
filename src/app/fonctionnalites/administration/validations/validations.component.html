@@ -2,7 +2,7 @@
 
   <!-- Notification de confirmation d'action -->
   @if (notificationSucces()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationSucces() }}</span>
     </div>
@@ -73,13 +73,13 @@
         [ngModel]="rechercheTexte()"
         (ngModelChange)="rechercheTexte.set($event); pageActuelle.set(1)"
         placeholder="Rechercher par nom..."
-        class="w-full py-2.5 pl-10 pr-4 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 shadow-2xs transition-all"
+        class="w-full py-2.5 pl-10 pr-4 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all"
       />
     </div>
 
     <!-- Sélecteur : Toutes les dates -->
     <div class="relative w-full md:w-48">
-      <div class="relative flex items-center rounded-xl border border-slate-200 bg-white py-2 px-3 shadow-2xs text-xs sm:text-sm">
+      <div class="relative flex items-center rounded-xl border border-slate-200 bg-white py-2 px-3 text-xs sm:text-sm">
         <i class="fa-regular fa-calendar text-slate-400 mr-2 text-xs"></i>
         <select
           [ngModel]="filtreDate()"
@@ -97,7 +97,7 @@
 
     <!-- Sélecteur : Toutes les régions -->
     <div class="relative w-full md:w-52">
-      <div class="relative flex items-center rounded-xl border border-slate-200 bg-white py-2 px-3 shadow-2xs text-xs sm:text-sm">
+      <div class="relative flex items-center rounded-xl border border-slate-200 bg-white py-2 px-3 text-xs sm:text-sm">
         <i class="fa-solid fa-location-dot text-slate-400 mr-2 text-xs"></i>
         <select
           [ngModel]="filtreRegion()"
@@ -118,7 +118,7 @@
     <!-- Bouton Filtrer noir -->
     <button
       type="button"
-      class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer shrink-0"
+      class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0"
     >
       Filtrer
     </button>
@@ -128,7 +128,7 @@
   <!-- ========================================================================= -->
   <!-- 4. TABLEAU DES VALIDATIONS (CONFORME À L'IMAGE 2)                          -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
+  <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
@@ -155,7 +155,7 @@
                   } @else {
                     <div
                       [class]="partenaire.classeFondIcone"
-                      class="w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-2xs shrink-0"
+                      class="w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0"
                     >
                       <i [class]="partenaire.iconeOuPhoto"></i>
                     </div>
@@ -237,7 +237,7 @@
                 <button
                   type="button"
                   (click)="ouvrirVerification(partenaire)"
-                  class="px-4 py-2 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white text-xs font-black shadow-sm shadow-red-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  class="px-4 py-2 rounded-xl bg-[#E51824] hover:bg-red-700 active:scale-95 text-white text-xs font-black transition-all cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <span>Vérifier</span>
                   <i class="fa-solid fa-bell text-[11px]"></i>
@@ -291,7 +291,7 @@
               type="button"
               (click)="changerPage(num)"
               [class]="pageActuelle() === num
-                ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+                ? 'bg-[#E51824] text-white font-extrabold '
                 : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
               class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
             >
@@ -326,7 +326,7 @@
       (click)="fermerVerification()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative max-h-[92vh] overflow-y-auto"
+        class="bg-white rounded-3xl w-full max-w-xl p-6 sm:p-8 border border-slate-100 space-y-6 relative max-h-[92vh] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <!-- Bouton fermer -->
@@ -399,12 +399,12 @@
                 (click)="ouvrirApercuDocument(doc, idx)"
                 role="button"
                 tabindex="0"
-                class="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-red-400 hover:shadow-md hover:bg-red-50/20 transition-all cursor-pointer group select-none"
+                class="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-red-400 hover:bg-red-50/20 transition-all cursor-pointer group select-none"
               >
                 <div class="flex items-center gap-3.5 min-w-0">
                   <div
                     [class]="doc.estValide ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100'"
-                    class="w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-colors shadow-2xs shrink-0"
+                    class="w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-colors shrink-0"
                   >
                     @if (doc.type === 'PDF') {
                       <i class="fa-solid fa-file-pdf text-red-500 text-base"></i>
@@ -440,7 +440,7 @@
                     {{ doc.estValide ? 'Conforme' : 'À vérifier' }}
                   </span>
                   
-                  <div class="w-8 h-8 rounded-xl bg-slate-50 group-hover:bg-[#E51824] group-hover:text-white text-slate-400 flex items-center justify-center transition-all shadow-2xs">
+                  <div class="w-8 h-8 rounded-xl bg-slate-50 group-hover:bg-[#E51824] group-hover:text-white text-slate-400 flex items-center justify-center transition-all">
                     <i class="fa-solid fa-chevron-right text-[10px]"></i>
                   </div>
                 </div>
@@ -468,7 +468,7 @@
           <button
             type="button"
             (click)="validerPartenaire()"
-            class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2"
+            class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2"
           >
             <i class="fa-solid fa-check text-xs"></i>
             <span>Valider et activer le partenaire</span>
@@ -490,7 +490,7 @@
       
       <!-- Barre d'outils supérieure flottante -->
       <div
-        class="w-full max-w-5xl bg-slate-900 text-white rounded-2xl p-3 sm:p-4 mb-4 shadow-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 sticky top-0 z-20"
+        class="w-full max-w-5xl bg-slate-900 text-white rounded-2xl p-3 sm:p-4 mb-4 border border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0 sticky top-0 z-20"
         (click)="$event.stopPropagation()"
       >
         <!-- Titre & Info Partenaire -->
@@ -625,7 +625,7 @@
             <button
               type="button"
               (click)="marquerDocumentConforme()"
-              class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5"
             >
               <i class="fa-solid fa-check text-xs"></i>
               <span>Valider conforme</span>
@@ -658,7 +658,7 @@
       <!-- ZONE D'AFFICHAGE RÉELLE DU DOCUMENT IMPORTÉ                         -->
       <!-- =================================================================== -->
       <div
-        class="w-full max-w-5xl bg-slate-900/90 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden text-slate-100 transition-all origin-top my-auto p-4 sm:p-6 flex flex-col items-center justify-center min-h-[520px]"
+        class="w-full max-w-5xl bg-slate-900/90 rounded-3xl border border-slate-800 relative overflow-hidden text-slate-100 transition-all origin-top my-auto p-4 sm:p-6 flex flex-col items-center justify-center min-h-[520px]"
         (click)="$event.stopPropagation()"
       >
 
@@ -673,14 +673,14 @@
               [src]="urlFichierLocal() || ''"
               [alt]="documentEnConsultation()!.nom"
               [style.transform]="'scale(' + (facteurZoom() / 100) + ')'"
-              class="max-w-full max-h-[70vh] object-contain rounded-xl shadow-2xl transition-transform duration-150 select-none border border-slate-800"
+              class="max-w-full max-h-[70vh] object-contain rounded-xl transition-transform duration-150 select-none border border-slate-800"
             />
           </div>
         }
 
         <!-- CAS 2 : PDF (EMBED DANS IFRAME SÉCURISÉE) -->
         @else if (documentEnConsultation()!.estPdf) {
-          <div class="w-full h-[75vh] rounded-2xl overflow-hidden border border-slate-700 bg-white shadow-2xl relative flex flex-col">
+          <div class="w-full h-[75vh] rounded-2xl overflow-hidden border border-slate-700 bg-white relative flex flex-col">
             @if (urlDocumentSecurisee()) {
               <iframe
                 [src]="urlDocumentSecurisee()!"
@@ -708,7 +708,7 @@
         <!-- CAS 3 : AUTRE TYPE DE FICHIER (OU TÉLÉCHARGEMENT DIRECT) -->
         @else {
           <div class="w-full max-w-lg p-8 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-4 my-auto">
-            <div class="w-20 h-20 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center text-3xl mx-auto shadow-inner">
+            <div class="w-20 h-20 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center text-3xl mx-auto">
               <i class="fa-solid fa-file-arrow-down"></i>
             </div>
             <div class="space-y-1">
@@ -720,7 +720,7 @@
               <button
                 type="button"
                 (click)="telechargerDocumentActuel()"
-                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <i class="fa-solid fa-download"></i>
                 <span>Télécharger le fichier</span>
@@ -786,7 +786,7 @@
           <button
             type="button"
             (click)="fermerApercuDocument()"
-            class="px-5 py-2 rounded-xl bg-[#E51824] hover:bg-red-700 text-xs font-black text-white shadow-md transition-all cursor-pointer flex items-center gap-2"
+            class="px-5 py-2 rounded-xl bg-[#E51824] hover:bg-red-700 text-xs font-black text-white transition-all cursor-pointer flex items-center gap-2"
           >
             <i class="fa-solid fa-check-double text-xs"></i>
             <span>Retourner au dossier du candidat</span>

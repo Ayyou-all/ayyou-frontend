@@ -2,7 +2,7 @@
 
   <!-- Notification Toast -->
   @if (notificationSucces()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationSucces() }}</span>
     </div>
@@ -29,7 +29,7 @@
 
     <!-- Actions à droite : Sélecteur de période & Bouton Exporter -->
     <div class="flex items-center gap-3 shrink-0">
-      <div class="relative flex items-center rounded-2xl border border-slate-200 bg-white py-2 px-3 shadow-2xs text-xs sm:text-sm">
+      <div class="relative flex items-center rounded-2xl border border-slate-200 bg-white py-2 px-3 text-xs sm:text-sm">
         <i class="fa-regular fa-calendar text-slate-400 mr-2 text-xs"></i>
         <select
           [ngModel]="periodeSelectionnee()"
@@ -47,7 +47,7 @@
       <button
         type="button"
         (click)="exporterRapport()"
-        class="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold shadow-2xs transition-all cursor-pointer flex items-center gap-2"
+        class="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2"
       >
         <i class="fa-solid fa-arrow-down-to-bracket text-xs"></i>
         <span>Exporter</span>
@@ -61,9 +61,9 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     
     <!-- 1. Revenu Total -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-money-bill-wave"></i>
         </div>
         @if (kpis().revenuTotal.evolution) {
@@ -81,9 +81,9 @@
     </div>
 
     <!-- 2. Commandes Totales -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-cart-shopping"></i>
         </div>
         @if (kpis().commandesTotales.evolution) {
@@ -101,9 +101,9 @@
     </div>
 
     <!-- 3. Utilisateurs Actifs -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-user-check"></i>
         </div>
         @if (kpis().utilisateursActifs.evolution) {
@@ -121,9 +121,9 @@
     </div>
 
     <!-- 4. Taux de Croissance -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-arrow-trend-up"></i>
         </div>
         @if (kpis().tauxCroissance.evolution) {
@@ -148,7 +148,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
     
     <!-- CARTE GAUCHE : ÉVOLUTION DES REVENUS (7/12) -->
-    <div class="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-2xs space-y-6">
+    <div class="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 space-y-6">
       
       <!-- En-tête de la carte avec switch Hebdomadaire / Mensuel -->
       <div class="flex items-center justify-between">
@@ -161,7 +161,7 @@
           <button
             type="button"
             (click)="frequenceGraphique.set('HEBDOMADAIRE')"
-            [class]="frequenceGraphique() === 'HEBDOMADAIRE' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+            [class]="frequenceGraphique() === 'HEBDOMADAIRE' ? 'bg-slate-900 text-white ' : 'text-slate-500 hover:text-slate-800'"
             class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
           >
             Hebdomadaire
@@ -169,7 +169,7 @@
           <button
             type="button"
             (click)="frequenceGraphique.set('MENSUEL')"
-            [class]="frequenceGraphique() === 'MENSUEL' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+            [class]="frequenceGraphique() === 'MENSUEL' ? 'bg-slate-900 text-white ' : 'text-slate-500 hover:text-slate-800'"
             class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
           >
             Mensuel
@@ -185,7 +185,7 @@
     </div>
 
     <!-- CARTE DROITE : COMMANDES PAR CATÉGORIE (5/12) -->
-    <div class="lg:col-span-4 bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-2xs space-y-6 flex flex-col justify-between">
+    <div class="lg:col-span-4 bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 space-y-6 flex flex-col justify-between">
       
       <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
         Commandes par Catégorie
@@ -220,7 +220,7 @@
   <!-- ========================================================================= -->
   <!-- 4. SECTION INFÉRIEURE : PERFORMANCE DES MEILLEURS RESTAURANTS              -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-2xs space-y-6">
+  <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 space-y-6">
     
     <div>
       <h3 class="text-base sm:text-lg font-black text-slate-900 font-['Outfit']">
@@ -288,7 +288,7 @@
   <div class="flex justify-center pt-2">
     <a
       routerLink="/administration/tableau-de-bord"
-      class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-black text-xs shadow-2xs transition-all cursor-pointer"
+      class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-black text-xs transition-all cursor-pointer"
     >
       <i class="fa-solid fa-arrow-left text-xs"></i>
       <span>Retour au Dashboard principal</span>

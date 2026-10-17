@@ -9,7 +9,7 @@
       <button
         type="button"
         (click)="retourner()"
-        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-2xs"
+        class="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         aria-label="Retour aux paniers"
       >
         <i class="fa-solid fa-chevron-left text-sm font-bold"></i>
@@ -45,7 +45,7 @@
       <div class="lg:col-span-7 space-y-6">
 
         <!-- CARTE ADRESSE DE LIVRAISON -->
-        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 space-y-3">
           
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3.5">
@@ -119,19 +119,22 @@
           <!-- Liste des cartes d'articles -->
           <div class="space-y-3.5">
             @for (ligne of panier().lignes; track ligne.plat.identifiant) {
-              <div class="bg-white rounded-[24px] sm:rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
+              <div class="bg-white rounded-[24px] sm:rounded-2xl p-4 border border-slate-100 flex items-center gap-3.5">
                 
                 <!-- Image du plat (cliquable) -->
                 <div
                   (click)="serviceCatalogue.ouvrirDetailPlat(ligne.plat)"
-                  class="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-2xs shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                  class="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                   title="Voir les détails de l'article"
                 >
-                  <img
-                    [src]="ligne.plat.adresseImage"
-                    [alt]="ligne.plat.nom"
-                    class="w-full h-full object-cover"
-                  />
+@if (ligne.plat.adresseImage) {
+                    <img [src]="ligne.plat.adresseImage" [alt]="ligne.plat.nom" class="w-full h-full object-cover" />
+                  } @else {
+                    <!-- Plat sans photo : icône à la place d'une image cassée -->
+                    <div class="w-full h-full flex items-center justify-center text-slate-300">
+                      <i class="fa-solid fa-utensils text-lg"></i>
+                    </div>
+                  }
                 </div>
 
                 <!-- Informations produit (cliquables) -->
@@ -234,7 +237,7 @@
       <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
 
         <!-- CARTE RÉCAPITULATIF FINANCIER -->
-        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3.5 text-xs sm:text-sm">
+        <div class="bg-white rounded-[28px] sm:rounded-3xl p-5 border border-slate-100 space-y-3.5 text-xs sm:text-sm">
           <div class="flex items-center justify-between text-slate-500 font-medium">
             <span>Sous-total</span>
             <span class="font-extrabold text-slate-900 font-['Outfit']">
@@ -284,13 +287,13 @@
             <div
               (click)="choisirMethodePaiement('WAVE')"
               [class]="panier().methodePaiement === 'WAVE'
-                ? 'border-2 border-[#E51824] bg-white shadow-xs'
+                ? 'border-2 border-[#E51824] bg-white '
                 : 'border border-slate-200/90 bg-white hover:border-slate-300'"
               class="rounded-2xl p-3.5 flex items-center justify-between transition-all cursor-pointer select-none"
             >
               <div class="flex items-center gap-3">
                 <!-- Logo Wave cyan avec pingouin stylisé -->
-                <div class="w-11 h-11 rounded-xl bg-[#00d2ff] flex items-center justify-center overflow-hidden shadow-2xs shrink-0">
+                <div class="w-11 h-11 rounded-xl bg-[#00d2ff] flex items-center justify-center overflow-hidden shrink-0">
                   <div class="relative w-8 h-8 flex items-center justify-center">
                     <!-- Silhouette Pingouin Wave vectorielle -->
                     <div class="w-5 h-6 bg-slate-900 rounded-full flex flex-col items-center justify-center relative">
@@ -320,13 +323,13 @@
             <div
               (click)="choisirMethodePaiement('ORANGE_MONEY')"
               [class]="panier().methodePaiement === 'ORANGE_MONEY'
-                ? 'border-2 border-[#E51824] bg-white shadow-xs'
+                ? 'border-2 border-[#E51824] bg-white '
                 : 'border border-slate-200/90 bg-white hover:border-slate-300'"
               class="rounded-2xl p-3.5 flex items-center justify-between transition-all cursor-pointer select-none"
             >
               <div class="flex items-center gap-3">
                 <!-- Logo Orange Money noir avec flèches orange/noires -->
-                <div class="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center overflow-hidden shadow-2xs shrink-0">
+                <div class="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center overflow-hidden shrink-0">
                   <div class="flex items-center gap-0.5 text-xs font-black">
                     <span class="text-white"><i class="fa-solid fa-arrow-trend-up"></i></span>
                     <span class="text-orange-500 font-black text-sm">OM</span>
@@ -372,13 +375,19 @@
           type="button"
           (click)="effectuerPaiement()"
           [disabled]="!peutPayer()"
-          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-red-500/25"
+          class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-extrabold text-base flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         >
           @if (traitementPaiementEnCours()) {
             <i class="fa-solid fa-circle-notch fa-spin text-lg"></i>
             <span>Validation en cours...</span>
           } @else {
-            <span>Payer {{ (estimation()?.totalFcfa ?? 0) | number }} FCFA</span>
+            @if (estimation(); as montants) {
+              <span>Payer {{ montants.totalFcfa | number }} FCFA</span>
+            } @else if (estimationEnCours()) {
+              <span>Calcul du total…</span>
+            } @else {
+              <span>Choisissez votre adresse de livraison</span>
+            }
             <i class="fa-solid fa-arrow-right text-sm"></i>
           }
         </button>
@@ -399,7 +408,7 @@
     (click)="fermerModifierAdresse()"
   >
     <div
-      class="w-full max-w-md bg-white rounded-3xl p-6 space-y-5 shadow-2xl animation-glissement-haut"
+      class="w-full max-w-md bg-white rounded-3xl p-6 space-y-5 animation-glissement-haut"
       (click)="$event.stopPropagation()"
     >
       <div class="flex items-center justify-between">
@@ -453,7 +462,7 @@
         type="button"
         (click)="fermerModifierAdresse()"
         [disabled]="latitudeLivraison() === null || !adresseLivraison().trim()"
-        class="w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-md shadow-red-500/20 transition-all cursor-pointer disabled:opacity-50"
+        class="w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm transition-all cursor-pointer disabled:opacity-50"
       >
         Valider cette adresse
       </button>
@@ -469,10 +478,10 @@
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animation-apparition"
   >
     <div
-      class="w-full max-w-md bg-white rounded-[32px] p-7 text-center space-y-5 shadow-2xl animation-glissement-haut"
+      class="w-full max-w-md bg-white rounded-[32px] p-7 text-center space-y-5 animation-glissement-haut"
       (click)="$event.stopPropagation()"
     >
-      <div class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-3xl mx-auto border-4 border-emerald-100 shadow-md">
+      <div class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-3xl mx-auto border-4 border-emerald-100">
         <i class="fa-solid fa-check"></i>
       </div>
 
@@ -503,7 +512,7 @@
       <button
         type="button"
         (click)="allerVersCommandes()"
-        class="w-full py-4 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-xl shadow-red-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+        class="w-full py-4 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
       >
         <span>Suivre ma commande</span>
         <i class="fa-solid fa-arrow-right text-xs"></i>

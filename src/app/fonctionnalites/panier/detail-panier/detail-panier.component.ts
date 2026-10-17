@@ -143,6 +143,7 @@ export class DetailPanierComponent implements OnInit, OnDestroy {
 
   /** Enregistre la destination et propose une adresse lisible (géocodage inverse OpenStreetMap). */
   definirDestination(latitude: number, longitude: number): void {
+    this.erreurLocalisation.set(null); // la destination est connue : l'ancien message GPS n'a plus lieu d'être
     this.latitudeLivraison.set(Number(latitude.toFixed(6)));
     this.longitudeLivraison.set(Number(longitude.toFixed(6)));
     this.marqueurDestination?.setLatLng([latitude, longitude]);

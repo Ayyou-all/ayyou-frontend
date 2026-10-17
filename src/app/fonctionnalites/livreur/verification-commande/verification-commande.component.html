@@ -3,7 +3,7 @@
   <!-- ========================================================================= -->
   <!-- 1. EN-TÊTE RÉCUPÉRATION RESTAURANT (CONFORME À L'IMAGE 1)                 -->
   <!-- ========================================================================= -->
-  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40 shadow-2xs">
+  <header class="w-full bg-white border-b border-slate-100 px-5 sm:px-8 py-4 sticky top-0 z-40">
     <div class="max-w-xl mx-auto flex items-center justify-between">
       
       <!-- Bouton Retour rond -->
@@ -44,7 +44,7 @@
   <main class="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
     <!-- CARTE COMMANDE + STATUT PRÊTE + COMPTOIR -->
-    <div class="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm space-y-4">
+    <div class="bg-white rounded-[32px] p-6 border border-slate-100 space-y-4">
       
       <div class="flex items-start justify-between gap-3">
         <div class="space-y-1">
@@ -57,7 +57,7 @@
         </div>
 
         <!-- Badge vert PRÊTE avec point -->
-        <div class="px-3 py-1 rounded-full bg-[#e8faf0] border border-[#bbf7d0] text-[#16a34a] text-xs font-black tracking-wider uppercase flex items-center gap-1.5 shadow-2xs">
+        <div class="px-3 py-1 rounded-full bg-[#e8faf0] border border-[#bbf7d0] text-[#16a34a] text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
           <span>PRÊTE</span>
         </div>
@@ -99,13 +99,13 @@
         @for (art of serviceLivreur.courseEnCours()?.articles; track art.nom; let idx = $index) {
           <div
             (click)="basculerArticle(idx)"
-            [class]="art.estVerifie ? 'border-red-200 bg-red-50/20 shadow-xs' : 'border-slate-100 bg-white'"
+            [class]="art.estVerifie ? 'border-red-200 bg-red-50/20 ' : 'border-slate-100 bg-white'"
             class="rounded-2xl p-4 border transition-all cursor-pointer flex items-center justify-between gap-3 select-none hover:border-slate-300"
           >
             <!-- Case à cocher personnalisée carrée arrondie -->
             <div class="flex items-center gap-3.5 min-w-0 flex-1">
               <div
-                [class]="art.estVerifie ? 'bg-[#E51824] border-[#E51824] text-white shadow-xs' : 'border-slate-300 bg-white'"
+                [class]="art.estVerifie ? 'bg-[#E51824] border-[#E51824] text-white ' : 'border-slate-300 bg-white'"
                 class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0"
               >
                 @if (art.estVerifie) {
@@ -155,7 +155,7 @@
   <!-- 3. BOUTON D'ACTION INFÉRIEUR (COMMANDE RÉCUPÉRÉE)                          -->
   <!-- Conforme au bas de l'Image 1                                              -->
   <!-- ========================================================================= -->
-  <div class="w-full bg-white border-t border-slate-100 p-4 sm:p-6 sticky bottom-0 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+  <div class="w-full bg-white border-t border-slate-100 p-4 sm:p-6 sticky bottom-0 z-40">
     <div class="max-w-xl mx-auto">
       @if (!serviceLivreur.remiseConfirmee()) {
         <p class="mb-3 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3">
@@ -169,7 +169,7 @@
         type="button"
         (click)="confirmerRecuperation()"
         [disabled]="departEnCours() || !serviceLivreur.remiseConfirmee() || !serviceLivreur.tousArticlesVerifies()"
-        class="disabled:opacity-50 disabled:cursor-not-allowed w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-3 shadow-xl shadow-red-500/25 transition-all cursor-pointer"
+        class="disabled:opacity-50 disabled:cursor-not-allowed w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-3 transition-all cursor-pointer"
       >
         <i class="fa-solid fa-box-open text-lg"></i>
         <span>{{ departEnCours() ? 'Envoi...' : 'Commande récupérée, je pars' }}</span>

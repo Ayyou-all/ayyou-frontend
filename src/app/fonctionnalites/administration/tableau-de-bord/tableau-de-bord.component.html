@@ -9,13 +9,13 @@
   <!-- ========================================================================= -->
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
     @for (carte of listeIndicateurs(); track carte.titre) {
-      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-2xs hover:shadow-md transition-shadow duration-300 flex flex-col justify-between space-y-4">
+      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 duration-300 flex flex-col justify-between space-y-4">
         
         <!-- Ligne supérieure : Icône dans un cercle doux + Badge d'évolution -->
         <div class="flex items-center justify-between">
           <div
             [class]="carte.classeFondIcone + ' ' + carte.classeCouleurIcone"
-            class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg shadow-2xs"
+            class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg"
           >
             <i [class]="carte.icone"></i>
           </div>
@@ -45,7 +45,7 @@
   <!-- ========================================================================= -->
   <!-- 2. SECTION GRAPHIQUE 'Commandes par jour' (CONFORME À L'IMAGE 1)          -->
   <!-- ========================================================================= -->
-  <section class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-2xs space-y-6">
+  <section class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 space-y-6">
     
     <!-- En-tête du graphique : Titre, sous-titre & Sélecteur Semaine / Mois -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -64,7 +64,7 @@
           type="button"
           (click)="periodeSelectionnee.set('SEMAINE')"
           [class]="periodeSelectionnee() === 'SEMAINE'
-            ? 'bg-white text-slate-900 shadow-xs'
+            ? 'bg-white text-slate-900 '
             : 'text-slate-500 hover:text-slate-800'"
           class="px-3.5 py-1.5 rounded-lg transition-all cursor-pointer"
         >
@@ -74,7 +74,7 @@
           type="button"
           (click)="periodeSelectionnee.set('MOIS')"
           [class]="periodeSelectionnee() === 'MOIS'
-            ? 'bg-white text-slate-900 shadow-xs'
+            ? 'bg-white text-slate-900 '
             : 'text-slate-500 hover:text-slate-800'"
           class="px-3.5 py-1.5 rounded-lg transition-all cursor-pointer"
         >
@@ -93,7 +93,7 @@
   <!-- ========================================================================= -->
   <!-- 3. TABLEAU 'Dernières validations en attente' (CONFORME À L'IMAGE 1)       -->
   <!-- ========================================================================= -->
-  <section class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-2xs space-y-6">
+  <section class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 space-y-6">
     
     <!-- En-tête du tableau : Titre + Sous-titre + Lien 'Voir tout' -->
     <div class="flex items-center justify-between">
@@ -140,7 +140,7 @@
                   } @else {
                     <div
                       [class]="val.classeFondIcone"
-                      class="w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-2xs shrink-0"
+                      class="w-10 h-10 rounded-full flex items-center justify-center text-sm shrink-0"
                     >
                       <i [class]="val.iconeOuPhoto"></i>
                     </div>
@@ -188,7 +188,7 @@
                 <button
                   type="button"
                   (click)="examinerPartenaire(val.identifiant)"
-                  class="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  class="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <span>Voir le profil</span>
                   <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>

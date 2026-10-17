@@ -3,13 +3,13 @@
   <!-- ========================================================================= -->
   <!-- 1. EN-TÊTE DE GUIDAGE VIRAGE PAR VIRAGE (CONFORME À L'IMAGE 3)            -->
   <!-- ========================================================================= -->
-  <div class="absolute top-0 left-0 right-0 z-30 pt-6 pb-12 px-5 bg-gradient-to-b from-black/75 via-black/35 to-transparent text-white">
+  <div class="absolute top-0 left-0 right-0 z-30 pt-6 pb-12 px-5 bg-black/50 text-white">
     <div class="max-w-2xl mx-auto flex items-center gap-4">
       <!-- Bouton retour blanc circulaire -->
       <button
         type="button"
         (click)="retourner()"
-        class="w-12 h-12 rounded-2xl bg-white/95 text-slate-800 hover:bg-white flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer shrink-0"
+        class="w-12 h-12 rounded-2xl bg-white/95 text-slate-800 hover:bg-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer shrink-0"
         aria-label="Retour"
       >
         <i class="fa-solid fa-chevron-left text-base font-bold"></i>
@@ -17,10 +17,10 @@
 
       <!-- Instruction virage par virage -->
       <div class="min-w-0">
-        <div class="text-3xl sm:text-4xl font-black leading-tight tracking-tight font-['Outfit'] drop-shadow-md">
+        <div class="text-3xl sm:text-4xl font-black leading-tight tracking-tight font-['Outfit']">
           450 m
         </div>
-        <p class="text-xs sm:text-sm text-neutral-200 font-semibold drop-shadow-md truncate">
+        <p class="text-xs sm:text-sm text-neutral-200 font-semibold truncate">
           Tourner à droite sur Rue de Médine
         </p>
       </div>
@@ -41,7 +41,7 @@
       <button
         type="button"
         (click)="zoomer()"
-        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 text-lg font-black shadow-xl flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 text-lg font-black flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         aria-label="Zoom avant"
       >
         <i class="fa-solid fa-plus text-sm"></i>
@@ -51,7 +51,7 @@
       <button
         type="button"
         (click)="dezoomer()"
-        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 text-lg font-black shadow-xl flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 text-lg font-black flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
         aria-label="Zoom arrière"
       >
         <i class="fa-solid fa-minus text-sm"></i>
@@ -61,7 +61,7 @@
       <button
         type="button"
         (click)="recentrerPosition()"
-        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-[#E51824] text-lg font-black shadow-xl flex items-center justify-center transition-transform active:scale-90 cursor-pointer mt-1"
+        class="w-12 h-12 rounded-2xl bg-white hover:bg-slate-50 text-[#E51824] text-lg font-black flex items-center justify-center transition-transform active:scale-90 cursor-pointer mt-1"
         aria-label="Recentrer ma position"
       >
         <i class="fa-solid fa-crosshairs text-base"></i>
@@ -71,13 +71,13 @@
     <!-- BADGES FLOTTANTS DE TEMPS ET DISTANCE (CONFORME À L'IMAGE 3) -->
     <div class="absolute bottom-64 sm:bottom-68 left-0 right-0 z-30 flex items-center justify-center gap-3">
       <!-- Badge Temps : 6 min -->
-      <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md shadow-xl text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
+      <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
         <i class="fa-regular fa-clock text-[#E51824] text-xs"></i>
         <span>6 min</span>
       </div>
 
       <!-- Badge Distance : 1.2 km -->
-      <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md shadow-xl text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
+      <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
         <i class="fa-solid fa-location-arrow text-[#E51824] text-xs"></i>
         <span>1.2 km</span>
       </div>
@@ -90,7 +90,7 @@
   <!-- Conforme au bas de l'Image 3                                              -->
   <!-- ========================================================================= -->
   <div class="relative z-30 w-full max-w-xl mx-auto p-4 pb-6 sm:pb-8">
-    <div class="bg-white rounded-[32px] p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4">
+    <div class="bg-white rounded-[32px] p-5 sm:p-6 border border-slate-100 space-y-4">
       
       <!-- Ligne Commande + Nom restaurant + Bouton appel -->
       <div class="flex items-center justify-between gap-3">
@@ -114,7 +114,7 @@
         <!-- Bouton d'appel sombre -->
         <a
           [href]="serviceLivreur.courseEnCours()?.restaurantTelephone ? ('tel:' + serviceLivreur.courseEnCours()?.restaurantTelephone) : 'javascript:void(0)'"
-          class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-transform active:scale-95 shrink-0"
+          class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center transition-transform active:scale-95 shrink-0"
           title="Appeler le restaurant"
         >
           <i class="fa-solid fa-phone text-base"></i>
@@ -128,7 +128,7 @@
       <button
         type="button"
         (click)="effectuerActionEtape()"
-        class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl shadow-red-500/25 transition-all cursor-pointer"
+        class="w-full py-4 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white font-black text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer"
       >
         <i [class]="iconeActionBouton() + ' text-sm'"></i>
         <span>{{ libelleActionBouton() }}</span>

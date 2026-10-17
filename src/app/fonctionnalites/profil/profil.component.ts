@@ -34,7 +34,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
       <!-- =================================================================== -->
       @if (serviceAuthentification.estAuthentifie()) {
         <!-- Carte d'identité du profil -->
-        <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs flex items-center gap-4">
+        <div class="bg-white rounded-3xl p-6 border border-slate-100 flex items-center gap-4">
           <div class="w-16 h-16 rounded-full overflow-hidden bg-rose-50 border-2 border-red-100 shrink-0 flex items-center justify-center text-[#E51824] font-black text-xl">
             @if (serviceAuthentification.utilisateurConnecte()?.adressePhoto) {
               <img
@@ -72,7 +72,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
         @if (serviceAuthentification.estLivreur()) {
           <!-- Statut du compte & disponibilité -->
           <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs">
+            <div class="bg-white rounded-3xl p-4 border border-slate-100">
               <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Statut du compte</span>
               @if (profilLivreur().statutValidation === 'ACTIF') {
                 <span class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-200">
@@ -84,7 +84,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
                 </span>
               }
             </div>
-            <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs">
+            <div class="bg-white rounded-3xl p-4 border border-slate-100">
               <span class="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Disponibilité</span>
               <span
                 [class]="profilLivreur().estDisponible ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
@@ -97,7 +97,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
           </div>
 
           <!-- Activité du jour & de la semaine -->
-          <div class="bg-gradient-to-br from-[#E51824] to-[#b3121c] rounded-3xl p-5 text-white shadow-lg shadow-red-500/20">
+          <div class="bg-[#E51824] rounded-3xl p-5 text-white">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-black uppercase tracking-wider text-white/90">Mon activité</h3>
               <i class="fa-solid fa-chart-line text-white/70"></i>
@@ -121,7 +121,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
           </div>
 
           <!-- Informations personnelles -->
-          <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
+          <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-3">
             <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
               <i class="fa-solid fa-id-card text-[#E51824]"></i> Informations personnelles
             </h3>
@@ -146,7 +146,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
           </div>
 
           <!-- Véhicule & zone de livraison -->
-          <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs space-y-3">
+          <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-3">
             <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
               <i class="fa-solid fa-motorcycle text-[#E51824]"></i> Véhicule & zone de livraison
             </h3>
@@ -173,7 +173,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
           <!-- Bouton modifier -->
           <a
             routerLink="/livreur/profil"
-            class="w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 transition-all cursor-pointer"
+            class="w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <i class="fa-solid fa-pen-to-square"></i>
             <span>Modifier mes informations</span>
@@ -181,7 +181,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
         }
 
         <!-- Menu des options et accès pro sécurisé selon le rôle -->
-        <div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs space-y-2">
+        <div class="bg-white rounded-3xl p-4 border border-slate-100 space-y-2">
           
           <!-- Accès 1 : Espace Gérant Restaurant (Exclusivement pour RESTAURANT) -->
           @if (serviceAuthentification.estGerant()) {
@@ -276,9 +276,9 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
         <!-- =================================================================== -->
         <!-- CAS 2 : MODE VISITEUR (NON CONNECTÉ)                                -->
         <!-- =================================================================== -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-xl text-center space-y-6">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 text-center space-y-6">
           
-          <div class="w-20 h-20 rounded-3xl bg-red-50 text-[#E51824] flex items-center justify-center text-3xl mx-auto shadow-sm ring-4 ring-red-100/60">
+          <div class="w-20 h-20 rounded-3xl bg-red-50 text-[#E51824] flex items-center justify-center text-3xl mx-auto ring-4 ring-red-100/60">
             <i class="fa-solid fa-user-lock"></i>
           </div>
 
@@ -296,7 +296,7 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
             <!-- Bouton Se connecter -->
             <a
               routerLink="/connexion"
-              class="w-full py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm shadow-lg shadow-red-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              class="w-full py-3.5 px-6 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <i class="fa-solid fa-arrow-right-to-bracket text-sm"></i>
               <span>Se connecter</span>

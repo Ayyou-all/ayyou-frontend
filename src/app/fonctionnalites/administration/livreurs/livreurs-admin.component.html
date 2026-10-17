@@ -2,7 +2,7 @@
 
   <!-- Notification Toast -->
   @if (notificationSucces()) {
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2.5 animation-apparition border border-slate-700">
+    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-xs sm:text-sm font-bold flex items-center gap-2.5 animation-apparition border border-slate-700">
       <i class="fa-solid fa-circle-check text-emerald-400"></i>
       <span>{{ notificationSucces() }}</span>
     </div>
@@ -24,7 +24,7 @@
     <!-- Actions à droite : Badge coursiers enregistrés & Bouton '+ Nouveau Livreur' -->
     <div class="flex items-center gap-3 shrink-0">
       <!-- Badge coursiers enregistrés -->
-      <div class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold shadow-2xs flex items-center gap-2">
+      <div class="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold flex items-center gap-2">
         <i class="fa-solid fa-bicycle text-slate-400 text-xs"></i>
         <span>{{ listeLivreurs().length }} Coursiers enregistrés</span>
       </div>
@@ -33,7 +33,7 @@
       <!-- Les partenaires s'inscrivent eux-mêmes ; l'admin valide leurs documents -->
       <a
         routerLink="/administration/validations"
-        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-2"
+        class="px-5 py-2.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center gap-2"
       >
         <i class="fa-solid fa-user-check text-xs"></i>
         <span>Livreurs à valider</span>
@@ -47,9 +47,9 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     
     <!-- 1. En ligne -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-signal"></i>
         </div>
         @if (statsKpi().enLigne.evolution) {
@@ -67,9 +67,9 @@
     </div>
 
     <!-- 2. En livraison -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-truck-fast"></i>
         </div>
         @if (statsKpi().enLivraison.evolution) {
@@ -87,9 +87,9 @@
     </div>
 
     <!-- 3. Nombre total de livreurs inscrits -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm shadow-2xs">
+        <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-users"></i>
         </div>
       </div>
@@ -102,9 +102,9 @@
     </div>
 
     <!-- 4. Livr. aujourd'hui -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs space-y-4">
+    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-10 h-10 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center text-sm shadow-2xs border border-slate-100">
+        <div class="w-10 h-10 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center text-sm border border-slate-100">
           <i class="fa-solid fa-clock-rotate-left"></i>
         </div>
       </div>
@@ -121,7 +121,7 @@
   <!-- ========================================================================= -->
   <!-- 3. BARRE D'ONGLETS & RECHERCHE (CONFORME À L'IMAGE 1)                       -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
+  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
     
     <!-- Onglets : Tous, Moto, Vélo, Voiture -->
     <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-50 border border-slate-100 shrink-0 overflow-x-auto">
@@ -129,7 +129,7 @@
         type="button"
         (click)="ongletActif.set('TOUS'); pageActuelle.set(1)"
         [class]="ongletActif() === 'TOUS'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -140,7 +140,7 @@
         type="button"
         (click)="ongletActif.set('MOTO'); pageActuelle.set(1)"
         [class]="ongletActif() === 'MOTO'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -151,7 +151,7 @@
         type="button"
         (click)="ongletActif.set('VELO'); pageActuelle.set(1)"
         [class]="ongletActif() === 'VELO'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -162,7 +162,7 @@
         type="button"
         (click)="ongletActif.set('VOITURE'); pageActuelle.set(1)"
         [class]="ongletActif() === 'VOITURE'
-          ? 'bg-white text-slate-900 font-extrabold shadow-sm'
+          ? 'bg-white text-slate-900 font-extrabold '
           : 'text-slate-500 hover:text-slate-800 font-bold'"
         class="px-5 py-2 rounded-xl text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap"
       >
@@ -194,7 +194,7 @@
   <!-- ========================================================================= -->
   <!-- 4. TABLEAU DES LIVREURS (CONFORME À L'IMAGE 1)                            -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
+  <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
@@ -325,7 +325,7 @@
           type="button"
           (click)="changerPage(1)"
           [class]="pageActuelle() === 1
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -337,7 +337,7 @@
           type="button"
           (click)="changerPage(2)"
           [class]="pageActuelle() === 2
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -349,7 +349,7 @@
           type="button"
           (click)="changerPage(3)"
           [class]="pageActuelle() === 3
-            ? 'bg-[#E51824] text-white font-extrabold shadow-sm'
+            ? 'bg-[#E51824] text-white font-extrabold '
             : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
           class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
         >
@@ -379,7 +379,7 @@
   <div class="flex justify-center pt-2">
     <a
       routerLink="/administration/tableau-de-bord"
-      class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-black text-xs shadow-2xs transition-all cursor-pointer"
+      class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-black text-xs transition-all cursor-pointer"
     >
       <i class="fa-solid fa-arrow-left text-xs"></i>
       <span>Retour au Dashboard principal</span>
@@ -395,7 +395,7 @@
       (click)="fermerHistorique()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative max-h-[90vh] overflow-y-auto"
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 border border-slate-100 space-y-6 relative max-h-[90vh] overflow-y-auto"
         (click)="$event.stopPropagation()"
       >
         <button
@@ -439,7 +439,7 @@
           <button
             type="button"
             (click)="fermerHistorique()"
-            class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-extrabold text-xs shadow-md cursor-pointer"
+            class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-extrabold text-xs cursor-pointer"
           >
             Fermer
           </button>
@@ -457,7 +457,7 @@
       (click)="fermerModaleEdition()"
     >
       <div
-        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 relative"
+        class="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 border border-slate-100 space-y-5 relative"
         (click)="$event.stopPropagation()"
       >
         <button
@@ -524,7 +524,7 @@
           <button
             type="button"
             (click)="sauvegarderLivreur()"
-            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs shadow-md"
+            class="px-6 py-2.5 rounded-xl bg-[#E51824] hover:bg-red-700 text-white font-black text-xs"
           >
             Enregistrer
           </button>

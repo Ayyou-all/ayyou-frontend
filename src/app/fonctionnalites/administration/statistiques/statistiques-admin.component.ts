@@ -136,10 +136,6 @@ export class StatistiquesAdminComponent implements OnInit, AfterViewInit, OnDest
     const ctx = this.canvasEvolutionRef.nativeElement.getContext('2d');
     if (!ctx) return;
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-    gradient.addColorStop(0, 'rgba(229, 24, 36, 0.22)');
-    gradient.addColorStop(0.85, 'rgba(229, 24, 36, 0.02)');
-    gradient.addColorStop(1, 'rgba(229, 24, 36, 0.0)');
 
     const pts = this.pointsCourbeRevenus();
     const labels = pts.length > 0 ? pts.map((p) => p.date) : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -155,7 +151,7 @@ export class StatistiquesAdminComponent implements OnInit, AfterViewInit, OnDest
             data,
             borderColor: '#E51824',
             borderWidth: 3,
-            backgroundColor: gradient,
+            backgroundColor: 'rgba(229, 24, 36, 0.08)', // couleur unie (pas de dégradé)
             fill: true,
             tension: 0.4,
             pointBackgroundColor: '#ffffff',

@@ -15,7 +15,7 @@ import { RouterModule } from '@angular/router';
         <span class="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600">8 432 inscrits</span>
       </div>
 
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-4">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 space-y-4">
         <p class="text-sm text-slate-500">
           Supervision de l'ensemble des comptes clients, restaurants, livreurs et administrateurs de la plateforme AYYOU.
         </p>
@@ -52,7 +52,7 @@ export class UtilisateursAdministrationComponent {}
         <span class="text-xs font-bold px-3 py-1.5 rounded-full bg-red-50 text-[#E51824] border border-red-100">142 actives</span>
       </div>
 
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-4">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 space-y-4">
         <p class="text-sm text-slate-500">
           Suivi en temps réel de tous les flux de commandes et de livraisons sur la région de Dakar.
         </p>
@@ -71,7 +71,7 @@ export class CommandesAdministrationComponent {}
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Réseau des Restaurants
       </h1>
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-4">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 space-y-4">
         <p class="text-sm text-slate-500">
           Gestion des enseignes partenaires, de leurs menus, horaires et taux de satisfaction client.
         </p>
@@ -90,7 +90,7 @@ export class RestaurantsAdministrationComponent {}
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Flotte des Livreurs
       </h1>
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-4">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 space-y-4">
         <p class="text-sm text-slate-500">
           Suivi de la disponibilité des coursiers, des temps moyens de livraison et des vérifications de véhicules.
         </p>
@@ -109,7 +109,7 @@ export class LivreursAdministrationComponent {}
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Statistiques & Croissance
       </h1>
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-4">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 space-y-4">
         <p class="text-sm text-slate-500">
           Rapports financiers, volumes de ventes par quartier et KPIs clés d'AYYOU.
         </p>
@@ -128,7 +128,7 @@ export class StatistiquesAdministrationComponent {}
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Paramètres Système
       </h1>
-      <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs space-y-4">
+      <div class="bg-white rounded-3xl p-6 border border-slate-100 space-y-4">
         <p class="text-sm text-slate-500">
           Configuration des commissions de livraison, des zones de couverture à Dakar et des notifications.
         </p>

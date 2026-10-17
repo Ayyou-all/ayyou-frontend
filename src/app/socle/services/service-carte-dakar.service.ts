@@ -58,7 +58,7 @@ export class ServiceCarteDakarService {
     return L.divIcon({
       className: 'marqueur-leaflet-sans-style',
       html: `
-        <div class="relative flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#E51824] text-white font-black text-xs shadow-2xl border-2 border-white select-none whitespace-nowrap -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110">
+        <div class="relative flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#E51824] text-white font-black text-xs border-2 border-white select-none whitespace-nowrap -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110">
           <div class="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center">
             <i class="fa-solid fa-motorcycle text-[10px]"></i>
           </div>
@@ -79,10 +79,10 @@ export class ServiceCarteDakarService {
       className: 'marqueur-leaflet-sans-style',
       html: `
         <div class="relative flex flex-col items-center -translate-x-1/2 -translate-y-full">
-          <div class="w-10 h-10 rounded-2xl bg-[#E51824] text-white flex items-center justify-center shadow-xl border-2 border-white">
+          <div class="w-10 h-10 rounded-2xl bg-[#E51824] text-white flex items-center justify-center border-2 border-white">
             <i class="fa-solid fa-utensils text-sm"></i>
           </div>
-          <div class="px-2 py-0.5 rounded-md bg-slate-900 text-white text-[9px] font-black mt-1 shadow truncate max-w-[100px]">
+          <div class="px-2 py-0.5 rounded-md bg-slate-900 text-white text-[9px] font-black mt-1 truncate max-w-[100px]">
             ${nom}
           </div>
         </div>
@@ -100,10 +100,10 @@ export class ServiceCarteDakarService {
       className: 'marqueur-leaflet-sans-style',
       html: `
         <div class="relative flex flex-col items-center -translate-x-1/2 -translate-y-full">
-          <div class="w-10 h-10 rounded-full bg-[#1e293b] text-white flex items-center justify-center shadow-xl border-2 border-white">
+          <div class="w-10 h-10 rounded-full bg-[#1e293b] text-white flex items-center justify-center border-2 border-white">
             <i class="fa-solid fa-house text-xs"></i>
           </div>
-          <div class="px-2 py-0.5 rounded-md bg-slate-900 text-white text-[9px] font-black mt-1 shadow truncate max-w-[100px]">
+          <div class="px-2 py-0.5 rounded-md bg-slate-900 text-white text-[9px] font-black mt-1 truncate max-w-[100px]">
             ${libelle}
           </div>
         </div>
@@ -121,8 +121,8 @@ export class ServiceCarteDakarService {
       className: 'marqueur-leaflet-sans-style',
       html: `
         <div class="relative flex flex-col items-center -translate-x-1/2 -translate-y-full">
-          <div class="w-12 h-16 bg-[#E51824] rounded-t-full rounded-b-none relative flex items-center justify-center shadow-2xl [clip-path:polygon(0%_0%,100%_0%,100%_70%,50%_100%,0%_70%)] border border-red-700">
-            <div class="w-5 h-5 rounded-full bg-white -mt-2 shadow-inner"></div>
+          <div class="w-12 h-16 bg-[#E51824] rounded-t-full rounded-b-none relative flex items-center justify-center [clip-path:polygon(0%_0%,100%_0%,100%_70%,50%_100%,0%_70%)] border border-red-700">
+            <div class="w-5 h-5 rounded-full bg-white -mt-2"></div>
           </div>
           <div class="w-8 h-2 rounded-full bg-black/30 blur-2xs mt-0.5"></div>
         </div>
