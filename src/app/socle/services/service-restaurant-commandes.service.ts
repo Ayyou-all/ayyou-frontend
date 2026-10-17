@@ -123,13 +123,43 @@ export class ServiceRestaurantCommandesService {
     }
   }
 
-  /** Rafraîchit régulièrement le tableau de cuisine (voir phase 9 pour le temps réel). */
-  demarrerEcouteTempsReel(intervalleMs: number = 5000): void {
+  /**
+   * Quasi temps réel, sans infrastructure supplémentaire :
+   * toutes les 4 secondes on demande une petite « version » au serveur ;
+   * la liste complète n'est rechargée que si cette version a changé.
+   */
+  demarrerEcouteTempsReel(intervalleMs: number = 4000): void {
     if (!this.estRoleGerant()) return;
     this.chargerCommandesRestaurant(true);
     if (!this.intervallePolling) {
-      this.intervallePolling = setInterval(() => this.chargerCommandesRestaurant(false), intervalleMs);
+      this.intervallePolling = setInterval(() => this.verifierChangements(), intervalleMs);
     }
+  }
+
+  private derniereVersion = '';
+
+  private verifierChangements(): void {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.estEnLigne.set(false);
+      return;
+    }
+    this.http.get<{ version: string }>(`${this.urlCommandes}restaurant/version/`).subscribe({
+      next: ({ version }) => {
+        this.estEnLigne.set(true);
+        if (version !== this.derniereVersion) {
+          this.derniereVersion = version;
+          this.chargerCommandesRestaurant(false);
+        }
+      },
+      error: (erreur) => {
+        if (erreur?.status === 0) {
+          this.estEnLigne.set(false);
+          this.messageErreur.set('Connexion perdue. Nouvelle tentative automatique...');
+        } else if (erreur?.status === 401 || erreur?.status === 403) {
+          this.arreterEcouteTempsReel();
+        }
+      }
+    });
   }
 
   arreterEcouteTempsReel(): void {

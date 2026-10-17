@@ -160,6 +160,12 @@
           </div>
         }
 
+        @if (serviceCommandes.connexionPerdue()) {
+          <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-800">
+            Connexion perdue : les informations affichées peuvent dater. Nouvelle tentative automatique…
+          </div>
+        }
+
         <!-- ANNULATION (avant acceptation du restaurant uniquement) -->
         @if (peutAnnuler()) {
           <div class="bg-white rounded-3xl p-4 border border-slate-200 space-y-3">

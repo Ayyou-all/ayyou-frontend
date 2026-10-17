@@ -42,6 +42,8 @@ export class ServiceCommandesService {
 
   // URL de la page suivante renvoyée par l'API paginée (null s'il n'y a plus rien à charger)
   readonly urlPageSuivante = signal<string | null>(null);
+  // Vrai quand le dernier rafraîchissement du suivi a échoué faute de réseau
+  readonly connexionPerdue = signal<boolean>(false);
 
   private readonly serviceAuth = inject(ServiceAuthentification);
 
@@ -313,10 +315,11 @@ export class ServiceCommandesService {
   rechargerCommande(identifiant: string): void {
     this.http.get<any>(`${environment.apiUrl}/commandes/${identifiant}/`).subscribe({
       next: (c) => {
-        const adaptee = this.adapterCommande(c);
-        this.ajouterCommande(adaptee);
+        this.connexionPerdue.set(false);
+        this.ajouterCommande(this.adapterCommande(c));
       },
-      error: () => {}
+      // Pas de réseau : on garde le dernier état connu et on le signale (nouvel essai automatique).
+      error: (erreur) => this.connexionPerdue.set(erreur?.status === 0)
     });
   }
 
