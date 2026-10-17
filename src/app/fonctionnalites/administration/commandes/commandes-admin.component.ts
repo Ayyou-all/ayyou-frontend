@@ -7,7 +7,7 @@ import { environment } from '../../../../environments/environment';
 
 export type OngletStatutCommande = 'TOUS' | 'EN_ATTENTE' | 'EN_COURS' | 'LIVREES' | 'ANNULEES' | 'SANS_LIVREUR' | 'A_REMBOURSER';
 export type StatutCommandeAdmin = 'EN_ATTENTE' | 'EN_COURS' | 'LIVREE' | 'ANNULEE';
-export type ActionSupport = 'annuler' | 'rembourser' | 'assigner-livreur' | 'retirer-livreur';
+export type ActionSupport = 'annuler' | 'rembourser' | 'assigner-livreur' | 'retirer-livreur' | 'debloquer';
 
 export interface ArticleCommandeAdmin {
   nom: string;
@@ -53,6 +53,7 @@ export interface CommandeAdministration {
   paiementConfirme: boolean;
   paiementARembourser: boolean;
   remiseConfirmee: boolean;
+  livraisonBloquee: boolean; // 5 codes PIN erronés
   articles: ArticleCommandeAdmin[];
   historique: EtapeHistorique[];
 }
