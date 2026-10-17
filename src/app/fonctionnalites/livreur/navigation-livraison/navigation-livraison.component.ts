@@ -4,11 +4,12 @@ import { Router, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
 import { ServiceCarteDakarService } from '../../../socle/services/service-carte-dakar.service';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
+import { SignalerProblemeComponent } from '../signaler-probleme/signaler-probleme.component';
 
 @Component({
   selector: 'app-navigation-livraison',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './navigation-livraison.component.html'
 })
 export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
@@ -145,6 +146,11 @@ export class NavigationLivraisonComponent implements AfterViewInit, OnDestroy {
   effectuerActionEtape(): void {
     this.serviceLivreur.avancerEtapeCourse('ARRIVE_RESTAURANT');
     this.routeur.navigate(['/livreur/verification']);
+  }
+
+  /** Après une annulation acceptée par le serveur. */
+  retourAccueil(): void {
+    this.routeur.navigate(['/livreur']);
   }
 
   /**

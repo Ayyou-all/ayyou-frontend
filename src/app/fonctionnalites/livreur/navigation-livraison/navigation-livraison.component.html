@@ -133,6 +133,8 @@
         <i [class]="iconeActionBouton() + ' text-sm'"></i>
         <span>{{ libelleActionBouton() }}</span>
       </button>
+      <!-- Avant d'avoir récupéré la commande, le livreur peut encore annuler (la course est reproposée) -->
+      <app-signaler-probleme mode="ANNULATION" (termine)="retourAccueil()"></app-signaler-probleme>
 
     </div>
   </div>

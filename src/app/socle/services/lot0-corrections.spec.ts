@@ -110,58 +110,43 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
     });
   });
 
-  describe('C. Validation du code PIN de sécurité', () => {
+  describe('C. Course du livreur — le PIN est vérifié uniquement par le serveur', () => {
     beforeEach(() => {
       serviceLivreur.courseEnCours.set({
         identifiantCommande: '1240',
         restaurantNom: 'Le Teranga',
         restaurantAdresse: 'Plateau',
         restaurantTelephone: '+221 33 800 00 00',
-        comptoirRetrait: 'Guichet 1',
+        comptoirRetrait: '',
         clientNom: 'Client Test',
         clientTelephone: '+221 77 000 00 00',
-        clientAdresse: 'Almadies',
-        clientInstructions: 'Appeler à l entrée',
+        clientAdresse: 'Sacré-Cœur',
         distanceKm: 3.2,
-        gainFcfa: 1500,
-        tempsRestantSec: 300,
-        tempsTrajetMin: 12,
-        codeValidation: '8245',
-        articles: []
+        gainFcfa: 1200,
+        tempsRestantSec: 0,
+        tempsTrajetMin: 0,
+        articles: [
+          { id: 1, nom: 'Thieb', quantite: 1, estVerifie: true },
+          { id: 2, nom: 'Bissap', quantite: 1, estVerifie: false }
+        ]
       });
-      serviceLivreur.etapeCourse.set('VALIDATION_CODE');
-    });
-    it('doit refuser un code incomplet ou de mauvaise longueur', () => {
-      const res = serviceLivreur.verifierCodeValidation('12');
-      expect(res.valide).toBe(false);
-      expect(res.message).toContain('4 chiffres');
     });
 
-    it('doit refuser des caractères non numériques', () => {
-      const res = serviceLivreur.verifierCodeValidation('abcd');
-      expect(res.valide).toBe(false);
+    it("n'expose plus de vérification locale du PIN (aucun code sur le téléphone)", () => {
+      expect((serviceLivreur as any).verifierCodeValidation).toBeUndefined();
+      expect((serviceLivreur as any).validerCodeAsync).toBeUndefined();
     });
 
-    it('doit refuser un code incorrect par rapport à la commande', () => {
-      // Le code de la commande mockée active est '8245'
-      const res = serviceLivreur.verifierCodeValidation('0000');
-      expect(res.valide).toBe(false);
-      expect(res.message).toContain('Code de sécurité incorrect');
-      expect(serviceLivreur.etapeCourse()).not.toBe('LIVRE');
+    it('ne permet le départ que lorsque tous les articles sont vérifiés', () => {
+      expect(serviceLivreur.tousArticlesVerifies()).toBe(false);
+      serviceLivreur.courseEnCours.update((c) => (c ? { ...c, articles: c.articles.map((a) => ({ ...a, estVerifie: true })) } : c));
+      expect(serviceLivreur.tousArticlesVerifies()).toBe(true);
     });
 
-    it('doit valider le code exact de la commande active', () => {
-      const res = serviceLivreur.verifierCodeValidation('8245');
-      expect(res.valide).toBe(true);
-    });
-
-    it('doit bloquer les validations multiples si la course est déjà clôturée', () => {
-      serviceLivreur.terminerCourse();
+    it('libère la course à la fin de la livraison', () => {
+      serviceLivreur.terminerLivraison();
+      expect(serviceLivreur.courseEnCours()).toBeNull();
       expect(serviceLivreur.etapeCourse()).toBe('LIVRE');
-
-      const res = serviceLivreur.verifierCodeValidation('8245');
-      expect(res.valide).toBe(false);
-      expect(res.message).toContain('déjà été validée');
     });
   });
 
@@ -201,33 +186,7 @@ describe('Vérifications Unitaires Multi-Lots (Lots 0, 1, 2, 4) — AYYOU', () =
       expect(adaptee.articles.length).toBe(2);
       expect(adaptee.estEnCours).toBe(true);
     });
-
-    it('doit rejeter de manière asynchrone un code PIN mal formé ou hors chiffres', async () => {
-      const serviceLivreurTest = TestBed.inject(ServiceLivreurService);
-      serviceLivreurTest.courseEnCours.set({
-        identifiantCommande: '42',
-        restaurantNom: 'Le Teranga',
-        restaurantAdresse: 'Plateau',
-        restaurantTelephone: '+221 33 000 00 00',
-        comptoirRetrait: 'Comptoir 1',
-        clientNom: 'Moussa',
-        clientTelephone: '+221 77 000 00 00',
-        clientAdresse: 'Almadies',
-        distanceKm: 2,
-        gainFcfa: 1500,
-        tempsRestantSec: 30,
-        tempsTrajetMin: 10,
-        articles: []
-      });
-      serviceLivreurTest.etapeCourse.set('VALIDATION_CODE');
-
-      const resCourt = await firstValueFrom(serviceLivreurTest.validerCodeAsync('12'));
-      expect(resCourt.valide).toBe(false);
-
-      const resAlpha = await firstValueFrom(serviceLivreurTest.validerCodeAsync('abcd'));
-      expect(resAlpha.valide).toBe(false);
-      expect(resAlpha.message).toContain('chiffres');
-    });
+    // Le format et la valeur du PIN sont contrôlés par le serveur (voir livraisons/tests côté Django).
   });
 
   describe('F. Contrôle des accès par AuthGuards (Lot 2)', () => {
