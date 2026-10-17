@@ -127,14 +127,6 @@
           <span class="text-[11px] font-bold">{{ pub.nombreJeaime }}</span>
         </button>
 
-        <!-- Nombre de vues (compteur de la base) -->
-        <div class="flex flex-col items-center gap-1 text-white">
-          <div class="w-10 h-10 rounded-full bg-black/35 backdrop-blur-md border border-white/10 flex items-center justify-center">
-            <i class="fa-solid fa-eye text-base"></i>
-          </div>
-          <span class="text-[11px] font-bold">{{ pub.nombreVues }}</span>
-        </div>
-
         <!-- Bouton Partager -->
         <button
           type="button"
@@ -329,8 +321,8 @@
           }
         </div>
 
-        <!-- J'aime, vues, partage : compteurs de la base -->
-        <div class="grid grid-cols-3 gap-3">
+        <!-- J'aime et partage : compteurs de la base -->
+        <div class="grid grid-cols-2 gap-3">
           <button
             type="button"
             (click)="basculerJaime()"
@@ -342,12 +334,6 @@
             </span>
             <span class="text-xs font-bold text-slate-800">{{ pub.nombreJeaime }} J'aime</span>
           </button>
-          <div class="flex flex-col items-center gap-2.5 py-5 rounded-3xl bg-slate-50 border border-slate-100">
-            <span class="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center">
-              <i class="fa-regular fa-eye text-xl text-slate-700"></i>
-            </span>
-            <span class="text-xs font-bold text-slate-800">{{ pub.nombreVues }} vues</span>
-          </div>
           <button
             type="button"
             (click)="partagerPlat()"

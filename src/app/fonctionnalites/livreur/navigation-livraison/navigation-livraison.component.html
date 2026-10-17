@@ -1,4 +1,7 @@
-<div class="relative w-full min-h-screen bg-slate-100 flex flex-col justify-between overflow-hidden select-none font-['Plus_Jakarta_Sans',sans-serif]">
+<div class="md:pl-64 relative w-full min-h-screen bg-slate-100 flex flex-col justify-between overflow-hidden select-none font-['Plus_Jakarta_Sans',sans-serif]">
+  <!-- Menu latéral livreur (ordinateur et tablette uniquement) -->
+  <app-menu-livreur></app-menu-livreur>
+
 
   <!-- ========================================================================= -->
   <!-- 1. EN-TÊTE DE GUIDAGE VIRAGE PAR VIRAGE (CONFORME À L'IMAGE 3)            -->
@@ -15,13 +18,15 @@
         <i class="fa-solid fa-chevron-left text-base font-bold"></i>
       </button>
 
-      <!-- Instruction virage par virage -->
+      <!-- Destination réelle : distance et durée de l'itinéraire routier calculé (si disponible) -->
       <div class="min-w-0">
-        <div class="text-3xl sm:text-4xl font-black leading-tight tracking-tight font-['Outfit']">
-          450 m
-        </div>
+        @if (distanceVersRestaurantKm() !== null) {
+          <div class="text-3xl sm:text-4xl font-black leading-tight tracking-tight font-['Outfit']">
+            {{ distanceVersRestaurantKm() }} km · {{ dureeVersRestaurantMinutes() }} min
+          </div>
+        }
         <p class="text-xs sm:text-sm text-neutral-200 font-semibold truncate">
-          Tourner à droite sur Rue de Médine
+          Direction : {{ serviceLivreur.courseEnCours()?.restaurantNom }}
         </p>
       </div>
     </div>
@@ -68,20 +73,19 @@
       </button>
     </div>
 
-    <!-- BADGES FLOTTANTS DE TEMPS ET DISTANCE (CONFORME À L'IMAGE 3) -->
-    <div class="absolute bottom-64 sm:bottom-68 left-0 right-0 z-30 flex items-center justify-center gap-3">
-      <!-- Badge Temps : 6 min -->
-      <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
-        <i class="fa-regular fa-clock text-[#E51824] text-xs"></i>
-        <span>6 min</span>
+    <!-- Temps et distance réels jusqu'au restaurant (itinéraire routier calculé) -->
+    @if (distanceVersRestaurantKm() !== null) {
+      <div class="absolute bottom-64 sm:bottom-68 left-0 right-0 z-30 flex items-center justify-center gap-3">
+        <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
+          <i class="fa-regular fa-clock text-[#E51824] text-xs"></i>
+          <span>{{ dureeVersRestaurantMinutes() }} min</span>
+        </div>
+        <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
+          <i class="fa-solid fa-location-arrow text-[#E51824] text-xs"></i>
+          <span>{{ distanceVersRestaurantKm() }} km</span>
+        </div>
       </div>
-
-      <!-- Badge Distance : 1.2 km -->
-      <div class="px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-slate-100">
-        <i class="fa-solid fa-location-arrow text-[#E51824] text-xs"></i>
-        <span>1.2 km</span>
-      </div>
-    </div>
+    }
 
   </div>
 

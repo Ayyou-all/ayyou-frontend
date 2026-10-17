@@ -1,4 +1,7 @@
-<div class="min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-['Plus_Jakarta_Sans',sans-serif]">
+<div class="md:pl-64 min-h-screen w-full bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-['Plus_Jakarta_Sans',sans-serif]">
+  <!-- Menu latéral livreur (ordinateur et tablette uniquement) -->
+  <app-menu-livreur></app-menu-livreur>
+
 
   <!-- ========================================================================= -->
   <!-- 1. EN-TÊTE : PROFIL LIVREUR (DESKTOP & MOBILE)                            -->
@@ -18,7 +21,7 @@
           <i class="fa-solid fa-arrow-left text-xs"></i>
         </a>
 
-        <a routerLink="/livreur" class="flex items-center gap-2 group cursor-pointer">
+        <a routerLink="/livreur" class="flex md:hidden items-center gap-2 group cursor-pointer">
           <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
           <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-[#E51824] text-[11px] font-black uppercase tracking-wider hidden sm:inline-flex items-center gap-1 border border-red-100">
             <i class="fa-solid fa-motorcycle text-[10px]"></i>
@@ -27,7 +30,7 @@
         </a>
 
         <!-- Liens de navigation Desktop -->
-        <nav class="hidden md:flex items-center gap-1 pl-4 border-l border-slate-100">
+        <nav class="hidden">
           <a
             routerLink="/livreur"
             class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer"
@@ -668,7 +671,7 @@
   <!-- ========================================================================= -->
   <!-- 3. BARRE DE NAVIGATION INFÉRIEURE DU LIVREUR (ACCUEIL, GAINS, PROFIL)      -->
   <!-- ========================================================================= -->
-  <nav class="w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40">
+  <nav class="md:hidden w-full bg-white border-t border-slate-200/80 px-6 py-2.5 flex items-center justify-around sticky bottom-0 z-40">
     <!-- Onglet 1 : Accueil -->
     <a
       routerLink="/livreur"

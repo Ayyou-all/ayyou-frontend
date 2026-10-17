@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MenuLivreurComponent } from '../../../partages/composants/menu-livreur/menu-livreur.component';
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
@@ -7,7 +8,7 @@ import { PropositionLivraisonComponent } from '../proposition-livraison/proposit
 @Component({
   selector: 'app-accueil-livreur',
   standalone: true,
-  imports: [CommonModule, RouterModule, PropositionLivraisonComponent],
+  imports: [MenuLivreurComponent, CommonModule, RouterModule, PropositionLivraisonComponent],
   templateUrl: './accueil-livreur.component.html'
 })
 export class AccueilLivreurComponent {

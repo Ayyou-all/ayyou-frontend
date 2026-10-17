@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MenuLivreurComponent } from '../../../partages/composants/menu-livreur/menu-livreur.component';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
@@ -7,7 +8,7 @@ import { SignalerProblemeComponent } from '../signaler-probleme/signaler-problem
 @Component({
   selector: 'app-validation-code',
   standalone: true,
-  imports: [CommonModule, RouterModule, SignalerProblemeComponent],
+  imports: [MenuLivreurComponent, CommonModule, RouterModule, SignalerProblemeComponent],
   templateUrl: './validation-code.component.html'
 })
 export class ValidationCodeComponent {
