@@ -58,6 +58,7 @@ export interface LigneHistoriqueGerant {
   articlesResume: string;
   statut: StatutHistorique;
   montantTotal: number;
+  montantRestaurant: number; // plats − commission AYYOU (sans les frais de livraison)
 }
 
 const STATUTS_TERMINES_LIVRES = ['LIVREE'];
@@ -89,7 +90,7 @@ export class ServiceRestaurantCommandesService {
   readonly chiffreAffairesDuJour = computed(() =>
     this.historiqueCommandes()
       .filter((h) => h.statut === 'LIVRÉE')
-      .reduce((total, h) => total + h.montantTotal, 0)
+      .reduce((total, h) => total + h.montantRestaurant, 0)
   );
   readonly chiffreAffairesJour = computed(() => this.chiffreAffairesDuJour());
 
@@ -247,7 +248,8 @@ export class ServiceRestaurantCommandesService {
             : STATUTS_TERMINES_ANNULES.includes(c.statut)
               ? 'ANNULÉE'
               : 'EN_COURS',
-          montantTotal: Number(c.total_fcfa)
+          montantTotal: Number(c.total_fcfa),
+          montantRestaurant: Number(c.sous_total_fcfa ?? 0) - Number(c.commission_plateforme_fcfa ?? 0)
         });
       }
     }
