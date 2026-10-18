@@ -100,13 +100,16 @@
         </div>
 
         <!-- Bouton d'appel sombre -->
-        <a
-          [href]="serviceLivreur.courseEnCours()?.clientTelephone ? ('tel:' + serviceLivreur.courseEnCours()?.clientTelephone) : 'javascript:void(0)'"
-          class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center transition-transform active:scale-95 shrink-0"
-          title="Appeler le client"
-        >
-          <i class="fa-solid fa-phone text-base"></i>
-        </a>
+        <!-- Affiché seulement si le numéro est connu -->
+        @if (serviceLivreur.courseEnCours()?.clientTelephone) {
+          <a
+            [href]="'tel:' + serviceLivreur.courseEnCours()?.clientTelephone"
+            class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center transition-transform active:scale-95 shrink-0"
+            title="Appeler le client"
+          >
+            <i class="fa-solid fa-phone text-base"></i>
+          </a>
+        }
       </div>
 
       <!-- Repère et consignes donnés par le client (affichés seulement s'ils existent) -->

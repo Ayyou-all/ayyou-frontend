@@ -1,4 +1,4 @@
-<div class="relative w-full pb-24">
+<div class="relative w-full pb-36 md:pb-44">
   @if (messageErreurLike()) {
     <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-red-600 text-white text-xs font-bold" (click)="messageErreurLike.set(null)">
       {{ messageErreurLike() }}
@@ -63,7 +63,8 @@
       <!-- 2. CARTE FLOTTANTE DU RESTAURANT (CONFORME À LA MAQUETTE 3)              -->
       <!-- ========================================================================= -->
       <div class="-mt-14 sm:-mt-16 bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-4">
-        <div class="flex items-start justify-between gap-3">
+        <!-- Téléphone et tablette : nom sur toute la largeur, compteurs dessous ; grand écran : sur une ligne -->
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div class="flex items-center gap-3.5">
             @if (resto.adresseLogo) {
               <div class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
@@ -81,7 +82,7 @@
           </div>
 
           <!-- Compteurs de style TikTok et bouton d'action S'abonner (remplace l'ancien bloc à cet emplacement exact) -->
-          <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+          <div class="flex items-center gap-3 sm:gap-4 lg:shrink-0">
             <!-- Compteur Abonnés TikTok -->
             <div class="flex flex-col items-center justify-center text-center px-1">
               <span class="text-base sm:text-lg font-black text-slate-900 font-['Outfit'] leading-tight">
@@ -116,7 +117,7 @@
               [class]="estAbonne()
                 ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'
                 : 'bg-[#E51824] text-white hover:bg-red-700  '"
-              class="px-3.5 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 border transition-all cursor-pointer ml-1"
+              class="ml-auto lg:ml-1 px-4 py-2 lg:px-3.5 lg:py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 border transition-all cursor-pointer"
               title="S'abonner aux publications de ce restaurant"
             >
               <i [class]="estAbonne() ? 'fa-solid fa-check text-xs text-emerald-600' : 'fa-solid fa-plus text-xs'"></i>
@@ -567,7 +568,8 @@
   <!-- 5. BOUTON FLOTTANT STICKY 'VOIR LE PANIER' (CONFORME À LA MAQUETTE 3)     -->
   <!-- ========================================================================= -->
   @if (servicePanier.nombreTotalArticles() > 0) {
-    <div class="fixed bottom-20 md:bottom-8 left-4 right-4 md:left-[calc(16rem+1rem)] max-w-xl mx-auto z-40 animation-glissement-haut">
+    <!-- Laisse la place au bouton du chatbot : décalée à gauche sur mobile, au-dessus sur grand écran -->
+    <div class="fixed bottom-20 md:bottom-24 left-4 right-20 md:right-4 md:left-[calc(16rem+1rem)] max-w-xl mx-auto z-40 animation-glissement-haut">
       <a
         routerLink="/panier"
         class="w-full py-4 px-5 rounded-2xl bg-[#E51824] hover:bg-red-700 active:scale-[0.99] text-white flex items-center justify-between border border-red-600 transition-all cursor-pointer group"

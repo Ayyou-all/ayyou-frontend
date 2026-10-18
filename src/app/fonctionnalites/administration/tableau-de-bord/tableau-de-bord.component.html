@@ -7,22 +7,23 @@
   <!-- ========================================================================= -->
   <!-- 1. GRILLE DES 4 CARTES KPI (CONFORME À L'IMAGE 1)                         -->
   <!-- ========================================================================= -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+  <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5">
     @for (carte of listeIndicateurs(); track carte.titre) {
-      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 duration-300 flex flex-col justify-between space-y-4">
+      <div class="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 duration-300 flex flex-col justify-between space-y-3 sm:space-y-4">
         
         <!-- Ligne supérieure : Icône dans un cercle doux + Badge d'évolution -->
         <div class="flex items-center justify-between">
           <div
             [class]="carte.classeFondIcone + ' ' + carte.classeCouleurIcone"
-            class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg"
+            class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-base sm:text-lg"
           >
             <i [class]="carte.icone"></i>
           </div>
 
+          <!-- Badge secondaire : masqué sur mobile pour alléger la carte -->
           <span
             [class]="carte.classeBadge"
-            class="px-2.5 py-1 rounded-full text-[11px] font-bold"
+            class="hidden sm:inline-block px-2.5 py-1 rounded-full text-[11px] font-bold"
           >
             {{ carte.badgeTexte }}
           </span>

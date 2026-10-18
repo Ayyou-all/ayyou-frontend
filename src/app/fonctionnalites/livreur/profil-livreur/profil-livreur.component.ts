@@ -25,7 +25,9 @@ export class ProfilLivreurComponent implements OnInit {
   readonly nom = signal<string>('');
   readonly courriel = signal<string>('');
   readonly telephone = signal<string>('');
-  readonly adresse = signal<string>('');
+  // Où le livreur reçoit ses gains (saisi à l'inscription)
+  readonly numeroReversement = signal<string>('');
+  readonly operateurReversement = signal<string>('');
 
   // Véhicule & Logistique
   readonly typeVehicule = signal<string>('MOTO');
@@ -100,7 +102,6 @@ export class ProfilLivreurComponent implements OnInit {
     this.nom.set(profil.nom || user?.nom || '');
     this.courriel.set(profil.courriel || user?.courriel || '');
     this.telephone.set(profil.telephone || user?.telephone || '');
-    this.adresse.set(profil.adresse || user?.adresse || '');
 
     this.typeVehicule.set(profil.typeVehicule || user?.typeVehicule || 'MOTO');
     this.nomVehicule.set(profil.nomVehicule || user?.nomVehicule || '');
@@ -128,8 +129,11 @@ export class ProfilLivreurComponent implements OnInit {
     if (data.telephone !== undefined || user?.telephone) {
       this.telephone.set(data.telephone || user?.telephone || '');
     }
-    if (data.adresse !== undefined || user?.adresse) {
-      this.adresse.set(data.adresse || user?.adresse || '');
+    if (data.numero_reversement !== undefined) {
+      this.numeroReversement.set(data.numero_reversement || '');
+    }
+    if (data.operateur_reversement !== undefined) {
+      this.operateurReversement.set(data.operateur_reversement || '');
     }
     if (data.typeVehicule || data.type_vehicule) {
       this.typeVehicule.set(data.typeVehicule || data.type_vehicule);
@@ -191,7 +195,8 @@ export class ProfilLivreurComponent implements OnInit {
     formData.append('prenom', this.prenom().trim());
     formData.append('nom', this.nom().trim());
     formData.append('telephone', this.telephone().trim());
-    formData.append('adresse', this.adresse().trim());
+    formData.append('numero_reversement', this.numeroReversement().replace(/\s+/g, ''));
+    if (this.operateurReversement()) formData.append('operateur_reversement', this.operateurReversement());
 
     if (this.fichierPhoto()) {
       formData.append('photo', this.fichierPhoto()!);
@@ -208,7 +213,6 @@ export class ProfilLivreurComponent implements OnInit {
                 prenom: this.prenom().trim(),
                 nom: this.nom().trim(),
                 telephone: this.telephone().trim(),
-                adresse: this.adresse().trim(),
                 nomComplet: `${this.prenom().trim()} ${this.nom().trim()}`
               }
             : null

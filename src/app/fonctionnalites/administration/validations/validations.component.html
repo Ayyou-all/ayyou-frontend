@@ -79,20 +79,6 @@
 
     <!-- Sélecteur : Toutes les dates -->
     <div class="relative w-full md:w-48">
-      <div class="relative flex items-center rounded-xl border border-slate-200 bg-white py-2 px-3 text-xs sm:text-sm">
-        <i class="fa-regular fa-calendar text-slate-400 mr-2 text-xs"></i>
-        <select
-          [ngModel]="filtreDate()"
-          (ngModelChange)="filtreDate.set($event)"
-          class="w-full bg-transparent text-slate-700 font-medium focus:outline-none cursor-pointer appearance-none pr-4"
-        >
-          <option value="TOUTES">Toutes les dates</option>
-          <option value="AUJOURDHUI">Aujourd'hui</option>
-          <option value="SEMAINE">Cette semaine</option>
-          <option value="MOIS">Ce mois-ci</option>
-        </select>
-        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 absolute right-3 pointer-events-none"></i>
-      </div>
     </div>
 
     <!-- Sélecteur : Toutes les régions -->
@@ -115,13 +101,7 @@
       </div>
     </div>
 
-    <!-- Bouton Filtrer noir -->
-    <button
-      type="button"
-      class="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0"
-    >
-      Filtrer
-    </button>
+
 
   </div>
 
@@ -130,8 +110,8 @@
   <!-- ========================================================================= -->
   <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
+      <table class="block md:table w-full text-left border-collapse">
+        <thead class="hidden md:table-header-group">
           <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
             <th class="py-3.5 px-6 font-bold">Nom du partenaire</th>
             <th class="py-3.5 px-6 font-bold">Type</th>
@@ -141,12 +121,12 @@
             <th class="py-3.5 px-6 font-bold text-right">Action</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 text-sm">
+        <tbody class="block md:table-row-group divide-y divide-slate-100 text-sm">
           @for (partenaire of partenairesAffiches(); track partenaire.identifiant) {
-            <tr class="hover:bg-slate-50/70 transition-colors">
+            <tr class="block md:table-row py-3 md:py-0 hover:bg-slate-50/70 transition-colors">
               
               <!-- 1. NOM DU PARTENAIRE (Icône/Photo + Nom en gras) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <div class="flex items-center gap-3.5">
                   @if (partenaire.estPhoto) {
                     <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
@@ -168,7 +148,7 @@
               </td>
 
               <!-- 2. TYPE (Restaurant avec icône couverts en bleu OU Livreur avec icône vélo en violet) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 @if (partenaire.type === 'RESTAURANT') {
                   <div class="flex items-center gap-2 text-sky-600 font-extrabold text-xs">
                     <i class="fa-solid fa-utensils text-xs"></i>
@@ -183,7 +163,7 @@
               </td>
 
               <!-- 3. DOCUMENTS (Badge 3/3 vert ou 2/3 jaune + Petites barres horizontales) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <div class="flex items-center gap-2.5">
                   <!-- Badge numérique -->
                   <span
@@ -208,12 +188,12 @@
               </td>
 
               <!-- 4. DATE DE SOUMISSION -->
-              <td class="py-4 px-6 text-xs font-semibold text-slate-600">
+              <td class="hidden md:table-cell py-1 md:py-4 px-5 md:px-6 text-xs font-semibold text-slate-600">
                 {{ partenaire.dateSoumission }}
               </td>
 
               <!-- 5. STATUT (Pastille orange En attente) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 @if (partenaire.statut === 'EN_ATTENTE') {
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60">
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
@@ -233,7 +213,7 @@
               </td>
 
               <!-- 6. ACTION (Bouton rouge 'Vérifier' avec cloche) -->
-              <td class="py-4 px-6 text-right">
+              <td class="block md:table-cell py-1.5 md:py-4 px-5 md:px-6 md:text-right">
                 <button
                   type="button"
                   (click)="ouvrirVerification(partenaire)"
@@ -246,8 +226,8 @@
 
             </tr>
           } @empty {
-            <tr>
-              <td colspan="6" class="py-12 text-center text-slate-400">
+            <tr class="block md:table-row">
+              <td colspan="6" class="block md:table-cell py-12 text-center text-slate-400">
                 <i class="fa-solid fa-folder-open text-3xl mb-2 block text-slate-300"></i>
                 <div class="text-sm font-bold text-slate-700">Aucune demande trouvée</div>
                 <div class="text-xs text-slate-400 mt-1">Tous les partenaires correspondant à vos filtres ont été traités.</div>

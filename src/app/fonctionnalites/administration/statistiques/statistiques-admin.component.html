@@ -17,7 +17,7 @@
         Rapports et Statistiques
       </h1>
       <div class="flex flex-wrap items-center gap-2 mt-1">
-        <p class="text-xs sm:text-sm text-slate-400 font-medium">
+        <p class="hidden sm:block text-xs sm:text-sm text-slate-400 font-medium">
           Analyse approfondie de l'activité commerciale et des performances de la plateforme.
         </p>
         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black border border-emerald-200">
@@ -58,10 +58,10 @@
   <!-- ========================================================================= -->
   <!-- 2. CARTES STATISTIQUES KPI (CONFORME À L'IMAGE 2)                           -->
   <!-- ========================================================================= -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
     
     <!-- 1. Revenu Total -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-money-bill-wave"></i>
@@ -74,14 +74,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Revenu Total</div>
-        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1 tracking-tight">
+        <div class="text-2xl sm:text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1 tracking-tight">
           {{ kpis().revenuTotal.valeur }}
         </div>
       </div>
     </div>
 
     <!-- 2. Commandes Totales -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-cart-shopping"></i>
@@ -94,14 +94,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Commandes Totales</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ kpis().commandesTotales.valeur }}
         </div>
       </div>
     </div>
 
     <!-- 3. Utilisateurs Actifs -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-user-check"></i>
@@ -114,14 +114,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Utilisateurs Actifs</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ kpis().utilisateursActifs.valeur }}
         </div>
       </div>
     </div>
 
     <!-- 4. Taux de Croissance -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-arrow-trend-up"></i>
@@ -134,7 +134,7 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Taux de livraison</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ kpis().tauxCroissance.valeur }}
         </div>
       </div>

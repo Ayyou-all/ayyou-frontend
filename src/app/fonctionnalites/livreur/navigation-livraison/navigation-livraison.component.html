@@ -116,13 +116,16 @@
         </div>
 
         <!-- Bouton d'appel sombre -->
-        <a
-          [href]="serviceLivreur.courseEnCours()?.restaurantTelephone ? ('tel:' + serviceLivreur.courseEnCours()?.restaurantTelephone) : 'javascript:void(0)'"
-          class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center transition-transform active:scale-95 shrink-0"
-          title="Appeler le restaurant"
-        >
-          <i class="fa-solid fa-phone text-base"></i>
-        </a>
+        <!-- Affiché seulement si le numéro est connu -->
+        @if (serviceLivreur.courseEnCours()?.restaurantTelephone) {
+          <a
+            [href]="'tel:' + serviceLivreur.courseEnCours()?.restaurantTelephone"
+            class="w-13 h-13 rounded-2xl bg-[#1e293b] hover:bg-slate-900 text-white flex items-center justify-center transition-transform active:scale-95 shrink-0"
+            title="Appeler le restaurant"
+          >
+            <i class="fa-solid fa-phone text-base"></i>
+          </a>
+        }
       </div>
 
       <!-- Ligne de séparation fine -->
