@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RoleUtilisateur } from '../../../socle/modeles/utilisateur.modele';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import { CATEGORIES_RESTAURANT } from '../../../socle/modeles/restaurant.modele';
 
 export type RoleInscription = 'CLIENT' | 'RESTAURANT' | 'LIVREUR';
 
@@ -84,14 +85,7 @@ export class InscriptionComponent {
   readonly nomRestaurantSaisi = signal<string>('');
   readonly categorieRestaurantSaisie = signal<string>('Cuisine sénégalaise');
   readonly menuCategoriesOuvert = signal<boolean>(false);
-  readonly listeCategories: string[] = [
-    'Cuisine sénégalaise',
-    'Fast Food',
-    'Grillades & Barbecue',
-    'Pâtisserie & Desserts',
-    'Plats traditionnels',
-    'Jus locaux & Boissons'
-  ];
+  readonly listeCategories = CATEGORIES_RESTAURANT;
   readonly adresseCompleteRestaurantSaisie = signal<string>('');
   readonly tempsPreparationMoyenSaisi = signal<string>('20-30 min');
   readonly logoRestaurantUrl = signal<string | null>(null);

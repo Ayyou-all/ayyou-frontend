@@ -171,16 +171,39 @@
           />
         </div>
 
-        <!-- Adresse du restaurant -->
+        <!-- Catégorie (même liste qu'à l'inscription) -->
         <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Adresse de l'établissement</label>
+          <label for="categorie-restaurant" class="block text-xs font-extrabold text-slate-700">Catégorie</label>
+          <select id="categorie-restaurant" name="specialite" [(ngModel)]="specialite" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none cursor-pointer">
+            <option value="" disabled>Sélectionner une catégorie</option>
+            @for (categorie of categoriesProposees(); track categorie) {
+              <option [value]="categorie">{{ categorie }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Adresse complète : saisie ou position actuelle (comme à l'inscription) -->
+        <div class="space-y-1.5 sm:col-span-2">
+          <label for="adresse-restaurant" class="block text-xs font-extrabold text-slate-700">Adresse complète</label>
           <input
+            id="adresse-restaurant"
             type="text"
             name="adresseRestaurant"
             [(ngModel)]="adresseRestaurant"
             class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"
-            placeholder="Ex : Médina, Rue 6 x Blaise Diagne, Dakar"
+            placeholder="Quartier, Rue, Ville"
           />
+          <button
+            type="button"
+            (click)="localiserRestaurant()"
+            class="text-xs font-bold text-[#E51824] hover:underline flex items-center gap-1.5 cursor-pointer"
+          >
+            <i [class]="localisationEnCours() ? 'fa-solid fa-circle-notch fa-spin' : 'fa-solid fa-location-crosshairs'"></i>
+            <span>Utiliser ma position actuelle (être au restaurant)</span>
+          </button>
+          @if (latitude() === null) {
+            <span class="block text-[11px] font-semibold text-amber-600">Position manquante : les frais de livraison ne peuvent pas être calculés.</span>
+          }
         </div>
 
         <!-- Prénom du gérant -->
@@ -240,44 +263,15 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- 2 bis. FONCTIONNEMENT : horaires, position GPS et reversements             -->
+    <!-- 2 bis. HORAIRES D'OUVERTURE (COMME À L'INSCRIPTION)                         -->
     <!-- ========================================================================= -->
     <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 space-y-6">
       <div class="pb-3 border-b border-slate-100">
-        <h2 class="text-base font-black text-slate-900 font-['Outfit']">Fonctionnement du restaurant</h2>
+        <h2 class="text-base font-black text-slate-900 font-['Outfit']">Horaires d'ouverture</h2>
         <p class="text-xs text-slate-400">En dehors de ces horaires, les clients ne peuvent pas commander.</p>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-        <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Téléphone du restaurant</label>
-          <input type="tel" name="telephoneRestaurant" [(ngModel)]="telephoneRestaurant" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" placeholder="+221 33 000 00 00" />
-        </div>
-        <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Spécialité</label>
-          <input type="text" name="specialite" [(ngModel)]="specialite" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" placeholder="Ex : Cuisine sénégalaise" />
-        </div>
-        <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Quartier / ville</label>
-          <input type="text" name="quartierVille" [(ngModel)]="quartierVille" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" placeholder="Ex : Médina, Dakar" />
-        </div>
-        <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Délai de livraison annoncé</label>
-          <input type="text" name="delaiLivraisonTexte" [(ngModel)]="delaiLivraisonTexte" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" placeholder="Ex : 25-35 min" />
-        </div>
-        <div class="space-y-1.5 sm:col-span-2">
-          <label class="block text-xs font-extrabold text-slate-700">Description</label>
-          <textarea name="description" [(ngModel)]="description" rows="2" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none"></textarea>
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Ouverture</label>
-          <input type="time" name="heureOuverture" [(ngModel)]="heureOuverture" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" />
-        </div>
-        <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Fermeture</label>
-          <input type="time" name="heureFermeture" [(ngModel)]="heureFermeture" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" />
-        </div>
         <div class="space-y-1.5 sm:col-span-2">
           <label class="block text-xs font-extrabold text-slate-700">Jours d'ouverture</label>
           <div class="flex flex-wrap gap-2">
@@ -294,36 +288,13 @@
           </div>
         </div>
 
-        <div class="space-y-1.5 sm:col-span-2">
-          <label class="block text-xs font-extrabold text-slate-700">Position GPS du restaurant</label>
-          <div class="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              (click)="localiserRestaurant()"
-              class="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-sm font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
-            >
-              <i [class]="localisationEnCours() ? 'fa-solid fa-circle-notch fa-spin' : 'fa-solid fa-location-crosshairs text-[#E51824]'"></i>
-              <span>Utiliser ma position actuelle (être au restaurant)</span>
-            </button>
-            @if (latitude() !== null) {
-              <span class="text-xs font-semibold text-emerald-600">Position enregistrée ({{ latitude() }}, {{ longitude() }})</span>
-            } @else {
-              <span class="text-xs font-semibold text-amber-600">Position manquante : les frais de livraison ne peuvent pas être calculés.</span>
-            }
-          </div>
-        </div>
-
         <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Numéro Mobile Money (reversements)</label>
-          <input type="tel" name="numeroReversement" [(ngModel)]="numeroReversement" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" placeholder="77 000 00 00" />
+          <label class="block text-xs font-extrabold text-slate-700">Ouverture</label>
+          <input type="time" name="heureOuverture" [(ngModel)]="heureOuverture" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" />
         </div>
         <div class="space-y-1.5">
-          <label class="block text-xs font-extrabold text-slate-700">Opérateur</label>
-          <select name="operateurReversement" [(ngModel)]="operateurReversement" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none">
-            <option value="">Choisir</option>
-            <option value="WAVE">Wave</option>
-            <option value="ORANGE_MONEY">Orange Money</option>
-          </select>
+          <label class="block text-xs font-extrabold text-slate-700">Fermeture</label>
+          <input type="time" name="heureFermeture" [(ngModel)]="heureFermeture" class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#E51824] focus:ring-2 focus:ring-red-100 text-sm font-semibold text-slate-900 transition outline-none" />
         </div>
       </div>
     </div>
