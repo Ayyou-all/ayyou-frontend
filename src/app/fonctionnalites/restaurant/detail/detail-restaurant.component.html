@@ -141,15 +141,15 @@
             </div>
           </div>
 
-          <!-- Colonne 2 : Lieu (seulement s'il est renseigné) -->
-          @if (resto.quartierVille) {
-          <div class="space-y-0.5 border-l border-slate-100 pl-4">
+          <!-- Colonne 2 : Lieu = « Adresse complète » des paramètres du restaurant (si renseignée) -->
+          @if (resto.adresse) {
+          <div class="min-w-0 space-y-0.5 border-l border-slate-100 pl-4">
             <div class="text-xs text-slate-400 font-medium">
               Lieu
             </div>
-            <div class="flex items-center gap-2 text-sm font-extrabold text-slate-900">
-              <i class="fa-solid fa-location-dot text-red-600 text-xs"></i>
-              <span class="truncate">{{ resto.quartierVille }}</span>
+            <div class="flex items-start gap-2 text-sm font-extrabold text-slate-900">
+              <i class="fa-solid fa-location-dot text-red-600 text-xs mt-1"></i>
+              <span class="line-clamp-2 break-words" [title]="resto.adresse">{{ resto.adresse }}</span>
             </div>
           </div>
           }
