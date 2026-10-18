@@ -73,11 +73,11 @@ export class MiseEnPageAdministrationComponent {
     }
   ];
 
-  // Paramètres en bas de la barre latérale
+  // Compte de l'administrateur, en bas de la barre latérale
   readonly lienParametres: ElementMenuAdministration = {
     code: 'parametres',
-    libelle: 'Paramètres',
-    icone: 'fa-solid fa-gear',
+    libelle: 'Mon compte',
+    icone: 'fa-solid fa-user-gear',
     chemin: '/administration/parametres'
   };
 

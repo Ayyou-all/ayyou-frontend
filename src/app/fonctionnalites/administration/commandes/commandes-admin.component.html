@@ -19,7 +19,7 @@
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Gestion des Commandes
       </h1>
-      <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">
+      <p class="hidden sm:block text-xs sm:text-sm text-slate-400 font-medium mt-1">
         Suivez et gérez l'ensemble des flux de livraison en temps réel.
       </p>
     </div>
@@ -40,10 +40,10 @@
   <!-- ========================================================================= -->
   <!-- 2. CARTES STATISTIQUES KPI (CONFORME À L'IMAGE 2)                           -->
   <!-- ========================================================================= -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
     
     <!-- 1. En attente -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-clock-rotate-left"></i>
@@ -51,14 +51,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En attente</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().enAttente }}
         </div>
       </div>
     </div>
 
     <!-- 2. En cours -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-truck-fast"></i>
@@ -66,14 +66,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En cours</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().enCours }}
         </div>
       </div>
     </div>
 
     <!-- 3. Livrées -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-circle-check"></i>
@@ -81,14 +81,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Livrées</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().livrees }}
         </div>
       </div>
     </div>
 
     <!-- 4. Annulées -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-circle-xmark"></i>
@@ -96,7 +96,7 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Annulées</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().annulees }}
         </div>
       </div>
@@ -107,7 +107,7 @@
   <!-- ========================================================================= -->
   <!-- 3. BARRE D'ONGLETS & RECHERCHE (CONFORME À L'IMAGE 2)                       -->
   <!-- ========================================================================= -->
-  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 select-none">
+  <div class="bg-white rounded-3xl p-3 sm:p-4 border border-slate-100 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 select-none">
     
     <!-- Onglets : Tous, En attente, En cours, Livrées, Annulées -->
     <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-50 border border-slate-100 shrink-0 overflow-x-auto">
@@ -206,8 +206,8 @@
   <!-- ========================================================================= -->
   <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
+      <table class="block md:table w-full text-left border-collapse">
+        <thead class="hidden md:table-header-group">
           <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
             <th class="py-3.5 px-6 font-bold">ID COMMANDE</th>
             <th class="py-3.5 px-6 font-bold">CLIENT</th>
@@ -219,17 +219,17 @@
             <th class="py-3.5 px-6 font-bold text-right">ACTIONS</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 text-sm">
+        <tbody class="block md:table-row-group divide-y divide-slate-100 text-sm">
           @for (cmd of commandesAffichees(); track cmd.identifiantCommande) {
-            <tr class="hover:bg-slate-50/70 transition-colors">
+            <tr class="block md:table-row py-3 md:py-0 hover:bg-slate-50/70 transition-colors">
               
               <!-- 1. ID COMMANDE (Gras noir) -->
-              <td class="py-4 px-6 font-black text-slate-900 font-mono text-xs">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6 font-black text-slate-900 font-mono text-xs">
                 {{ cmd.identifiantCommande }}
               </td>
 
               <!-- 2. CLIENT (Photo + Nom) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
                     @if (cmd.clientPhoto) {
@@ -245,12 +245,12 @@
               </td>
 
               <!-- 3. RESTAURANT -->
-              <td class="py-4 px-6 text-xs font-semibold text-slate-700">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6 text-xs font-semibold text-slate-700">
                 {{ cmd.restaurantNom }}
               </td>
 
               <!-- 4. COURSIER (Photo + Nom ou 'Non assigné') -->
-              <td class="py-4 px-6">
+              <td class="hidden md:table-cell py-1 md:py-4 px-5 md:px-6">
                 @if (cmd.estCoursierAssigne) {
                   <div class="flex items-center gap-2.5">
                     <div class="w-7 h-7 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
@@ -272,12 +272,12 @@
               </td>
 
               <!-- 5. TOTAL -->
-              <td class="py-4 px-6 text-xs font-black text-slate-900">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6 text-xs font-black text-slate-900">
                 {{ cmd.totalMontant }}
               </td>
 
               <!-- 6. STATUT (Pill badge) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <span
                   [class]="cmd.classeStatut"
                   class="inline-block px-3 py-1 rounded-full text-xs font-bold border"
@@ -287,12 +287,12 @@
               </td>
 
               <!-- 7. DATE -->
-              <td class="py-4 px-6 text-xs font-semibold text-slate-500">
+              <td class="hidden md:table-cell py-1 md:py-4 px-5 md:px-6 text-xs font-semibold text-slate-500">
                 {{ cmd.dateAffichage }}
               </td>
 
               <!-- 8. ACTIONS (Œil) -->
-              <td class="py-4 px-6 text-right">
+              <td class="block md:table-cell py-1.5 md:py-4 px-5 md:px-6 md:text-right">
                 <button
                   type="button"
                   (click)="ouvrirDetailCommande(cmd)"
@@ -305,8 +305,8 @@
 
             </tr>
           } @empty {
-            <tr>
-              <td colspan="8" class="py-12 text-center text-slate-400">
+            <tr class="block md:table-row">
+              <td colspan="8" class="block md:table-cell py-12 text-center text-slate-400">
                 <i class="fa-solid fa-bag-shopping text-3xl mb-2 block text-slate-300"></i>
                 <div class="text-sm font-bold text-slate-700">Aucune commande trouvée</div>
                 <div class="text-xs text-slate-400 mt-1">Aucune commande ne correspond à ces critères.</div>

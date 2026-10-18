@@ -312,18 +312,36 @@
           </div>
         </div>
 
-        <!-- Adresse de domicile / point de départ -->
-        <div class="space-y-1.5">
-          <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
-            Adresse de résidence / Quartier habituel
-          </label>
-          <input
-            type="text"
-            [ngModel]="adresse()"
-            (ngModelChange)="adresse.set($event)"
-            placeholder="Ex : Dakar, Mermoz Pyrotechnie Villa 24"
-            class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
-          />
+        <!-- Mobile Money : où le livreur reçoit ses gains (saisi à l'inscription) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="numero-reversement" class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Numéro Mobile Money
+            </label>
+            <input
+              id="numero-reversement"
+              type="tel"
+              [ngModel]="numeroReversement()"
+              (ngModelChange)="numeroReversement.set($event)"
+              placeholder="Ex : 77 123 45 67"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <label for="operateur-reversement" class="block text-xs font-black text-slate-500 uppercase tracking-wider">
+              Opérateur
+            </label>
+            <select
+              id="operateur-reversement"
+              [ngModel]="operateurReversement()"
+              (ngModelChange)="operateurReversement.set($event)"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
+            >
+              <option value="">Choisir</option>
+              <option value="WAVE">Wave</option>
+              <option value="ORANGE_MONEY">Orange Money</option>
+            </select>
+          </div>
         </div>
 
         <!-- Bouton Sauvegarder Identité -->
