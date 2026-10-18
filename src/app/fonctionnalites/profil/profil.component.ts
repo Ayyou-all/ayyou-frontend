@@ -22,11 +22,6 @@ import { FormulaireCompteComponent } from '../../partages/composants/formulaire-
             <i class="fa-regular fa-eye text-xs"></i>
             <span>Mode Visiteur</span>
           </span>
-        } @else {
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-            <i class="fa-solid fa-circle-check text-xs"></i>
-            <span>Connecté</span>
-          </span>
         }
       </div>
 
@@ -52,15 +47,6 @@ import { FormulaireCompteComponent } from '../../partages/composants/formulaire-
               <h2 class="text-lg font-extrabold text-slate-900 truncate">
                 {{ serviceAuthentification.utilisateurConnecte()?.prenom }} {{ serviceAuthentification.utilisateurConnecte()?.nom }}
               </h2>
-              @if (serviceAuthentification.estGerant()) {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-700">Gérant</span>
-              } @else if (serviceAuthentification.estLivreur()) {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">Livreur</span>
-              } @else if (serviceAuthentification.estAdministrateur()) {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white">Admin</span>
-              } @else {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">Client</span>
-              }
             </div>
             <div class="text-xs text-slate-500">{{ serviceAuthentification.utilisateurConnecte()?.courriel }}</div>
             <div class="text-xs text-slate-500">{{ serviceAuthentification.utilisateurConnecte()?.telephone }}</div>

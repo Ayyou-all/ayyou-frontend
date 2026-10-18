@@ -23,10 +23,6 @@
 
         <a routerLink="/livreur" class="flex md:hidden items-center gap-2 group cursor-pointer">
           <img src="/images/logo-ayyou.png" alt="Logo AYYOU" class="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
-          <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-[#E51824] text-[11px] font-black uppercase tracking-wider hidden sm:inline-flex items-center gap-1 border border-red-100">
-            <i class="fa-solid fa-motorcycle text-[10px]"></i>
-            Livreur
-          </span>
         </a>
 
         <!-- Liens de navigation Desktop -->
@@ -128,15 +124,10 @@
 
           <!-- Badge Statut du compte -->
           <div>
-            @if (serviceLivreur.profilLivreur().statutValidation === 'ACTIF') {
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-black border border-emerald-200">
-                <i class="fa-solid fa-circle-check text-[10px]"></i>
-                Compte Validé & Actif
-              </span>
-            } @else {
+            @if (serviceLivreur.profilLivreur().statutValidation !== 'ACTIF') {
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-black border border-amber-200">
                 <i class="fa-solid fa-clock text-[10px]"></i>
-                Dossier Partenaire
+                Dossier en cours de validation
               </span>
             }
           </div>

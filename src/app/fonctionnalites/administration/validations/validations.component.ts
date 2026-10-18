@@ -94,7 +94,6 @@ export class ValidationsComponent implements OnInit {
 
   // Filtres de recherche
   readonly rechercheTexte = signal<string>('');
-  readonly filtreDate = signal<string>('TOUTES');
   readonly filtreRegion = signal<string>('TOUTES');
 
   // Pagination
