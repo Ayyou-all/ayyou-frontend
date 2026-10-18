@@ -1,0 +1,220 @@
+<!-- Abonnements des restaurants : chiffres réels (paiements PayTech confirmés uniquement) -->
+<div class="space-y-6 max-w-7xl mx-auto">
+
+  <div>
+    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">Abonnements</h1>
+    <p class="hidden sm:block text-xs sm:text-sm text-slate-400 font-medium mt-1">
+      Essais gratuits, restaurants abonnés, suspensions et revenus des abonnements
+      @if (statistiques(); as stats) { ({{ stats.prix_fcfa | number: '1.0-0' }} FCFA / mois). }
+    </p>
+  </div>
+
+  @if (erreur()) {
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{{ erreur() }}</div>
+  }
+
+  @if (statistiques(); as stats) {
+    <!-- Restaurants -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100">
+        <p class="text-xs font-bold text-slate-400">Restaurants abonnés</p>
+        <p class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">{{ stats.abonnes }}</p>
+      </div>
+      <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100">
+        <p class="text-xs font-bold text-slate-400">En période d'essai</p>
+        <p class="text-2xl sm:text-3xl font-black text-amber-600 font-['Outfit'] mt-1">{{ stats.en_essai }}</p>
+      </div>
+      <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100">
+        <p class="text-xs font-bold text-slate-400">Restaurants suspendus</p>
+        <p class="text-2xl sm:text-3xl font-black text-[#E51824] font-['Outfit'] mt-1">{{ stats.suspendus }}</p>
+      </div>
+      <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100">
+        <p class="text-xs font-bold text-slate-400">Total restaurants</p>
+        <p class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">{{ stats.total_restaurants }}</p>
+        <p class="text-[11px] text-slate-400 mt-1">{{ stats.abonnements_expires }} abonnement(s) expiré(s)</p>
+      </div>
+    </div>
+
+    <!-- Revenus -->
+    <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-4">
+      <h2 class="text-base font-black text-slate-900 font-['Outfit']">Revenus des abonnements</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <p class="text-xs font-bold text-slate-400">Ce mois</p>
+          <p class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit']">{{ stats.revenus_mois | number: '1.0-0' }} FCFA</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-slate-400">Cumulés</p>
+          <p class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit']">{{ stats.revenus_cumules | number: '1.0-0' }} FCFA</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-slate-400">Paiements confirmés</p>
+          <p class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit']">{{ stats.nombre_paiements }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-slate-400">Montant moyen</p>
+          <p class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit']">{{ stats.montant_moyen | number: '1.0-0' }} FCFA</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 pt-4 border-t border-slate-100 text-sm">
+        <div><span class="block text-xs text-slate-400">Aujourd'hui</span><span class="font-bold text-slate-800">{{ stats.revenus_aujourd_hui | number: '1.0-0' }} FCFA</span></div>
+        <div><span class="block text-xs text-slate-400">Cette semaine</span><span class="font-bold text-slate-800">{{ stats.revenus_semaine | number: '1.0-0' }} FCFA</span></div>
+        <div><span class="block text-xs text-slate-400">Cette année</span><span class="font-bold text-slate-800">{{ stats.revenus_annee | number: '1.0-0' }} FCFA</span></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+      <!-- Derniers abonnements payés -->
+      <div class="lg:col-span-2 bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-4">
+        <h2 class="text-base font-black text-slate-900 font-['Outfit']">Derniers abonnements</h2>
+        @if (derniersPaiements().length === 0) {
+          <p class="text-sm text-slate-400">Aucun paiement d'abonnement confirmé pour le moment.</p>
+        } @else {
+          <table class="w-full text-sm block md:table">
+            <thead class="hidden md:table-header-group">
+              <tr class="text-left text-xs text-slate-400">
+                <th class="pb-2 font-bold">Restaurant</th>
+                <th class="pb-2 font-bold">Montant</th>
+                <th class="pb-2 font-bold">Date</th>
+                <th class="pb-2 font-bold">Expiration</th>
+                <th class="pb-2 font-bold">Statut</th>
+              </tr>
+            </thead>
+            <tbody class="block md:table-row-group divide-y divide-slate-100">
+              @for (paiement of derniersPaiements(); track paiement.id) {
+                <tr class="block md:table-row py-3 md:py-0">
+                  <td class="block md:table-cell md:py-3 font-bold text-slate-900">{{ paiement.restaurant }}</td>
+                  <td class="block md:table-cell md:py-3 text-slate-700">
+                    {{ paiement.montant_fcfa | number: '1.0-0' }} FCFA
+                    @if (paiement.methode_paiement) { <span class="text-slate-400"> · {{ paiement.methode_paiement }}</span> }
+                  </td>
+                  <td class="block md:table-cell md:py-3 text-xs md:text-sm text-slate-500">{{ paiement.date_confirmation | date: 'd MMM y' }}</td>
+                  <td class="block md:table-cell md:py-3 text-xs md:text-sm text-slate-500">
+                    <span class="md:hidden">Expire le </span>{{ paiement.date_fin_periode | date: 'd MMM y' }}
+                  </td>
+                  <td class="hidden md:table-cell md:py-3">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700">{{ libellePaiement(paiement.statut) }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
+      <!-- Alertes d'abonnement reçues par l'administrateur -->
+      <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-4">
+        <h2 class="text-base font-black text-slate-900 font-['Outfit']">Alertes</h2>
+        @if (alertes().length === 0) {
+          <p class="text-sm text-slate-400">Aucune alerte pour le moment.</p>
+        } @else {
+          <ul class="space-y-3">
+            @for (alerte of alertes(); track alerte.id) {
+              <li class="border-l-2 border-[#E51824] pl-3">
+                <p class="text-sm font-bold text-slate-900">{{ alerte.titre }}</p>
+                <p class="text-xs text-slate-500">{{ alerte.message }}</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">{{ alerte.date_creation | date: 'd MMM, HH:mm' }}</p>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Liste des restaurants et de leur abonnement -->
+  <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 space-y-4">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <h2 class="text-base font-black text-slate-900 font-['Outfit']">Restaurants</h2>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input
+          type="search"
+          [ngModel]="recherche()"
+          (ngModelChange)="changerRecherche($event)"
+          placeholder="Rechercher un restaurant"
+          aria-label="Rechercher un restaurant"
+          class="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-base sm:text-sm focus:outline-none focus:border-[#E51824] focus:bg-white"
+        />
+        <select
+          [ngModel]="filtreStatut()"
+          (ngModelChange)="filtreStatut.set($event); appliquerFiltres()"
+          aria-label="Filtrer par statut"
+          class="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-[#E51824] cursor-pointer"
+        >
+          @for (statut of statuts; track statut.valeur) { <option [value]="statut.valeur">{{ statut.libelle }}</option> }
+        </select>
+        <select
+          [ngModel]="filtrePeriode()"
+          (ngModelChange)="filtrePeriode.set($event); appliquerFiltres()"
+          aria-label="Filtrer par période de paiement"
+          class="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-[#E51824] cursor-pointer"
+        >
+          @for (periode of periodes; track periode.valeur) { <option [value]="periode.valeur">{{ periode.libelle }}</option> }
+        </select>
+      </div>
+    </div>
+
+    @if (chargementListe()) {
+      <div class="py-10 flex justify-center"><i class="fa-solid fa-circle-notch fa-spin text-xl text-[#E51824]"></i></div>
+    } @else if (restaurants().length === 0) {
+      <p class="py-6 text-sm text-slate-400 text-center">Aucun restaurant ne correspond à ces filtres.</p>
+    } @else {
+      <table class="w-full text-sm block md:table">
+        <thead class="hidden md:table-header-group">
+          <tr class="text-left text-xs text-slate-400">
+            <th class="pb-2 font-bold">Restaurant</th>
+            <th class="pb-2 font-bold">Statut</th>
+            <th class="pb-2 font-bold">Abonné depuis</th>
+            <th class="pb-2 font-bold">Expiration</th>
+            <th class="pb-2 font-bold">Total payé</th>
+            <th class="pb-2 font-bold">Dernier paiement</th>
+          </tr>
+        </thead>
+        <tbody class="block md:table-row-group divide-y divide-slate-100">
+          @for (restaurant of restaurants(); track restaurant.id) {
+            <tr class="block md:table-row py-3 md:py-0">
+              <td class="block md:table-cell md:py-3">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-bold text-slate-900">{{ restaurant.nom }}</span>
+                  <span [class]="classeStatut(restaurant.statut_abonnement)" class="md:hidden px-2.5 py-1 rounded-full text-xs font-bold">
+                    {{ libelleStatut(restaurant.statut_abonnement) }}
+                  </span>
+                </div>
+              </td>
+              <td class="hidden md:table-cell md:py-3">
+                <span [class]="classeStatut(restaurant.statut_abonnement)" class="px-2.5 py-1 rounded-full text-xs font-bold">
+                  {{ libelleStatut(restaurant.statut_abonnement) }}
+                </span>
+              </td>
+              <td class="hidden md:table-cell md:py-3 text-slate-500">
+                {{ restaurant.date_abonnement ? (restaurant.date_abonnement | date: 'd MMM y') : '—' }}
+              </td>
+              <td class="block md:table-cell md:py-3 text-xs md:text-sm text-slate-500">
+                <span class="md:hidden">{{ restaurant.statut_abonnement === 'SUSPENDU' ? 'Échéance passée le ' : 'Expire le ' }}</span>
+                {{ restaurant.date_expiration | date: 'd MMM y' }}
+              </td>
+              <td class="hidden md:table-cell md:py-3 font-semibold text-slate-800">{{ restaurant.total_paye_fcfa | number: '1.0-0' }} FCFA</td>
+              <td class="hidden md:table-cell md:py-3 text-slate-500">
+                @if (restaurant.dernier_paiement; as dernier) {
+                  {{ dernier.date | date: 'd MMM y' }} · {{ libellePaiement(dernier.statut) }}
+                } @else { — }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (nombrePages() > 1) {
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" (click)="allerPage(page() - 1)" [disabled]="page() === 1" class="w-9 h-9 rounded-xl border border-slate-200 text-slate-600 disabled:opacity-40 cursor-pointer" aria-label="Page précédente">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+          </button>
+          <span class="text-xs font-bold text-slate-500">page {{ page() }} / {{ nombrePages() }}</span>
+          <button type="button" (click)="allerPage(page() + 1)" [disabled]="page() === nombrePages()" class="w-9 h-9 rounded-xl border border-slate-200 text-slate-600 disabled:opacity-40 cursor-pointer" aria-label="Page suivante">
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

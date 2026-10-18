@@ -66,6 +66,12 @@ export class MiseEnPageAdministrationComponent {
       chemin: '/administration/livreurs'
     },
     {
+      code: 'abonnements',
+      libelle: 'Abonnements',
+      icone: 'fa-solid fa-credit-card',
+      chemin: '/administration/abonnements'
+    },
+    {
       code: 'statistiques',
       libelle: 'Statistiques',
       icone: 'fa-solid fa-chart-line',

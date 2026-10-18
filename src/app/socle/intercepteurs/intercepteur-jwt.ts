@@ -6,6 +6,7 @@
 
 import { HttpErrorResponse, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { BehaviorSubject, catchError, filter, switchMap, take, throwError } from 'rxjs';
 import { ServiceAuthentification } from '../services/service-authentification.service';
 
@@ -61,6 +62,7 @@ function gererErreur401(
 
 export const intercepteurJwt: HttpInterceptorFn = (requete, suivant) => {
   const serviceAuth = inject(ServiceAuthentification);
+  const routeur = inject(Router);
 
   // Pour l'appel de rafraîchissement ou de connexion, on n'ajoute pas de Bearer expiré
   const estRequeteRafraichissement = requete.url.includes('/authentification/rafraichir/');
@@ -84,6 +86,11 @@ export const intercepteurJwt: HttpInterceptorFn = (requete, suivant) => {
         !estRequeteRafraichissement
       ) {
         return gererErreur401(requete, suivant, serviceAuth);
+      }
+
+      // Restaurant suspendu (essai terminé, pas d'abonnement) : on l'amène sur la page d'abonnement
+      if (erreur.status === 403 && erreur.error?.code === 'abonnement_requis') {
+        routeur.navigateByUrl('/gerant/abonnement');
       }
 
       // Si le refresh lui-même renvoie une erreur (401 ou 400), on déconnecte
