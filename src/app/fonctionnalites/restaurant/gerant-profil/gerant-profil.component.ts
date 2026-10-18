@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { CATEGORIES_RESTAURANT } from '../../../socle/modeles/restaurant.modele';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 
 @Component({
@@ -38,12 +39,11 @@ export class GerantProfilComponent implements OnInit {
   readonly apercuCouverture = signal<string | null>(null);
   fichierCouverture: File | null = null;
 
-  // Fonctionnement du restaurant (enregistré en base, utilisé pour les horaires et les frais)
-  telephoneRestaurant = '';
+  // Catégorie choisie à l'inscription (liste identique)
   specialite = '';
-  quartierVille = '';
-  description = '';
-  delaiLivraisonTexte = '';
+  readonly listeCategories = CATEGORIES_RESTAURANT;
+
+  // Horaires d'ouverture (en dehors, les clients ne peuvent pas commander)
   heureOuverture = '';
   heureFermeture = '';
   readonly joursOuverture = signal<boolean[]>([true, true, true, true, true, true, true]);
@@ -51,8 +51,6 @@ export class GerantProfilComponent implements OnInit {
   readonly latitude = signal<number | null>(null);
   readonly longitude = signal<number | null>(null);
   readonly localisationEnCours = signal<boolean>(false);
-  numeroReversement = '';
-  operateurReversement: '' | 'WAVE' | 'ORANGE_MONEY' = '';
 
   readonly urlLogo = signal<string | null>(null);
   readonly apercuLogo = signal<string | null>(null);
@@ -100,19 +98,13 @@ export class GerantProfilComponent implements OnInit {
           this.adresseRestaurant = etab.adresse || '';
           this.urlLogo.set(etab.adresse_logo || null);
           this.urlCouverture.set(etab.adresse_couverture || null);
-          this.telephoneRestaurant = etab.telephone || '';
           this.specialite = etab.specialite || '';
-          this.quartierVille = etab.quartier_ville || '';
-          this.description = etab.description || '';
-          this.delaiLivraisonTexte = etab.delai_livraison_texte || '';
           this.heureOuverture = etab.heure_ouverture ? String(etab.heure_ouverture).slice(0, 5) : '';
           this.heureFermeture = etab.heure_fermeture ? String(etab.heure_fermeture).slice(0, 5) : '';
           const jours = String(etab.jours_ouverture || '').split(',');
           this.joursOuverture.set(this.nomsJours.map((_, index) => jours.includes(String(index))));
           this.latitude.set(etab.latitude != null ? Number(etab.latitude) : null);
           this.longitude.set(etab.longitude != null ? Number(etab.longitude) : null);
-          this.numeroReversement = etab.numero_reversement || '';
-          this.operateurReversement = etab.operateur_reversement || '';
         }
         this.chargementInitial.set(false);
       },
@@ -163,7 +155,17 @@ export class GerantProfilComponent implements OnInit {
     this.joursOuverture.update((jours) => jours.map((actif, i) => (i === index ? !actif : actif)));
   }
 
-  /** Enregistre la position GPS réelle du restaurant (le gérant doit être sur place). */
+  /** Ancienne catégorie hors liste : on la garde dans le choix pour ne pas la perdre. */
+  categoriesProposees(): string[] {
+    return this.specialite && !this.listeCategories.includes(this.specialite)
+      ? [this.specialite, ...this.listeCategories]
+      : this.listeCategories;
+  }
+
+  /**
+   * Comme à l'inscription : prend la position actuelle (le gérant doit être au restaurant)
+   * et remplit l'adresse complète si elle est vide.
+   */
   localiserRestaurant(): void {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       this.messageErreur.set("La géolocalisation n'est pas disponible sur cet appareil.");
@@ -172,9 +174,19 @@ export class GerantProfilComponent implements OnInit {
     this.localisationEnCours.set(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        this.localisationEnCours.set(false);
-        this.latitude.set(Number(position.coords.latitude.toFixed(6)));
-        this.longitude.set(Number(position.coords.longitude.toFixed(6)));
+        const latitude = Number(position.coords.latitude.toFixed(6));
+        const longitude = Number(position.coords.longitude.toFixed(6));
+        this.latitude.set(latitude);
+        this.longitude.set(longitude);
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+          .then((reponse) => reponse.json())
+          .then((donnees) => {
+            const a = donnees.address || {};
+            const adresse = [a.road, a.suburb || a.neighbourhood, a.city || a.town].filter(Boolean).join(', ');
+            if (!this.adresseRestaurant.trim() && adresse) this.adresseRestaurant = adresse;
+          })
+          .catch(() => {})
+          .finally(() => this.localisationEnCours.set(false));
       },
       () => {
         this.localisationEnCours.set(false);
@@ -244,11 +256,7 @@ export class GerantProfilComponent implements OnInit {
     if (this.adresseRestaurant) {
       formEtab.append('adresse', this.adresseRestaurant.trim());
     }
-    formEtab.append('telephone', this.telephoneRestaurant.trim());
-    formEtab.append('specialite', this.specialite.trim());
-    formEtab.append('quartier_ville', this.quartierVille.trim());
-    formEtab.append('description', this.description.trim());
-    if (this.delaiLivraisonTexte.trim()) formEtab.append('delai_livraison_texte', this.delaiLivraisonTexte.trim());
+    if (this.specialite) formEtab.append('specialite', this.specialite);
     if (this.heureOuverture) formEtab.append('heure_ouverture', this.heureOuverture);
     if (this.heureFermeture) formEtab.append('heure_fermeture', this.heureFermeture);
     formEtab.append(
@@ -259,8 +267,6 @@ export class GerantProfilComponent implements OnInit {
       formEtab.append('latitude', String(this.latitude()));
       formEtab.append('longitude', String(this.longitude()));
     }
-    formEtab.append('numero_reversement', this.numeroReversement.replace(/\s+/g, ''));
-    if (this.operateurReversement) formEtab.append('operateur_reversement', this.operateurReversement);
     if (this.fichierLogo) {
       formEtab.append('logo', this.fichierLogo);
     }

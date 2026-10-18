@@ -34,3 +34,13 @@ export interface Restaurant {
   nombreLikesVideos?: number;
   plats?: Plat[];
 }
+
+/** Catégories proposées à l'inscription du restaurant (et reprises dans son profil). */
+export const CATEGORIES_RESTAURANT: string[] = [
+  'Cuisine sénégalaise',
+  'Fast Food',
+  'Grillades & Barbecue',
+  'Pâtisserie & Desserts',
+  'Plats traditionnels',
+  'Jus locaux & Boissons'
+];
