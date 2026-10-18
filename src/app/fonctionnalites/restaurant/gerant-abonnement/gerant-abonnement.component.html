@@ -1,0 +1,160 @@
+<!-- Mon abonnement : statut réel (backend), prix, paiement PayTech, historique -->
+<div class="max-w-5xl mx-auto space-y-5 sm:space-y-6 animation-apparition">
+
+  <!-- En-tête -->
+  <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80">
+    <h1 class="text-xl sm:text-2xl font-black text-slate-900 font-['Outfit']">Mon abonnement</h1>
+    <p class="hidden sm:block text-xs text-slate-500 mt-1">14 jours d'essai gratuit, puis un abonnement mensuel pour continuer à utiliser votre espace restaurant.</p>
+  </div>
+
+  <!-- Retour de la page de paiement PayTech -->
+  @switch (retourPaiement()) {
+    @case ('verification') {
+      <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 flex items-center gap-3 text-sm font-semibold text-slate-700">
+        <i class="fa-solid fa-circle-notch fa-spin text-[#E51824]"></i>
+        Vérification de votre paiement auprès de PayTech…
+      </div>
+    }
+    @case ('confirme') {
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 text-sm font-semibold text-emerald-800">
+        <i class="fa-solid fa-circle-check"></i>
+        Paiement confirmé. Votre abonnement est actif jusqu'au {{ etat()?.date_fin_abonnement | date: 'd MMMM y' }}.
+      </div>
+    }
+    @case ('en_attente') {
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-3 text-sm font-semibold text-amber-800">
+        <i class="fa-regular fa-clock"></i>
+        Votre paiement n'est pas encore confirmé par PayTech. Votre abonnement sera activé dès réception de la confirmation.
+      </div>
+    }
+    @case ('annule') {
+      <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 flex items-center gap-3 text-sm font-semibold text-slate-700">
+        <i class="fa-solid fa-circle-info text-slate-400"></i>
+        Le paiement n'a pas été finalisé. Vous pouvez réessayer quand vous voulez.
+      </div>
+    }
+  }
+
+  @if (erreur()) {
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{{ erreur() }}</div>
+  }
+
+  @if (chargement() && !etat()) {
+    <div class="bg-white rounded-3xl border border-slate-200/80 p-10 flex justify-center">
+      <i class="fa-solid fa-circle-notch fa-spin text-2xl text-[#E51824]"></i>
+    </div>
+  }
+
+  @if (etat(); as abonnement) {
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 sm:gap-6">
+
+      <!-- Statut actuel -->
+      <div class="lg:col-span-3 bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 space-y-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-black text-slate-900 font-['Outfit']">Statut</h2>
+          @switch (abonnement.statut) {
+            @case ('ESSAI') { <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">Essai gratuit</span> }
+            @case ('ACTIF') { <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">Abonnement actif</span> }
+            @case ('SUSPENDU') { <span class="px-3 py-1 rounded-full bg-red-50 text-[#E51824] text-xs font-bold">Suspendu</span> }
+          }
+        </div>
+
+        @switch (abonnement.statut) {
+          @case ('ESSAI') {
+            <div>
+              <p class="text-3xl sm:text-4xl font-black text-slate-900 font-['Outfit']">
+                {{ abonnement.jours_restants <= 1 ? 'Dernier jour' : 'Il vous reste ' + abonnement.jours_restants + ' jours' }}
+              </p>
+              <p class="text-sm text-slate-500 mt-1">Votre essai gratuit se termine le {{ abonnement.date_echeance | date: 'd MMMM y' }}.</p>
+            </div>
+          }
+          @case ('ACTIF') {
+            <div>
+              <p class="text-3xl sm:text-4xl font-black text-slate-900 font-['Outfit']">Expire le {{ abonnement.date_echeance | date: 'd MMMM y' }}</p>
+              <p class="text-sm text-slate-500 mt-1">
+                {{ abonnement.jours_restants <= 1 ? 'Votre abonnement expire demain.' : 'Encore ' + abonnement.jours_restants + ' jours d\'accès.' }}
+              </p>
+            </div>
+          }
+          @case ('SUSPENDU') {
+            <div>
+              <p class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit']">
+                {{ abonnement.date_fin_abonnement ? 'Votre abonnement a expiré.' : 'Votre période d\'essai est terminée.' }}
+              </p>
+              <p class="text-sm text-slate-500 mt-1">
+                Pour continuer à utiliser votre espace restaurant, activez votre abonnement. Vos données sont conservées.
+              </p>
+            </div>
+          }
+        }
+
+        <p class="text-xs text-slate-400 border-t border-slate-100 pt-4">
+          Vous payez en avance : les jours restants sont conservés, le nouveau mois s'ajoute à la fin de votre période en cours.
+        </p>
+      </div>
+
+      <!-- Offre et paiement -->
+      <div class="lg:col-span-2 bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 flex flex-col gap-5">
+        <div>
+          <h2 class="text-base font-black text-slate-900 font-['Outfit']">Abonnement AYYOU</h2>
+          <p class="mt-2">
+            <span class="text-3xl font-black text-slate-900 font-['Outfit']">{{ abonnement.prix_fcfa | number: '1.0-0' }} FCFA</span>
+            <span class="text-sm font-semibold text-slate-500"> / mois</span>
+          </p>
+        </div>
+        <ul class="space-y-2.5">
+          @for (fonctionnalite of fonctionnalites; track fonctionnalite) {
+            <li class="flex items-center gap-2.5 text-sm text-slate-700">
+              <i class="fa-solid fa-check text-[#E51824] text-xs"></i>{{ fonctionnalite }}
+            </li>
+          }
+        </ul>
+        <button
+          type="button"
+          (click)="payer()"
+          [disabled]="paiementEnCours()"
+          class="mt-auto w-full py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-sm font-bold transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          @if (paiementEnCours()) {
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Redirection vers PayTech…
+          } @else {
+            {{ libelleBouton() }} — {{ abonnement.prix_fcfa | number: '1.0-0' }} FCFA/mois
+          }
+        </button>
+        <p class="text-xs text-slate-400 text-center -mt-2">Paiement sécurisé par PayTech : Wave, Orange Money.</p>
+      </div>
+    </div>
+
+    <!-- Historique des paiements -->
+    <div class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 space-y-4">
+      <h2 class="text-base font-black text-slate-900 font-['Outfit']">Historique des paiements</h2>
+      @if (historique().length === 0) {
+        <p class="text-sm text-slate-400">Aucun paiement pour le moment.</p>
+      } @else {
+        <div class="divide-y divide-slate-100">
+          @for (paiement of historique(); track paiement.id) {
+            <div class="py-3 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-slate-900">
+                  {{ paiement.montant_fcfa | number: '1.0-0' }} FCFA
+                  @if (paiement.methode_paiement) {
+                    <span class="font-semibold text-slate-400"> · {{ paiement.methode_paiement }}</span>
+                  }
+                </p>
+                <p class="text-xs text-slate-500">
+                  {{ (paiement.date_confirmation || paiement.date_creation) | date: 'd MMM y, HH:mm' }}
+                  @if (paiement.date_debut_periode && paiement.date_fin_periode) {
+                    · Période du {{ paiement.date_debut_periode | date: 'd MMM y' }} au {{ paiement.date_fin_periode | date: 'd MMM y' }}
+                  }
+                </p>
+              </div>
+              <span [class]="classeStatutPaiement(paiement.statut)" class="self-start sm:self-auto px-2.5 py-1 rounded-full text-xs font-bold">
+                {{ libelleStatutPaiement(paiement.statut) }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

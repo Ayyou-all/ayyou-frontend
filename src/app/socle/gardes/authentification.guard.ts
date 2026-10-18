@@ -1,5 +1,7 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
+import { ServiceAbonnement } from '../services/service-abonnement.service';
 import { ServiceAuthentification } from '../services/service-authentification.service';
 
 /**
@@ -77,4 +79,29 @@ export const gardeProfilRedirection: CanActivateFn = () => {
   }
 
   return true;
+};
+
+/**
+ * Garde des pages de l'espace restaurant : un restaurant SUSPENDU (essai terminé, pas d'abonnement)
+ * est renvoyé vers « Mon abonnement ». Il garde l'accès à son profil et à ses commandes en cours.
+ * Le backend bloque de toute façon les actions (réponse 403 « abonnement_requis »).
+ */
+export const gardeAbonnementRestaurant: CanActivateChildFn = (route, state) => {
+  const serviceAuth = inject(ServiceAuthentification);
+  if (!serviceAuth.estGerant()) {
+    return true;
+  }
+  const serviceAbonnement = inject(ServiceAbonnement);
+  const routeur = inject(Router);
+  const pagesToujoursAccessibles = ['/gerant/abonnement', '/gerant/profil', '/gerant/commandes'];
+
+  return serviceAbonnement.charger().pipe(
+    map((reponse) =>
+      reponse.abonnement.statut === 'SUSPENDU' && !pagesToujoursAccessibles.some((page) => state.url.startsWith(page))
+        ? routeur.createUrlTree(['/gerant/abonnement'])
+        : true
+    ),
+    // Réseau indisponible : on laisse passer, le backend reste la source de vérité.
+    catchError(() => of(true))
+  );
 };
