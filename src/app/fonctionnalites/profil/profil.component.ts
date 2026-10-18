@@ -3,11 +3,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceAuthentification } from '../../socle/services/service-authentification.service';
 import { ServiceLivreurService } from '../../socle/services/service-livreur.service';
+import { FormulaireCompteComponent } from '../../partages/composants/formulaire-compte/formulaire-compte.component';
 
 @Component({
   selector: 'app-profil',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormulaireCompteComponent],
   template: `
     <div class="w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-10 space-y-6 md:space-y-8">
       
@@ -20,11 +21,6 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
             <i class="fa-regular fa-eye text-xs"></i>
             <span>Mode Visiteur</span>
-          </span>
-        } @else {
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-            <i class="fa-solid fa-circle-check text-xs"></i>
-            <span>Connecté</span>
           </span>
         }
       </div>
@@ -51,15 +47,6 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
               <h2 class="text-lg font-extrabold text-slate-900 truncate">
                 {{ serviceAuthentification.utilisateurConnecte()?.prenom }} {{ serviceAuthentification.utilisateurConnecte()?.nom }}
               </h2>
-              @if (serviceAuthentification.estGerant()) {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-700">Gérant</span>
-              } @else if (serviceAuthentification.estLivreur()) {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">Livreur</span>
-              } @else if (serviceAuthentification.estAdministrateur()) {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white">Admin</span>
-              } @else {
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">Client</span>
-              }
             </div>
             <div class="text-xs text-slate-500">{{ serviceAuthentification.utilisateurConnecte()?.courriel }}</div>
             <div class="text-xs text-slate-500">{{ serviceAuthentification.utilisateurConnecte()?.telephone }}</div>
@@ -69,6 +56,11 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
         <!-- =================================================================== -->
         <!-- SECTIONS PROFIL LIVREUR (DONNÉES RÉELLES DE LA BASE)                 -->
         <!-- =================================================================== -->
+        <!-- Client : modification des informations saisies à l'inscription -->
+        @if (serviceAuthentification.estClient()) {
+          <app-formulaire-compte [avecAdresse]="true" [avecPhoto]="true"></app-formulaire-compte>
+        }
+
         @if (serviceAuthentification.estLivreur()) {
           <!-- Statut du compte & disponibilité -->
           <div class="grid grid-cols-2 gap-3">
@@ -137,10 +129,6 @@ import { ServiceLivreurService } from '../../socle/services/service-livreur.serv
               <div class="flex items-center justify-between py-2.5">
                 <span class="text-slate-500">E-mail</span>
                 <span class="font-bold text-slate-900 truncate max-w-[60%]">{{ profilLivreur().courriel || serviceAuthentification.utilisateurConnecte()?.courriel }}</span>
-              </div>
-              <div class="flex items-center justify-between py-2.5">
-                <span class="text-slate-500">Adresse</span>
-                <span class="font-bold text-slate-900 text-right max-w-[60%]">{{ profilLivreur().adresse || 'Non renseignée' }}</span>
               </div>
             </div>
           </div>

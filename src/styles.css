@@ -28,20 +28,21 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--police-titres);
 }
 
-/* Barre de défilement moderne */
+/* Barre de défilement discrète (fine et claire) : visible sans attirer l'œil,
+   notamment sous les onglets et tableaux qui défilent sur mobile */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #f97316;
+  background: #94a3b8;
 }
 
 /* Animation douce */

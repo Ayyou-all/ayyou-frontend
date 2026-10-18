@@ -16,7 +16,7 @@
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Gestion des Restaurants
       </h1>
-      <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">
+      <p class="hidden sm:block text-xs sm:text-sm text-slate-400 font-medium mt-1">
         Supervisez vos partenaires et gérez leur présence sur la plateforme.
       </p>
     </div>
@@ -44,10 +44,10 @@
   <!-- ========================================================================= -->
   <!-- 2. CARTES STATISTIQUES KPI (CONFORME À L'IMAGE 3)                           -->
   <!-- ========================================================================= -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
     
     <!-- 1. Actifs -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-circle-check"></i>
@@ -60,14 +60,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Actifs</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().actifs.valeur }}
         </div>
       </div>
     </div>
 
     <!-- 2. En attente -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-hourglass-half"></i>
@@ -80,14 +80,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">En attente</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().enAttente.valeur }}
         </div>
       </div>
     </div>
 
     <!-- 3. Inactifs -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-circle-minus"></i>
@@ -100,14 +100,14 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Inactifs</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().inactifs.valeur }}
         </div>
       </div>
     </div>
 
     <!-- 4. Commandes reçues par l'ensemble des restaurants -->
-    <div class="bg-white rounded-3xl p-5 border border-slate-100 space-y-4">
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 space-y-3 sm:space-y-4">
       <div class="flex items-center justify-between">
         <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-sm">
           <i class="fa-solid fa-receipt"></i>
@@ -115,7 +115,7 @@
       </div>
       <div>
         <div class="text-xs font-semibold text-slate-400">Commandes totales</div>
-        <div class="text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
+        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] mt-1">
           {{ statsKpi().commandesTotales.valeur }}
         </div>
       </div>
@@ -196,13 +196,7 @@
         placeholder="Rechercher un restaurant..."
         class="w-full py-2.5 pl-10 pr-10 rounded-2xl bg-[#f8fafc] border border-slate-200/80 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-100 transition-all"
       />
-      <button
-        type="button"
-        class="absolute right-3 text-slate-400 hover:text-slate-700 cursor-pointer"
-        title="Filtres"
-      >
-        <i class="fa-solid fa-filter text-xs"></i>
-      </button>
+
     </div>
 
   </div>
@@ -212,8 +206,8 @@
   <!-- ========================================================================= -->
   <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
+      <table class="block md:table w-full text-left border-collapse">
+        <thead class="hidden md:table-header-group">
           <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
             <th class="py-3.5 px-6 font-bold">LOGO</th>
             <th class="py-3.5 px-6 font-bold">NOM DU RESTAURANT</th>
@@ -223,12 +217,12 @@
             <th class="py-3.5 px-6 font-bold text-right">ACTIONS</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 text-sm">
+        <tbody class="block md:table-row-group divide-y divide-slate-100 text-sm">
           @for (resto of restaurantsAffiches(); track resto.identifiant) {
-            <tr class="hover:bg-slate-50/70 transition-colors">
+            <tr class="block md:table-row py-3 md:py-0 hover:bg-slate-50/70 transition-colors">
               
               <!-- 1. LOGO -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 @if (resto.adresseLogo) {
                   <div class="w-10 h-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
                     <img [src]="resto.adresseLogo" [alt]="resto.nom" class="w-full h-full object-cover" />
@@ -244,7 +238,7 @@
               </td>
 
               <!-- 2. NOM DU RESTAURANT + CODE ID -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <div class="min-w-0">
                   <div class="font-black text-slate-900 leading-snug truncate text-xs sm:text-sm">
                     {{ resto.nom }}
@@ -256,14 +250,14 @@
               </td>
 
               <!-- 3. CATÉGORIE (Badge gris pill) -->
-              <td class="py-4 px-6">
+              <td class="hidden md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60">
                   {{ resto.categorie }}
                 </span>
               </td>
 
               <!-- 4. LOCALISATION (Pin + Texte) -->
-              <td class="py-4 px-6 text-xs font-semibold text-slate-600">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6 text-xs font-semibold text-slate-600">
                 <div class="flex items-center gap-1.5">
                   <i class="fa-solid fa-location-dot text-[11px] text-slate-400"></i>
                   <span>{{ resto.localisation }}</span>
@@ -271,7 +265,7 @@
               </td>
 
               <!-- 6. STATUT (Pill badge : Actif, En attente, Inactif) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 @if (resto.statut === 'ACTIF') {
                   <span class="inline-block px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                     Actif
@@ -288,8 +282,8 @@
               </td>
 
               <!-- 7. ACTIONS (Livre/Menu, Éditer, Supprimer) -->
-              <td class="py-4 px-6 text-right">
-                <div class="flex items-center justify-end gap-2">
+              <td class="block md:table-cell py-1.5 md:py-4 px-5 md:px-6 md:text-right">
+                <div class="flex items-center justify-start md:justify-end gap-2">
                   <!-- Consulter le menu / la carte -->
                   <button
                     type="button"
@@ -324,8 +318,8 @@
 
             </tr>
           } @empty {
-            <tr>
-              <td colspan="7" class="py-12 text-center text-slate-400">
+            <tr class="block md:table-row">
+              <td colspan="7" class="block md:table-cell py-12 text-center text-slate-400">
                 <i class="fa-solid fa-utensils text-3xl mb-2 block text-slate-300"></i>
                 <div class="text-sm font-bold text-slate-700">Aucun restaurant trouvé</div>
                 <div class="text-xs text-slate-400 mt-1">Modifiez vos filtres ou lancez une nouvelle recherche.</div>
@@ -343,8 +337,8 @@
       
       <!-- Texte récapitulatif -->
       <div class="text-xs font-semibold text-slate-500">
-        Affichage de <span class="font-bold text-slate-900">1</span> à
-        <span class="font-bold text-slate-900">{{ restaurantsAffiches().length }}</span> sur
+        Page <span class="font-bold text-slate-900">{{ pageActuelle() }}</span> ·
+        <span class="font-bold text-slate-900">{{ restaurantsAffiches().length }}</span> affichés sur
         <span class="font-bold text-slate-900">104</span> restaurants
       </div>
 
@@ -362,41 +356,7 @@
           <i class="fa-solid fa-chevron-left text-[10px]"></i>
         </button>
 
-        <!-- Page 1 (Active) -->
-        <button
-          type="button"
-          (click)="changerPage(1)"
-          [class]="pageActuelle() === 1
-            ? 'bg-[#E51824] text-white font-extrabold '
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          1
-        </button>
-
-        <!-- Page 2 -->
-        <button
-          type="button"
-          (click)="changerPage(2)"
-          [class]="pageActuelle() === 2
-            ? 'bg-[#E51824] text-white font-extrabold '
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          2
-        </button>
-
-        <!-- Page 3 -->
-        <button
-          type="button"
-          (click)="changerPage(3)"
-          [class]="pageActuelle() === 3
-            ? 'bg-[#E51824] text-white font-extrabold '
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          3
-        </button>
+        <span class="px-2 text-xs font-bold text-slate-700">{{ pageActuelle() }} / {{ nombrePagesTotal() }}</span>
 
         <!-- Suivant > -->
         <button

@@ -180,7 +180,7 @@ export const routes: Routes = [
           import(
             './fonctionnalites/administration/parametres/parametres-admin.component'
           ).then((m) => m.ParametresAdminComponent),
-        title: 'Paramètres — Superadmin AYYOU'
+        title: 'Mon compte — Administration AYYOU'
       }
     ]
   },

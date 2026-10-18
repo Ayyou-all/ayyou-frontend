@@ -16,20 +16,14 @@
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-['Outfit'] tracking-tight">
         Gestion des Utilisateurs
       </h1>
-      <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1">
+      <p class="hidden sm:block text-xs sm:text-sm text-slate-400 font-medium mt-1">
         Visualisez et gérez l'ensemble des acteurs de la plateforme
       </p>
     </div>
 
     <!-- Actions à droite : Cloche de notification & Bouton 'Exporter CSV' -->
     <div class="flex items-center gap-3 shrink-0">
-      <button
-        type="button"
-        class="w-10 h-10 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
-        title="Notifications"
-      >
-        <i class="fa-regular fa-bell text-sm"></i>
-      </button>
+
 
       <button
         type="button"
@@ -102,8 +96,8 @@
   <!-- ========================================================================= -->
   <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
+      <table class="block md:table w-full text-left border-collapse">
+        <thead class="hidden md:table-header-group">
           <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
             <th class="py-3.5 px-6 font-bold">UTILISATEUR</th>
             <th class="py-3.5 px-6 font-bold">EMAIL</th>
@@ -113,12 +107,12 @@
             <th class="py-3.5 px-6 font-bold text-right">ACTIONS</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 text-sm">
+        <tbody class="block md:table-row-group divide-y divide-slate-100 text-sm">
           @for (utilisateur of utilisateursAffiches(); track utilisateur.identifiant) {
-            <tr class="hover:bg-slate-50/70 transition-colors">
+            <tr class="block md:table-row py-3 md:py-0 hover:bg-slate-50/70 transition-colors">
               
               <!-- 1. UTILISATEUR (Avatar + Nom en gras + Sous-titre type) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <div class="flex items-center gap-3.5">
                   @if (utilisateur.photoUrl) {
                     <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
@@ -137,20 +131,17 @@
                     <div class="font-black text-slate-900 leading-snug truncate">
                       {{ utilisateur.nom }}
                     </div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      {{ utilisateur.badgeType }}
-                    </div>
                   </div>
                 </div>
               </td>
 
               <!-- 2. EMAIL -->
-              <td class="py-4 px-6 text-xs text-slate-600 font-medium">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6 text-xs text-slate-600 font-medium">
                 {{ utilisateur.email }}
               </td>
 
               <!-- 3. RÔLE (Icône colorée + Libellé) -->
-              <td class="py-4 px-6">
+              <td class="hidden md:table-cell py-1 md:py-4 px-5 md:px-6">
                 <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
                   <i [class]="utilisateur.iconeRole + ' ' + utilisateur.couleurIconeRole + ' text-xs'"></i>
                   <span>{{ utilisateur.role }}</span>
@@ -158,12 +149,12 @@
               </td>
 
               <!-- 4. INSCRIPTION -->
-              <td class="py-4 px-6 text-xs font-semibold text-slate-600">
+              <td class="hidden md:table-cell py-1 md:py-4 px-5 md:px-6 text-xs font-semibold text-slate-600">
                 {{ utilisateur.dateInscription }}
               </td>
 
               <!-- 5. STATUT (Pill badge : ● ACTIF, ● BANNI, ● INACTIF) -->
-              <td class="py-4 px-6">
+              <td class="block md:table-cell py-1 md:py-4 px-5 md:px-6">
                 @if (utilisateur.statut === 'ACTIF') {
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -183,8 +174,8 @@
               </td>
 
               <!-- 6. ACTIONS (Crayon + Cloche ou Avion rouge selon statut) -->
-              <td class="py-4 px-6 text-right">
-                <div class="flex items-center justify-end gap-2">
+              <td class="block md:table-cell py-1.5 md:py-4 px-5 md:px-6 md:text-right">
+                <div class="flex items-center justify-start md:justify-end gap-2">
                   <!-- Bouton Édition -->
                   <button
                     type="button"
@@ -220,8 +211,8 @@
 
             </tr>
           } @empty {
-            <tr>
-              <td colspan="6" class="py-12 text-center text-slate-400">
+            <tr class="block md:table-row">
+              <td colspan="6" class="block md:table-cell py-12 text-center text-slate-400">
                 <i class="fa-solid fa-users text-3xl mb-2 block text-slate-300"></i>
                 <div class="text-sm font-bold text-slate-700">Aucun utilisateur trouvé</div>
                 <div class="text-xs text-slate-400 mt-1">Ajustez vos filtres ou termes de recherche.</div>
@@ -239,8 +230,8 @@
       
       <!-- Texte récapitulatif -->
       <div class="text-xs font-semibold text-slate-500">
-        Affichage de <span class="font-bold text-slate-900">1</span> à
-        <span class="font-bold text-slate-900">{{ utilisateursAffiches().length }}</span> sur
+        Page <span class="font-bold text-slate-900">{{ pageActuelle() }}</span> ·
+        <span class="font-bold text-slate-900">{{ utilisateursAffiches().length }}</span> affichés sur
         <span class="font-bold text-slate-900">{{ utilisateursFiltres().length }}</span> utilisateurs
       </div>
 
@@ -258,59 +249,14 @@
           <i class="fa-solid fa-chevron-left text-[10px]"></i>
         </button>
 
-        <!-- Page 1 (Active) -->
-        <button
-          type="button"
-          (click)="changerPage(1)"
-          [class]="pageActuelle() === 1
-            ? 'bg-[#E51824] text-white font-extrabold '
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          1
-        </button>
-
-        <!-- Page 2 -->
-        <button
-          type="button"
-          (click)="changerPage(2)"
-          [class]="pageActuelle() === 2
-            ? 'bg-[#E51824] text-white font-extrabold '
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          2
-        </button>
-
-        <!-- Page 3 -->
-        <button
-          type="button"
-          (click)="changerPage(3)"
-          [class]="pageActuelle() === 3
-            ? 'bg-[#E51824] text-white font-extrabold '
-            : 'bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold'"
-          class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          3
-        </button>
-
-        <!-- Points de suspension ... -->
-        <span class="px-1 text-slate-400 font-bold text-xs select-none">...</span>
-
-        <!-- Dernière page 42 -->
-        <button
-          type="button"
-          (click)="changerPage(42)"
-          class="w-8 h-8 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors cursor-pointer"
-        >
-          42
-        </button>
+        <span class="px-2 text-xs font-bold text-slate-700">{{ pageActuelle() }} / {{ nombrePagesTotal() }}</span>
 
         <!-- Suivant > -->
         <button
           type="button"
           (click)="changerPage(pageActuelle() + 1)"
-          class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 flex items-center justify-center text-xs transition-colors cursor-pointer"
+          [disabled]="pageActuelle() >= nombrePagesTotal()"
+          class="w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 flex items-center justify-center text-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label="Suivant"
         >
           <i class="fa-solid fa-chevron-right text-[10px]"></i>
