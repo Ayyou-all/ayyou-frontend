@@ -339,6 +339,8 @@
 
     <!-- Zone principale contenant les écrans avec marge basse pour la bottom bar mobile -->
     <main class="flex-1 p-3.5 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <!-- Essai gratuit / échéance / suspension : visible sur toutes les pages du restaurant -->
+      <app-banniere-abonnement></app-banniere-abonnement>
       <router-outlet></router-outlet>
     </main>
 
@@ -349,7 +351,7 @@
       class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200/90 z-40 px-1 select-none"
     >
       <div class="grid grid-cols-6 h-full max-w-lg mx-auto">
-        @for (item of listeMenu; track item.code) {
+        @for (item of listeMenuMobile; track item.code) {
           <a
             [routerLink]="item.chemin"
             [class]="estLienActif(item.chemin)

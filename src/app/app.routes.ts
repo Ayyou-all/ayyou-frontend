@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import {
   gardeAdministration,
+  gardeAbonnementRestaurant,
   gardeGerant,
   gardeLivreur,
   gardeProfilRedirection
@@ -167,6 +168,14 @@ export const routes: Routes = [
         pathMatch: 'full'
       },
       {
+        path: 'abonnements',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/administration/abonnements/abonnements-admin.component'
+          ).then((m) => m.AbonnementsAdminComponent),
+        title: 'Abonnements des restaurants — Superadmin AYYOU'
+      },
+      {
         path: 'statistiques',
         loadComponent: () =>
           import(
@@ -187,6 +196,8 @@ export const routes: Routes = [
   {
     path: 'gerant',
     canActivate: [gardeGerant],
+    // Restaurant suspendu (abonnement requis) : renvoyé vers « Mon abonnement »
+    canActivateChild: [gardeAbonnementRestaurant],
     loadComponent: () =>
       import(
         './partages/mises-en-page/mise-en-page-gerant/mise-en-page-gerant.component'
@@ -249,6 +260,14 @@ export const routes: Routes = [
             './fonctionnalites/restaurant/gerant-profil/gerant-profil.component'
           ).then((m) => m.GerantProfilComponent),
         title: 'Mon Profil & Établissement — Espace Restaurant AYYOU'
+      },
+      {
+        path: 'abonnement',
+        loadComponent: () =>
+          import(
+            './fonctionnalites/restaurant/gerant-abonnement/gerant-abonnement.component'
+          ).then((m) => m.GerantAbonnementComponent),
+        title: 'Mon abonnement — Espace Restaurant AYYOU'
       }
     ]
   },

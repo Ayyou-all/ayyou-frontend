@@ -4,6 +4,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { BanniereAbonnementComponent } from '../../composants/banniere-abonnement/banniere-abonnement.component';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
 import {
   NotificationGerant,
@@ -17,12 +18,14 @@ export interface ElementMenuGerant {
   icone: string;
   chemin: string;
   badge?: () => number;
+  /** Absent de la barre du bas sur mobile (déjà 6 entrées) : accessible via la bannière et le profil. */
+  masquerMobile?: boolean;
 }
 
 @Component({
   selector: 'app-mise-en-page-gerant',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, BanniereAbonnementComponent],
   templateUrl: './mise-en-page-gerant.component.html'
 })
 export class MiseEnPageGerantComponent implements OnInit {
@@ -145,8 +148,18 @@ export class MiseEnPageGerantComponent implements OnInit {
       libelleMobile: 'Profil',
       icone: 'fa-solid fa-store',
       chemin: '/gerant/profil'
+    },
+    {
+      code: 'abonnement',
+      libelle: 'Abonnement',
+      libelleMobile: 'Abonnement',
+      icone: 'fa-solid fa-credit-card',
+      chemin: '/gerant/abonnement',
+      masquerMobile: true
     }
   ];
+
+  readonly listeMenuMobile = this.listeMenu.filter((item) => !item.masquerMobile);
 
   readonly photoGerant = computed(() => this.serviceAuth.utilisateurConnecte()?.adressePhoto || null);
 
