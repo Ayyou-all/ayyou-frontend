@@ -569,18 +569,19 @@
             <div class="space-y-4">
               <div class="space-y-1">
                 <label for="champ-nom-complet-mobile" class="block text-xs font-bold text-slate-700">Nom complet</label>
-                <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <div [class.champ-erreur]="erreur('nomComplet')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                   <i class="fa-solid fa-user text-slate-400 mr-3 text-sm"></i>
                   <input
                     id="champ-nom-complet-mobile"
                     type="text"
                     [ngModel]="nomCompletSaisi()"
-                    (ngModelChange)="nomCompletSaisi.set($event)"
+                    (ngModelChange)="nomCompletSaisi.set($event); effacerErreur('nomComplet')"
                     placeholder="Prénom et Nom"
                     class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                     required
                   />
                 </div>
+                @if (erreur('nomComplet')) { <p class="message-champ-erreur">{{ erreur('nomComplet') }}</p> }
               </div>
 
               <!-- Champ : Adresse e-mail (Obligatoire pour vérification de sécurité) -->
@@ -590,25 +591,26 @@
                     Adresse e-mail
                   </label>
                 </div>
-                <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <div [class.champ-erreur]="erreur('courriel')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                   <i class="fa-solid fa-envelope text-slate-400 mr-3 text-sm"></i>
                   <input
                     id="champ-email-mobile"
                     type="email"
                     [ngModel]="courrielSaisi()"
-                    (ngModelChange)="courrielSaisi.set($event)"
+                    (ngModelChange)="courrielSaisi.set($event); effacerErreur('courriel')"
                     placeholder="votre@email.com"
                     autocomplete="email"
                     class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                     required
                   />
                 </div>
+                @if (erreur('courriel')) { <p class="message-champ-erreur">{{ erreur('courriel') }}</p> }
               </div>
 
-              <!-- Champ : Téléphone (Optionnel) -->
+              <!-- Champ : Téléphone (obligatoire) -->
               <div class="space-y-1">
                 <label for="champ-telephone-mobile" class="block text-xs font-bold text-slate-700">
-                  Téléphone <span class="text-slate-400 font-normal">(Optionnel)</span>
+                  Téléphone
                 </label>
                 <div class="flex items-center gap-2">
                   <div class="relative shrink-0">
@@ -638,28 +640,29 @@
                     }
                   </div>
 
-                  <div class="flex-1 flex items-center h-12 rounded-2xl border border-slate-200 px-4 bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100">
+                  <div [class.champ-erreur]="erreur('telephone')" class="flex-1 flex items-center h-12 rounded-2xl border border-slate-200 px-4 bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100">
                     <input
                       id="champ-telephone-mobile"
                       type="tel"
                       [ngModel]="telephoneSaisi()"
-                      (ngModelChange)="telephoneSaisi.set($event)"
+                      (ngModelChange)="telephoneSaisi.set($event); effacerErreur('telephone')"
                       placeholder="77 000 00 00"
                       class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                     />
                   </div>
                 </div>
+                @if (erreur('telephone')) { <p class="message-champ-erreur">{{ erreur('telephone') }}</p> }
               </div>
 
               <div class="space-y-1">
                 <label for="champ-mdp-mobile" class="block text-xs font-bold text-slate-700">Mot de passe</label>
-                <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <div [class.champ-erreur]="erreur('motDePasse')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                   <i class="fa-solid fa-lock text-slate-400 mr-3 text-sm"></i>
                   <input
                     id="champ-mdp-mobile"
                     [type]="motDePasseVisible() ? 'text' : 'password'"
                     [ngModel]="motDePasseSaisi()"
-                    (ngModelChange)="motDePasseSaisi.set($event)"
+                    (ngModelChange)="motDePasseSaisi.set($event); effacerErreur('motDePasse')"
                     placeholder="••••••••"
                     class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                   />
@@ -667,17 +670,18 @@
                     <i [class]="motDePasseVisible() ? 'fa-solid fa-eye text-sm' : 'fa-solid fa-eye-slash text-sm'"></i>
                   </button>
                 </div>
+                @if (erreur('motDePasse')) { <p class="message-champ-erreur">{{ erreur('motDePasse') }}</p> }
               </div>
 
               <div class="space-y-1">
                 <label for="champ-conf-mobile" class="block text-xs font-bold text-slate-700">Confirmer le mot de passe</label>
-                <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <div [class.champ-erreur]="erreur('confirmation')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                   <i class="fa-regular fa-circle-question text-slate-400 mr-3 text-sm"></i>
                   <input
                     id="champ-conf-mobile"
                     [type]="confirmationMotDePasseVisible() ? 'text' : 'password'"
                     [ngModel]="confirmationMotDePasseSaisi()"
-                    (ngModelChange)="confirmationMotDePasseSaisi.set($event)"
+                    (ngModelChange)="confirmationMotDePasseSaisi.set($event); effacerErreur('confirmation')"
                     placeholder="••••••••"
                     class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                   />
@@ -685,12 +689,14 @@
                     <i [class]="confirmationMotDePasseVisible() ? 'fa-solid fa-eye text-sm' : 'fa-solid fa-eye-slash text-sm'"></i>
                   </button>
                 </div>
+                @if (erreur('confirmation')) { <p class="message-champ-erreur">{{ erreur('confirmation') }}</p> }
               </div>
 
               <div class="flex items-start gap-2.5 pt-2">
                 <button
                   type="button"
-                  (click)="conditionsAcceptees.set(!conditionsAcceptees())"
+                  (click)="conditionsAcceptees.set(!conditionsAcceptees()); effacerErreur('conditions')"
+                  [class.champ-erreur]="erreur('conditions')"
                   class="mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors"
                   [class]="conditionsAcceptees() ? 'bg-red-600 text-white' : 'border border-slate-300 bg-white'"
                 >
@@ -756,18 +762,19 @@
             <!-- Ligne 2 : Nom du restaurant -->
             <div class="space-y-1">
               <label for="champ-nom-resto-mobile" class="block text-xs font-bold text-slate-700">Nom du restaurant</label>
-              <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+              <div [class.champ-erreur]="erreur('nomRestaurant')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                 <i class="fa-solid fa-utensils text-slate-400 mr-3 text-sm"></i>
                 <input
                   id="champ-nom-resto-mobile"
                   type="text"
                   [ngModel]="nomRestaurantSaisi()"
-                  (ngModelChange)="nomRestaurantSaisi.set($event)"
+                  (ngModelChange)="nomRestaurantSaisi.set($event); effacerErreur('nomRestaurant')"
                   placeholder="Ex: Teranga Grill"
                   class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                   required
                 />
               </div>
+              @if (erreur('nomRestaurant')) { <p class="message-champ-erreur">{{ erreur('nomRestaurant') }}</p> }
             </div>
 
             <!-- Ligne 3 : Catégorie -->
@@ -806,18 +813,19 @@
             <!-- Ligne 4 : Adresse complète -->
             <div class="space-y-1">
               <label for="champ-adresse-resto-mobile" class="block text-xs font-bold text-slate-700">Adresse complète</label>
-              <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+              <div [class.champ-erreur]="erreur('adresseRestaurant')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                 <i class="fa-solid fa-location-dot text-slate-400 mr-3 text-sm"></i>
                 <input
                   id="champ-adresse-resto-mobile"
                   type="text"
                   [ngModel]="adresseCompleteRestaurantSaisie()"
-                  (ngModelChange)="adresseCompleteRestaurantSaisie.set($event)"
+                  (ngModelChange)="adresseCompleteRestaurantSaisie.set($event); effacerErreur('adresseRestaurant')"
                   placeholder="Quartier, Rue, Ville"
                   class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                   required
                 />
               </div>
+              @if (erreur('adresseRestaurant')) { <p class="message-champ-erreur">{{ erreur('adresseRestaurant') }}</p> }
               <button
                 type="button"
                 (click)="localiserRestaurant()"
@@ -973,17 +981,18 @@
             <!-- Numéro de plaque -->
             <div class="space-y-1">
               <label for="champ-plaque-mobile" class="block text-xs font-bold text-slate-700">Numéro de plaque</label>
-              <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+              <div [class.champ-erreur]="erreur('plaque')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                 <i class="fa-solid fa-id-card text-slate-400 mr-3 text-sm"></i>
                 <input
                   id="champ-plaque-mobile"
                   type="text"
                   [ngModel]="numeroPlaqueSaisi()"
-                  (ngModelChange)="numeroPlaqueSaisi.set($event)"
+                  (ngModelChange)="numeroPlaqueSaisi.set($event); effacerErreur('plaque')"
                   placeholder="Ex: AA-123-BB"
                   class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                 />
               </div>
+              @if (erreur('plaque')) { <p class="message-champ-erreur">{{ erreur('plaque') }}</p> }
             </div>
 
             <!-- Permis de conduite (Recto/Verso) -->
@@ -1060,17 +1069,18 @@
               <label for="champ-mobile-money-mobile" class="block text-xs font-bold text-slate-700">
                 Paiements (Wave / Orange Money)
               </label>
-              <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+              <div [class.champ-erreur]="erreur('mobileMoney')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                 <i class="fa-solid fa-mobile-screen text-slate-400 mr-3 text-sm"></i>
                 <input
                   id="champ-mobile-money-mobile"
                   type="tel"
                   [ngModel]="numeroMobileMoneySaisi()"
-                  (ngModelChange)="numeroMobileMoneySaisi.set($event)"
+                  (ngModelChange)="numeroMobileMoneySaisi.set($event); effacerErreur('mobileMoney')"
                   placeholder="Numéro Mobile Money"
                   class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                 />
               </div>
+              @if (erreur('mobileMoney')) { <p class="message-champ-erreur">{{ erreur('mobileMoney') }}</p> }
 
               <!-- Badges de sélection Wave / Orange Money -->
               <div class="flex items-center gap-2 pt-0.5">
@@ -1133,17 +1143,18 @@
                 Adresse de livraison par défaut
               </label>
               
-              <div class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+              <div [class.champ-erreur]="erreur('adresseLivraison')" class="flex items-center rounded-2xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                 <i class="fa-solid fa-location-dot text-slate-400 mr-3 text-sm"></i>
                 <input
                   id="champ-adresse-mobile"
                   type="text"
                   [ngModel]="adresseLivraisonSaisie()"
-                  (ngModelChange)="adresseLivraisonSaisie.set($event)"
+                  (ngModelChange)="adresseLivraisonSaisie.set($event); effacerErreur('adresseLivraison')"
                   placeholder="Rue, Quartier, Ville"
                   class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                 />
               </div>
+              @if (erreur('adresseLivraison')) { <p class="message-champ-erreur">{{ erreur('adresseLivraison') }}</p> }
 
               <button
                 type="button"
@@ -1341,18 +1352,19 @@
               <div class="space-y-4">
                 <div class="space-y-1.5">
                   <label for="champ-nom-complet-desk" class="block text-xs font-bold text-slate-700">Nom complet</label>
-                  <div class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                  <div [class.champ-erreur]="erreur('nomComplet')" class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                     <i class="fa-solid fa-user text-slate-400 mr-3 text-sm"></i>
                     <input
                       id="champ-nom-complet-desk"
                       type="text"
                       [ngModel]="nomCompletSaisi()"
-                      (ngModelChange)="nomCompletSaisi.set($event)"
+                      (ngModelChange)="nomCompletSaisi.set($event); effacerErreur('nomComplet')"
                       placeholder="Prénom et Nom"
                       class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                       required
                     />
                   </div>
+                  @if (erreur('nomComplet')) { <p class="message-champ-erreur">{{ erreur('nomComplet') }}</p> }
                 </div>
 
                 <!-- Champ : Adresse e-mail (Obligatoire pour vérification de sécurité) -->
@@ -1362,25 +1374,26 @@
                       Adresse e-mail
                     </label>
                   </div>
-                  <div class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                  <div [class.champ-erreur]="erreur('courriel')" class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                     <i class="fa-solid fa-envelope text-slate-400 mr-3 text-sm"></i>
                     <input
                       id="champ-email-desk"
                       type="email"
                       [ngModel]="courrielSaisi()"
-                      (ngModelChange)="courrielSaisi.set($event)"
+                      (ngModelChange)="courrielSaisi.set($event); effacerErreur('courriel')"
                       placeholder="votre@email.com"
                       autocomplete="email"
                       class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                       required
                     />
                   </div>
+                  @if (erreur('courriel')) { <p class="message-champ-erreur">{{ erreur('courriel') }}</p> }
                 </div>
 
-                <!-- Champ : Téléphone (Optionnel) -->
+                <!-- Champ : Téléphone (obligatoire) -->
                 <div class="space-y-1.5">
                   <label for="champ-tel-desk" class="block text-xs font-bold text-slate-700">
-                    Téléphone <span class="text-slate-400 font-normal">(Optionnel)</span>
+                    Téléphone
                   </label>
                   <div class="flex items-center gap-2">
                     <div class="relative shrink-0">
@@ -1410,30 +1423,31 @@
                       }
                     </div>
 
-                    <div class="flex-1 flex items-center h-12 rounded-xl border border-slate-200 px-4 bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100">
+                    <div [class.champ-erreur]="erreur('telephone')" class="flex-1 flex items-center h-12 rounded-xl border border-slate-200 px-4 bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100">
                       <input
                         id="champ-tel-desk"
                         type="tel"
                         [ngModel]="telephoneSaisi()"
-                        (ngModelChange)="telephoneSaisi.set($event)"
+                        (ngModelChange)="telephoneSaisi.set($event); effacerErreur('telephone')"
                         placeholder="77 000 00 00"
                         class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                       />
                     </div>
                   </div>
+                  @if (erreur('telephone')) { <p class="message-champ-erreur">{{ erreur('telephone') }}</p> }
                 </div>
 
                 <!-- Mots de passe en deux colonnes Desktop -->
                 <div class="grid grid-cols-2 gap-3">
                   <div class="space-y-1.5">
                     <label for="champ-mdp-desk" class="block text-xs font-bold text-slate-700">Mot de passe</label>
-                    <div class="flex items-center rounded-xl border border-slate-200 py-3.5 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                    <div [class.champ-erreur]="erreur('motDePasse')" class="flex items-center rounded-xl border border-slate-200 py-3.5 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                       <i class="fa-solid fa-lock text-slate-400 mr-2.5 text-xs"></i>
                       <input
                         id="champ-mdp-desk"
                         [type]="motDePasseVisible() ? 'text' : 'password'"
                         [ngModel]="motDePasseSaisi()"
-                        (ngModelChange)="motDePasseSaisi.set($event)"
+                        (ngModelChange)="motDePasseSaisi.set($event); effacerErreur('motDePasse')"
                         placeholder="••••••••"
                         class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                       />
@@ -1441,17 +1455,18 @@
                         <i [class]="motDePasseVisible() ? 'fa-solid fa-eye text-xs' : 'fa-solid fa-eye-slash text-xs'"></i>
                       </button>
                     </div>
+                    @if (erreur('motDePasse')) { <p class="message-champ-erreur">{{ erreur('motDePasse') }}</p> }
                   </div>
 
                   <div class="space-y-1.5">
                     <label for="champ-conf-desk" class="block text-xs font-bold text-slate-700">Confirmer</label>
-                    <div class="flex items-center rounded-xl border border-slate-200 py-3.5 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                    <div [class.champ-erreur]="erreur('confirmation')" class="flex items-center rounded-xl border border-slate-200 py-3.5 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                       <i class="fa-regular fa-circle-question text-slate-400 mr-2.5 text-xs"></i>
                       <input
                         id="champ-conf-desk"
                         [type]="confirmationMotDePasseVisible() ? 'text' : 'password'"
                         [ngModel]="confirmationMotDePasseSaisi()"
-                        (ngModelChange)="confirmationMotDePasseSaisi.set($event)"
+                        (ngModelChange)="confirmationMotDePasseSaisi.set($event); effacerErreur('confirmation')"
                         placeholder="••••••••"
                         class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                       />
@@ -1459,13 +1474,15 @@
                         <i [class]="confirmationMotDePasseVisible() ? 'fa-solid fa-eye text-xs' : 'fa-solid fa-eye-slash text-xs'"></i>
                       </button>
                     </div>
+                    @if (erreur('confirmation')) { <p class="message-champ-erreur">{{ erreur('confirmation') }}</p> }
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2.5 pt-2">
                   <button
                     type="button"
-                    (click)="conditionsAcceptees.set(!conditionsAcceptees())"
+                    (click)="conditionsAcceptees.set(!conditionsAcceptees()); effacerErreur('conditions')"
+                  [class.champ-erreur]="erreur('conditions')"
                     class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors"
                     [class]="conditionsAcceptees() ? 'bg-red-600 text-white' : 'border border-slate-300 bg-white'"
                   >
@@ -1531,18 +1548,19 @@
               <!-- Ligne 2 : Nom du restaurant -->
               <div class="space-y-1.5">
                 <label for="champ-nom-resto-desk" class="block text-xs font-bold text-slate-700">Nom du restaurant</label>
-                <div class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <div [class.champ-erreur]="erreur('nomRestaurant')" class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                   <i class="fa-solid fa-utensils text-slate-400 mr-3 text-sm"></i>
                   <input
                     id="champ-nom-resto-desk"
                     type="text"
                     [ngModel]="nomRestaurantSaisi()"
-                    (ngModelChange)="nomRestaurantSaisi.set($event)"
+                    (ngModelChange)="nomRestaurantSaisi.set($event); effacerErreur('nomRestaurant')"
                     placeholder="Ex: Le Teranga Food"
                     class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                     required
                   />
                 </div>
+                @if (erreur('nomRestaurant')) { <p class="message-champ-erreur">{{ erreur('nomRestaurant') }}</p> }
               </div>
 
               <!-- Ligne 3 : Catégorie & Document justificatifs (Grid 2 colonnes) -->
@@ -1585,18 +1603,19 @@
                   <!-- Adresse complète -->
                   <div class="space-y-1">
                     <label for="champ-adresse-resto-desk" class="block text-xs font-bold text-slate-700">Adresse complète</label>
-                    <div class="flex items-center rounded-xl border border-slate-200 py-3 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                    <div [class.champ-erreur]="erreur('adresseRestaurant')" class="flex items-center rounded-xl border border-slate-200 py-3 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                       <i class="fa-solid fa-location-dot text-slate-400 mr-3 text-sm"></i>
                       <input
                         id="champ-adresse-resto-desk"
                         type="text"
                         [ngModel]="adresseCompleteRestaurantSaisie()"
-                        (ngModelChange)="adresseCompleteRestaurantSaisie.set($event)"
+                        (ngModelChange)="adresseCompleteRestaurantSaisie.set($event); effacerErreur('adresseRestaurant')"
                         placeholder="Quartier, Rue, Ville"
                         class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                         required
                       />
                     </div>
+                    @if (erreur('adresseRestaurant')) { <p class="message-champ-erreur">{{ erreur('adresseRestaurant') }}</p> }
               <button
                 type="button"
                 (click)="localiserRestaurant()"
@@ -1760,17 +1779,18 @@
                 <!-- Numéro de plaque -->
                 <div class="space-y-1.5">
                   <label for="champ-plaque-desk" class="block text-xs font-bold text-slate-700">Numéro de plaque</label>
-                  <div class="flex items-center rounded-2xl border border-slate-200 py-3 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                  <div [class.champ-erreur]="erreur('plaque')" class="flex items-center rounded-2xl border border-slate-200 py-3 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                     <i class="fa-solid fa-id-card text-slate-400 mr-2.5 text-sm"></i>
                     <input
                       id="champ-plaque-desk"
                       type="text"
                       [ngModel]="numeroPlaqueSaisi()"
-                      (ngModelChange)="numeroPlaqueSaisi.set($event)"
+                      (ngModelChange)="numeroPlaqueSaisi.set($event); effacerErreur('plaque')"
                       placeholder="Ex: AA-123-BB"
                       class="w-full text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                     />
                   </div>
+                  @if (erreur('plaque')) { <p class="message-champ-erreur">{{ erreur('plaque') }}</p> }
                 </div>
 
                 <!-- Zone d'activité / Ville -->
@@ -1848,17 +1868,18 @@
                 <label for="champ-mobile-money-desk" class="block text-xs font-bold text-slate-700">
                   Numéro Mobile Money pour les paiements
                 </label>
-                <div class="flex items-center rounded-2xl border border-slate-200 py-3 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <div [class.champ-erreur]="erreur('mobileMoney')" class="flex items-center rounded-2xl border border-slate-200 py-3 px-3.5 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                   <i class="fa-solid fa-mobile-screen text-slate-400 mr-2.5 text-sm"></i>
                   <input
                     id="champ-mobile-money-desk"
                     type="tel"
                     [ngModel]="numeroMobileMoneySaisi()"
-                    (ngModelChange)="numeroMobileMoneySaisi.set($event)"
+                    (ngModelChange)="numeroMobileMoneySaisi.set($event); effacerErreur('mobileMoney')"
                     placeholder="Ex: 77 000 00 00"
                     class="w-full text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                   />
                 </div>
+                @if (erreur('mobileMoney')) { <p class="message-champ-erreur">{{ erreur('mobileMoney') }}</p> }
 
                 <!-- Pilules Wave / Orange Money -->
                 <div class="flex items-center gap-2.5 pt-0.5">
@@ -1921,17 +1942,18 @@
                   Adresse de livraison par défaut
                 </label>
                 
-                <div class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
+                <div [class.champ-erreur]="erreur('adresseLivraison')" class="flex items-center rounded-xl border border-slate-200 py-3.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white">
                   <i class="fa-solid fa-location-dot text-slate-400 mr-3 text-sm"></i>
                   <input
                     id="champ-adresse-desk"
                     type="text"
                     [ngModel]="adresseLivraisonSaisie()"
-                    (ngModelChange)="adresseLivraisonSaisie.set($event)"
+                    (ngModelChange)="adresseLivraisonSaisie.set($event); effacerErreur('adresseLivraison')"
                     placeholder="Rue, Quartier, Ville ou Point de repère"
                     class="w-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
                   />
                 </div>
+                @if (erreur('adresseLivraison')) { <p class="message-champ-erreur">{{ erreur('adresseLivraison') }}</p> }
 
                 <button
                   type="button"

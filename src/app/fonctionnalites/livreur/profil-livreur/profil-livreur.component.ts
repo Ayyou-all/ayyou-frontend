@@ -5,6 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceLivreurService } from '../../../socle/services/service-livreur.service';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import {
+  ErreursChamps,
+  estTelephoneValide,
+  lireErreursServeur,
+  MESSAGE_CHAMPS_EN_ROUGE
+} from '../../../socle/outils/erreurs-formulaire';
 
 @Component({
   selector: 'app-profil-livreur',
@@ -74,6 +80,35 @@ export class ProfilLivreurComponent implements OnInit {
   readonly chargement = signal<boolean>(false);
   readonly messageSucces = signal<string | null>(null);
   readonly messageErreur = signal<string | null>(null);
+  // Erreurs affichées sous chaque champ (champ entouré en rouge)
+  readonly erreursChamps = signal<ErreursChamps>({});
+
+  erreur(champ: string): string | undefined {
+    return this.erreursChamps()[champ];
+  }
+
+  effacerErreur(champ: string): void {
+    if (!this.erreursChamps()[champ]) return;
+    const { [champ]: _, ...autres } = this.erreursChamps();
+    this.erreursChamps.set(autres);
+    if (Object.keys(autres).length === 0) this.messageErreur.set(null);
+  }
+
+  /** Affiche les erreurs d'une section ; renvoie vrai s'il y en a. */
+  private afficherErreursChamps(erreurs: ErreursChamps): boolean {
+    this.erreursChamps.set(erreurs);
+    const messages = Object.values(erreurs);
+    if (messages.length === 0) return false;
+    this.messageErreur.set(messages.length === 1 ? messages[0] : MESSAGE_CHAMPS_EN_ROUGE);
+    return true;
+  }
+
+  private afficherErreursServeur(err: any, messageParDefaut: string): void {
+    this.chargement.set(false);
+    const { message, champs } = lireErreursServeur(err, {}, messageParDefaut);
+    this.erreursChamps.set(champs);
+    this.messageErreur.set(message);
+  }
 
   ngOnInit(): void {
     // 1. Initialisation immédiate depuis les données en cache pour affichage instantané
@@ -179,15 +214,15 @@ export class ProfilLivreurComponent implements OnInit {
     this.messageSucces.set(null);
     this.messageErreur.set(null);
 
-    if (!this.prenom().trim() || !this.nom().trim()) {
-      this.messageErreur.set('Le prénom et le nom sont obligatoires.');
-      return;
+    const erreurs: ErreursChamps = {};
+    if (!this.prenom().trim()) erreurs['prenom'] = 'Le prénom est obligatoire.';
+    if (!this.nom().trim()) erreurs['nom'] = 'Le nom est obligatoire.';
+    if (!this.telephone().trim()) erreurs['telephone'] = 'Le numéro de téléphone est obligatoire.';
+    else if (!estTelephoneValide(this.telephone())) erreurs['telephone'] = 'Numéro invalide (ex. : +221 77 123 45 67).';
+    if (this.numeroReversement().trim() && !estTelephoneValide(this.numeroReversement())) {
+      erreurs['numero_reversement'] = 'Numéro Mobile Money invalide (ex. : 77 123 45 67).';
     }
-
-    if (!this.telephone().trim()) {
-      this.messageErreur.set('Le numéro de téléphone est obligatoire.');
-      return;
-    }
+    if (this.afficherErreursChamps(erreurs)) return;
 
     this.chargement.set(true);
 
@@ -218,18 +253,20 @@ export class ProfilLivreurComponent implements OnInit {
             : null
         );
       },
-      error: (err) => {
-        this.chargement.set(false);
-        this.messageErreur.set(
-          err.error?.message || err.error?.detail || 'Une erreur est survenue lors de la mise à jour.'
-        );
-      }
+      error: (err) => this.afficherErreursServeur(err, 'Une erreur est survenue lors de la mise à jour.')
     });
   }
 
   enregistrerVehicule(): void {
     this.messageSucces.set(null);
     this.messageErreur.set(null);
+
+    const erreurs: ErreursChamps = {};
+    if (this.typeVehicule() !== 'VELO' && !this.immatriculation().trim()) {
+      erreurs['immatriculation'] = "L'immatriculation est obligatoire pour une moto, un scooter ou une voiture.";
+    }
+    if (!this.zonePrincipale().trim()) erreurs['zone_principale'] = "Indiquez votre zone d'activité.";
+    if (this.afficherErreursChamps(erreurs)) return;
 
     this.chargement.set(true);
 
@@ -257,12 +294,7 @@ export class ProfilLivreurComponent implements OnInit {
             : null
         );
       },
-      error: (err) => {
-        this.chargement.set(false);
-        this.messageErreur.set(
-          err.error?.message || err.error?.detail || 'Une erreur est survenue lors de la mise à jour.'
-        );
-      }
+      error: (err) => this.afficherErreursServeur(err, 'Une erreur est survenue lors de la mise à jour.')
     });
   }
 
@@ -315,12 +347,7 @@ export class ProfilLivreurComponent implements OnInit {
           this.documents.set(res.documents);
         }
       },
-      error: (err) => {
-        this.chargement.set(false);
-        this.messageErreur.set(
-          err.error?.message || err.error?.detail || 'Erreur lors du téléversement des pièces justificatives.'
-        );
-      }
+      error: (err) => this.afficherErreursServeur(err, 'Erreur lors du téléversement des pièces justificatives.')
     });
   }
 
@@ -332,20 +359,12 @@ export class ProfilLivreurComponent implements OnInit {
     const confirmation = this.confirmationMotDePasse().trim();
     const ancien = this.ancienMotDePasse().trim();
 
-    if (!ancien) {
-      this.messageErreur.set('Veuillez renseigner votre mot de passe actuel.');
-      return;
-    }
-
-    if (!nouveau || nouveau.length < 6) {
-      this.messageErreur.set('Le nouveau mot de passe doit comporter au moins 6 caractères.');
-      return;
-    }
-
-    if (nouveau !== confirmation) {
-      this.messageErreur.set('Les deux mots de passe ne correspondent pas.');
-      return;
-    }
+    const erreurs: ErreursChamps = {};
+    if (!ancien) erreurs['ancien_mot_de_passe'] = 'Indiquez votre mot de passe actuel.';
+    if (!nouveau) erreurs['nouveau_mot_de_passe'] = 'Choisissez un nouveau mot de passe.';
+    else if (nouveau.length < 6) erreurs['nouveau_mot_de_passe'] = 'Au moins 6 caractères.';
+    if (nouveau !== confirmation) erreurs['confirmation_mot_de_passe'] = 'Les deux mots de passe ne sont pas identiques.';
+    if (this.afficherErreursChamps(erreurs)) return;
 
     this.chargement.set(true);
 
@@ -362,12 +381,7 @@ export class ProfilLivreurComponent implements OnInit {
         this.nouveauMotDePasse.set('');
         this.confirmationMotDePasse.set('');
       },
-      error: (err) => {
-        this.chargement.set(false);
-        this.messageErreur.set(
-          err.error?.message || err.error?.detail || 'Ancien mot de passe invalide.'
-        );
-      }
+      error: (err) => this.afficherErreursServeur(err, 'Le mot de passe n\'a pas pu être modifié.')
     });
   }
 
