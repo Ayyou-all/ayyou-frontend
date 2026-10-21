@@ -6,6 +6,7 @@ import { RouterModule } from '@angular/router';
 import { map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import { ErreursChamps, lireErreursServeur, MESSAGE_CHAMPS_EN_ROUGE } from '../../../socle/outils/erreurs-formulaire';
 
 export type CategorieMenuGerant = 'PLATS_PRINCIPAUX' | 'BOISSONS' | 'DESSERTS';
 
@@ -37,6 +38,43 @@ export class GerantMenuComponent {
   readonly rechercheTexte = signal<string>('');
   readonly chargementEnCours = signal<boolean>(false);
   readonly messageErreur = signal<string | null>(null);
+
+  // Erreurs du formulaire d'ajout / de modification d'un plat (champ entouré en rouge + message dessous)
+  readonly erreursChamps = signal<ErreursChamps>({});
+  readonly messageFormulaire = signal<string | null>(null);
+
+  erreur(champ: string): string | undefined {
+    return this.erreursChamps()[champ];
+  }
+
+  effacerErreur(champ: string): void {
+    if (!this.erreursChamps()[champ]) return;
+    const { [champ]: _, ...autres } = this.erreursChamps();
+    this.erreursChamps.set(autres);
+    if (Object.keys(autres).length === 0) this.messageFormulaire.set(null);
+  }
+
+  /** Mêmes règles que le backend (prix entre 50 et 500 000 FCFA). */
+  private validerPlat(nom: string, prix: number): boolean {
+    const erreurs: ErreursChamps = {};
+    if (!nom.trim()) erreurs['nom'] = 'Le nom du plat est obligatoire.';
+    if (prix === null || prix === undefined || isNaN(Number(prix)) || String(prix).trim() === '') {
+      erreurs['prix'] = 'Indiquez le prix en FCFA.';
+    } else if (Number(prix) < 50 || Number(prix) > 500000) {
+      erreurs['prix'] = 'Le prix doit être compris entre 50 et 500 000 FCFA.';
+    }
+    this.erreursChamps.set(erreurs);
+    const messages = Object.values(erreurs);
+    this.messageFormulaire.set(messages.length === 0 ? null : messages.length === 1 ? messages[0] : MESSAGE_CHAMPS_EN_ROUGE);
+    return messages.length === 0;
+  }
+
+  private afficherErreursServeur(erreur: any, messageParDefaut: string): void {
+    const { message, champs } = lireErreursServeur(erreur, { prix_fcfa: 'prix', section_menu: 'categorie' }, messageParDefaut);
+    this.erreursChamps.set(champs);
+    // L'erreur d'image n'a pas de zone de saisie : elle s'affiche dans le bandeau du formulaire
+    this.messageFormulaire.set(champs['image'] ? `Photo : ${champs['image']}` : message);
+  }
 
   // Notification Toast
   readonly notificationSucces = signal<string | null>(null);
@@ -175,6 +213,8 @@ export class GerantMenuComponent {
    * Ouvre la modale d'ajout.
    */
   ouvrirAjoutPlat(): void {
+    this.erreursChamps.set({});
+    this.messageFormulaire.set(null);
     this.nouveauNom.set('');
     this.nouvelleDescription.set('');
     this.nouvellePhoto.set('');
@@ -253,7 +293,7 @@ export class GerantMenuComponent {
    */
   creerPlat(): void {
     const nom = this.nouveauNom().trim();
-    if (!nom) return;
+    if (!this.validerPlat(nom, this.nouveauPrix())) return;
 
     const desc = this.nouvelleDescription() || 'Plat fait maison avec des ingrédients frais du terroir sénégalais.';
     const prix = this.nouveauPrix();
@@ -300,10 +340,7 @@ export class GerantMenuComponent {
         this.nouvelleDescription.set('');
         setTimeout(() => this.notificationSucces.set(null), 3000);
       },
-      error: () => {
-        this.notificationSucces.set(`Erreur lors de l'enregistrement de "${nom}".`);
-        setTimeout(() => this.notificationSucces.set(null), 3000);
-      }
+      error: (erreur: any) => this.afficherErreursServeur(erreur, `Erreur lors de l'enregistrement de "${nom}".`)
     });
   }
 
@@ -311,6 +348,8 @@ export class GerantMenuComponent {
    * Ouvre la modale d'édition d'un plat.
    */
   editerPlat(plat: PlatGerant): void {
+    this.erreursChamps.set({});
+    this.messageFormulaire.set(null);
     this.platEnEdition.set({ ...plat });
     this.fichierPhotoEditionChoisi.set(null);
     this.modaleEditionOuverte.set(true);
@@ -321,7 +360,7 @@ export class GerantMenuComponent {
    */
   sauvegarderPlat(): void {
     const p = this.platEnEdition();
-    if (!p) return;
+    if (!p || !this.validerPlat(p.nom, p.prix)) return;
 
     let requete: any;
     if (this.fichierPhotoEditionChoisi()) {
@@ -355,10 +394,7 @@ export class GerantMenuComponent {
         this.fichierPhotoEditionChoisi.set(null);
         setTimeout(() => this.notificationSucces.set(null), 2500);
       },
-      error: () => {
-        this.notificationSucces.set(`Erreur lors de la mise à jour de "${p.nom}".`);
-        setTimeout(() => this.notificationSucces.set(null), 3000);
-      }
+      error: (erreur: any) => this.afficherErreursServeur(erreur, `Erreur lors de la mise à jour de "${p.nom}".`)
     });
   }
 

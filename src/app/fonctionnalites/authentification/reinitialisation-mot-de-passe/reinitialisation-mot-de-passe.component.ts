@@ -3,6 +3,12 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import {
+  ErreursChamps,
+  estCourrielValide,
+  lireErreursServeur,
+  MESSAGE_CHAMPS_EN_ROUGE
+} from '../../../socle/outils/erreurs-formulaire';
 
 type EtapeReinitialisation = 'COURRIEL' | 'NOUVEAU_MOT_DE_PASSE' | 'TERMINE';
 
@@ -31,13 +37,33 @@ export class ReinitialisationMotDePasseComponent {
   protected readonly chargement = signal<boolean>(false);
   protected readonly messageErreur = signal<string | null>(null);
   protected readonly messageInfo = signal<string | null>(null);
+  // Erreurs affichées sous chaque champ (champ entouré en rouge)
+  protected readonly erreursChamps = signal<ErreursChamps>({});
+
+  protected erreur(champ: string): string | undefined {
+    return this.erreursChamps()[champ];
+  }
+
+  protected effacerErreur(champ: string): void {
+    if (!this.erreursChamps()[champ]) return;
+    const { [champ]: _, ...autres } = this.erreursChamps();
+    this.erreursChamps.set(autres);
+    if (Object.keys(autres).length === 0) this.messageErreur.set(null);
+  }
+
+  private afficherErreursChamps(erreurs: ErreursChamps): boolean {
+    this.erreursChamps.set(erreurs);
+    const messages = Object.values(erreurs);
+    this.messageErreur.set(messages.length === 0 ? null : messages.length === 1 ? messages[0] : MESSAGE_CHAMPS_EN_ROUGE);
+    return messages.length > 0;
+  }
 
   protected demanderCode(): void {
     const courriel = this.courriel().trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(courriel)) {
-      this.messageErreur.set('Veuillez saisir une adresse e-mail valide.');
-      return;
-    }
+    if (this.afficherErreursChamps(
+      !courriel ? { courriel: "Indiquez l'adresse e-mail de votre compte." }
+        : !estCourrielValide(courriel) ? { courriel: 'Adresse e-mail invalide (ex. : fatou@gmail.com).' } : {}
+    )) return;
     this.chargement.set(true);
     this.messageErreur.set(null);
     this.serviceAuthentification.demanderReinitialisationMotDePasse(courriel).subscribe({
@@ -53,18 +79,16 @@ export class ReinitialisationMotDePasseComponent {
   }
 
   protected enregistrerNouveauMotDePasse(): void {
-    if (!/^\d{6}$/.test(this.code().trim())) {
-      this.messageErreur.set('Le code reçu par e-mail contient 6 chiffres.');
-      return;
-    }
+    const erreurs: ErreursChamps = {};
+    if (!/^\d{6}$/.test(this.code().trim())) erreurs['code'] = 'Le code reçu par e-mail contient 6 chiffres.';
     if (this.nouveauMotDePasse().length < 6) {
-      this.messageErreur.set('Le mot de passe doit contenir au moins 6 caractères.');
-      return;
+      erreurs['nouveau_mot_de_passe'] = 'Le mot de passe doit contenir au moins 6 caractères.';
     }
-    if (this.nouveauMotDePasse() !== this.confirmation()) {
-      this.messageErreur.set('Les deux mots de passe ne correspondent pas.');
-      return;
+    if (!this.confirmation()) erreurs['confirmation_mot_de_passe'] = 'Retapez le nouveau mot de passe.';
+    else if (this.nouveauMotDePasse() !== this.confirmation()) {
+      erreurs['confirmation_mot_de_passe'] = 'Les deux mots de passe ne sont pas identiques.';
     }
+    if (this.afficherErreursChamps(erreurs)) return;
     this.chargement.set(true);
     this.messageErreur.set(null);
     this.serviceAuthentification
@@ -85,6 +109,7 @@ export class ReinitialisationMotDePasseComponent {
 
   protected changerAdresse(): void {
     this.messageErreur.set(null);
+    this.erreursChamps.set({});
     this.messageInfo.set(null);
     this.etape.set('COURRIEL');
   }
@@ -95,25 +120,10 @@ export class ReinitialisationMotDePasseComponent {
 
   private afficherErreur(erreur: any): void {
     this.chargement.set(false);
-    if (erreur?.status === 0) {
-      this.messageErreur.set('Impossible de contacter le serveur. Vérifiez votre connexion.');
-      return;
-    }
-    if (erreur?.status === 429) {
-      this.messageErreur.set('Trop de tentatives. Veuillez patienter une minute avant de réessayer.');
-      return;
-    }
-    const corps = erreur?.error;
-    let message = 'Une erreur est survenue. Veuillez réessayer.';
-    if (corps?.message) {
-      message = corps.message;
-    } else if (corps && typeof corps === 'object') {
-      const premierChamp = Object.keys(corps)[0];
-      if (premierChamp) {
-        const detail = corps[premierChamp];
-        message = Array.isArray(detail) ? detail[0] : String(detail);
-      }
-    }
+    const { message, champs } = lireErreursServeur(erreur);
+    // Code expiré ou faux : le champ du code passe en rouge
+    if (['code_expire', 'code_incorrect'].includes(erreur?.error?.code)) champs['code'] = message;
+    this.erreursChamps.set(champs);
     this.messageErreur.set(message);
   }
 }

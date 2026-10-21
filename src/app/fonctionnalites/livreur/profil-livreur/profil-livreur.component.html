@@ -252,13 +252,14 @@
             <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
               Prénom
             </label>
-            <input
+            <input [class.champ-erreur]="erreur('prenom')"
               type="text"
               [ngModel]="prenom()"
-              (ngModelChange)="prenom.set($event)"
+              (ngModelChange)="prenom.set($event); effacerErreur('prenom')"
               placeholder="Ex : Moussa"
               class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
             />
+            @if (erreur('prenom')) { <p class="message-champ-erreur">{{ erreur('prenom') }}</p> }
           </div>
 
           <!-- Nom -->
@@ -266,13 +267,14 @@
             <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
               Nom de famille
             </label>
-            <input
+            <input [class.champ-erreur]="erreur('nom')"
               type="text"
               [ngModel]="nom()"
-              (ngModelChange)="nom.set($event)"
+              (ngModelChange)="nom.set($event); effacerErreur('nom')"
               placeholder="Ex : Diop"
               class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
             />
+            @if (erreur('nom')) { <p class="message-champ-erreur">{{ erreur('nom') }}</p> }
           </div>
 
           <!-- E-mail (lecture seule) -->
@@ -293,13 +295,14 @@
             <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
               Numéro de téléphone (Mobile)
             </label>
-            <input
+            <input [class.champ-erreur]="erreur('telephone')"
               type="tel"
               [ngModel]="telephone()"
-              (ngModelChange)="telephone.set($event)"
+              (ngModelChange)="telephone.set($event); effacerErreur('telephone')"
               placeholder="Ex : +221 77 123 45 67"
               class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
             />
+            @if (erreur('telephone')) { <p class="message-champ-erreur">{{ erreur('telephone') }}</p> }
           </div>
         </div>
 
@@ -309,14 +312,15 @@
             <label for="numero-reversement" class="block text-xs font-black text-slate-500 uppercase tracking-wider">
               Numéro Mobile Money
             </label>
-            <input
+            <input [class.champ-erreur]="erreur('numero_reversement')"
               id="numero-reversement"
               type="tel"
               [ngModel]="numeroReversement()"
-              (ngModelChange)="numeroReversement.set($event)"
+              (ngModelChange)="numeroReversement.set($event); effacerErreur('numero_reversement')"
               placeholder="Ex : 77 123 45 67"
               class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
             />
+            @if (erreur('numero_reversement')) { <p class="message-champ-erreur">{{ erreur('numero_reversement') }}</p> }
           </div>
           <div class="space-y-1.5">
             <label for="operateur-reversement" class="block text-xs font-black text-slate-500 uppercase tracking-wider">
@@ -396,13 +400,14 @@
           <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
             Numéro d'immatriculation (Plaque)
           </label>
-          <input
+          <input [class.champ-erreur]="erreur('immatriculation')"
             type="text"
             [ngModel]="immatriculation()"
-            (ngModelChange)="immatriculation.set($event)"
+            (ngModelChange)="immatriculation.set($event); effacerErreur('immatriculation')"
             placeholder="Ex : DK-4582-AZ"
             class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-mono font-bold text-slate-800 uppercase focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
           />
+          @if (erreur('immatriculation')) { <p class="message-champ-erreur">{{ erreur('immatriculation') }}</p> }
         </div>
 
         <!-- Zone d'activité principale -->
@@ -410,9 +415,9 @@
           <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
             Zone principale de livraison
           </label>
-          <select
+          <select [class.champ-erreur]="erreur('zone_principale')"
             [ngModel]="zonePrincipale()"
-            (ngModelChange)="zonePrincipale.set($event)"
+            (ngModelChange)="zonePrincipale.set($event); effacerErreur('zone_principale')"
             class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all cursor-pointer"
           >
             <option value="">Sélectionnez votre zone prioritaire...</option>
@@ -420,6 +425,7 @@
               <option [value]="z">{{ z }}</option>
             }
           </select>
+          @if (erreur('zone_principale')) { <p class="message-champ-erreur">{{ erreur('zone_principale') }}</p> }
         </div>
 
         <!-- Bouton Sauvegarder Véhicule -->
@@ -616,13 +622,14 @@
           <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
             Mot de passe actuel
           </label>
-          <input
+          <input [class.champ-erreur]="erreur('ancien_mot_de_passe')"
             type="password"
             [ngModel]="ancienMotDePasse()"
-            (ngModelChange)="ancienMotDePasse.set($event)"
+            (ngModelChange)="ancienMotDePasse.set($event); effacerErreur('ancien_mot_de_passe')"
             placeholder="••••••••"
             class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
           />
+          @if (erreur('ancien_mot_de_passe')) { <p class="message-champ-erreur">{{ erreur('ancien_mot_de_passe') }}</p> }
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -631,13 +638,14 @@
             <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
               Nouveau mot de passe
             </label>
-            <input
+            <input [class.champ-erreur]="erreur('nouveau_mot_de_passe')"
               type="password"
               [ngModel]="nouveauMotDePasse()"
-              (ngModelChange)="nouveauMotDePasse.set($event)"
+              (ngModelChange)="nouveauMotDePasse.set($event); effacerErreur('nouveau_mot_de_passe')"
               placeholder="Minimum 6 caractères"
               class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
             />
+            @if (erreur('nouveau_mot_de_passe')) { <p class="message-champ-erreur">{{ erreur('nouveau_mot_de_passe') }}</p> }
           </div>
 
           <!-- Confirmation -->
@@ -645,13 +653,14 @@
             <label class="block text-xs font-black text-slate-500 uppercase tracking-wider">
               Confirmation du nouveau mot de passe
             </label>
-            <input
+            <input [class.champ-erreur]="erreur('confirmation_mot_de_passe')"
               type="password"
               [ngModel]="confirmationMotDePasse()"
-              (ngModelChange)="confirmationMotDePasse.set($event)"
+              (ngModelChange)="confirmationMotDePasse.set($event); effacerErreur('confirmation_mot_de_passe')"
               placeholder="Répétez le mot de passe"
               class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#E51824] focus:outline-hidden transition-all"
             />
+            @if (erreur('confirmation_mot_de_passe')) { <p class="message-champ-erreur">{{ erreur('confirmation_mot_de_passe') }}</p> }
           </div>
         </div>
 

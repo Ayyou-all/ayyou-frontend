@@ -3,6 +3,13 @@ import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import {
+  ErreursChamps,
+  estCourrielValide,
+  estTelephoneValide,
+  lireErreursServeur,
+  MESSAGE_CHAMPS_EN_ROUGE
+} from '../../../socle/outils/erreurs-formulaire';
 
 /**
  * Modification du compte avec les routes existantes de l'API :
@@ -10,98 +17,14 @@ import { ServiceAuthentification } from '../../../socle/services/service-authent
  * - POST /api/utilisateurs/changer-mot-de-passe/ : mot de passe.
  * Aucun autre champ n'est proposé (seuls ceux saisis à l'inscription).
  */
+const CHAMPS_INFORMATIONS = ['prenom', 'nom', 'courriel', 'telephone', 'adresse'];
+const CHAMPS_MOT_DE_PASSE = ['ancien_mot_de_passe', 'nouveau_mot_de_passe', 'confirmation_mot_de_passe'];
+
 @Component({
   selector: 'app-formulaire-compte',
   standalone: true,
   imports: [FormsModule],
-  template: `
-    <!-- Informations du compte -->
-    <form (ngSubmit)="enregistrerInformations()" class="bg-white rounded-3xl border border-slate-100 p-5 md:p-7 space-y-4">
-      <h2 class="text-base md:text-lg font-bold text-slate-900 font-['Outfit']">Mes informations</h2>
-
-      @if (avecPhoto) {
-        <div class="flex items-center gap-4">
-          <div class="w-16 h-16 rounded-full overflow-hidden bg-[#FFF1F2] border border-slate-100 flex items-center justify-center shrink-0">
-            @if (apercuPhoto()) {
-              <img [src]="apercuPhoto()" alt="" class="w-full h-full object-cover" />
-            } @else {
-              <i class="fa-solid fa-user text-[#E51824]"></i>
-            }
-          </div>
-          <label class="px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer">
-            Changer la photo
-            <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" (change)="choisirPhoto($event)" />
-          </label>
-        </div>
-      }
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <label class="block space-y-1.5">
-          <span class="text-sm font-semibold text-slate-700">Prénom</span>
-          <input name="prenom" [ngModel]="prenom()" (ngModelChange)="prenom.set($event)" required autocomplete="given-name" [class]="classeChamp" />
-        </label>
-        <label class="block space-y-1.5">
-          <span class="text-sm font-semibold text-slate-700">Nom</span>
-          <input name="nom" [ngModel]="nom()" (ngModelChange)="nom.set($event)" required autocomplete="family-name" [class]="classeChamp" />
-        </label>
-        <label class="block space-y-1.5">
-          <span class="text-sm font-semibold text-slate-700">E-mail</span>
-          <input name="courriel" type="email" [ngModel]="courriel()" (ngModelChange)="courriel.set($event)" required autocomplete="email" [class]="classeChamp" />
-        </label>
-        <label class="block space-y-1.5">
-          <span class="text-sm font-semibold text-slate-700">Téléphone</span>
-          <input name="telephone" type="tel" [ngModel]="telephone()" (ngModelChange)="telephone.set($event)" required autocomplete="tel" [class]="classeChamp" />
-        </label>
-        @if (avecAdresse) {
-          <label class="block space-y-1.5 sm:col-span-2">
-            <span class="text-sm font-semibold text-slate-700">Adresse de livraison habituelle</span>
-            <input name="adresse" [ngModel]="adresse()" (ngModelChange)="adresse.set($event)" autocomplete="street-address" [class]="classeChamp" />
-          </label>
-        }
-      </div>
-
-      @if (messageInformations()) {
-        <p [class]="erreurInformations() ? 'text-red-600' : 'text-emerald-700'" class="text-sm font-semibold">{{ messageInformations() }}</p>
-      }
-      <button
-        type="submit"
-        [disabled]="envoiInformations()"
-        class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
-      >
-        {{ envoiInformations() ? 'Enregistrement…' : 'Enregistrer' }}
-      </button>
-    </form>
-
-    <!-- Mot de passe -->
-    <form (ngSubmit)="changerMotDePasse()" class="bg-white rounded-3xl border border-slate-100 p-5 md:p-7 space-y-4">
-      <h2 class="text-base md:text-lg font-bold text-slate-900 font-['Outfit']">Mot de passe</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <label class="block space-y-1.5">
-          <span class="text-sm font-semibold text-slate-700">Mot de passe actuel</span>
-          <input name="ancien" type="password" [ngModel]="ancienMotDePasse()" (ngModelChange)="ancienMotDePasse.set($event)" autocomplete="current-password" [class]="classeChamp" />
-        </label>
-        <label class="block space-y-1.5">
-          <span class="text-sm font-semibold text-slate-700">Nouveau</span>
-          <input name="nouveau" type="password" [ngModel]="nouveauMotDePasse()" (ngModelChange)="nouveauMotDePasse.set($event)" autocomplete="new-password" [class]="classeChamp" />
-        </label>
-        <label class="block space-y-1.5">
-          <span class="text-sm font-semibold text-slate-700">Confirmation</span>
-          <input name="confirmation" type="password" [ngModel]="confirmationMotDePasse()" (ngModelChange)="confirmationMotDePasse.set($event)" autocomplete="new-password" [class]="classeChamp" />
-        </label>
-      </div>
-      <p class="text-xs text-slate-400">8 caractères minimum.</p>
-      @if (messageMotDePasse()) {
-        <p [class]="erreurMotDePasse() ? 'text-red-600' : 'text-emerald-700'" class="text-sm font-semibold">{{ messageMotDePasse() }}</p>
-      }
-      <button
-        type="submit"
-        [disabled]="envoiMotDePasse() || !ancienMotDePasse() || !nouveauMotDePasse()"
-        class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-black text-white text-sm font-bold transition-colors cursor-pointer disabled:opacity-40"
-      >
-        {{ envoiMotDePasse() ? 'Modification…' : 'Changer le mot de passe' }}
-      </button>
-    </form>
-  `,
+  templateUrl: './formulaire-compte.component.html',
   host: { class: 'block space-y-5' }
 })
 export class FormulaireCompteComponent implements OnInit {
@@ -156,9 +79,35 @@ export class FormulaireCompteComponent implements OnInit {
     this.apercuPhoto.set(URL.createObjectURL(fichier));
   }
 
+  // Erreurs affichées sous chaque champ (champ entouré en rouge)
+  readonly erreursChamps = signal<ErreursChamps>({});
+
+  erreur(champ: string): string | undefined {
+    return this.erreursChamps()[champ];
+  }
+
+  effacerErreur(champ: string): void {
+    if (!this.erreursChamps()[champ]) return;
+    const { [champ]: _, ...autres } = this.erreursChamps();
+    this.erreursChamps.set(autres);
+  }
+
+  private remplacerErreurs(champs: string[], erreurs: ErreursChamps): void {
+    const autres = Object.fromEntries(Object.entries(this.erreursChamps()).filter(([champ]) => !champs.includes(champ)));
+    this.erreursChamps.set({ ...autres, ...erreurs });
+  }
+
   enregistrerInformations(): void {
-    if (!this.prenom().trim() || !this.nom().trim() || !this.courriel().trim() || !this.telephone().trim()) {
-      this.afficherInformations('Prénom, nom, e-mail et téléphone sont obligatoires.', true);
+    const erreurs: ErreursChamps = {};
+    if (!this.prenom().trim()) erreurs['prenom'] = 'Le prénom est obligatoire.';
+    if (!this.nom().trim()) erreurs['nom'] = 'Le nom est obligatoire.';
+    if (!this.courriel().trim()) erreurs['courriel'] = "L'adresse e-mail est obligatoire.";
+    else if (!estCourrielValide(this.courriel())) erreurs['courriel'] = 'Adresse e-mail invalide (ex. : fatou@gmail.com).';
+    if (!this.telephone().trim()) erreurs['telephone'] = 'Le numéro de téléphone est obligatoire.';
+    else if (!estTelephoneValide(this.telephone())) erreurs['telephone'] = 'Numéro invalide (ex. : +221 77 123 45 67).';
+    this.remplacerErreurs(CHAMPS_INFORMATIONS, erreurs);
+    if (Object.keys(erreurs).length > 0) {
+      this.afficherInformations(MESSAGE_CHAMPS_EN_ROUGE, true);
       return;
     }
     const donnees = new FormData();
@@ -170,6 +119,7 @@ export class FormulaireCompteComponent implements OnInit {
     if (this.avecPhoto && this.photo) donnees.append('photo', this.photo);
 
     this.envoiInformations.set(true);
+    this.afficherInformations('', false);
     this.http.patch<any>(`${this.urlCompte}moi/`, donnees).subscribe({
       next: (compte) => {
         this.envoiInformations.set(false);
@@ -179,17 +129,28 @@ export class FormulaireCompteComponent implements OnInit {
       },
       error: (erreur) => {
         this.envoiInformations.set(false);
-        this.afficherInformations(this.lireErreur(erreur, "L'enregistrement a échoué. Vérifiez votre connexion."), true);
+        const { message, champs } = lireErreursServeur(erreur, {}, "L'enregistrement a échoué. Vérifiez votre connexion.");
+        this.remplacerErreurs(CHAMPS_INFORMATIONS, champs);
+        this.afficherInformations(message, true);
       }
     });
   }
 
   changerMotDePasse(): void {
+    const erreurs: ErreursChamps = {};
+    if (!this.ancienMotDePasse()) erreurs['ancien_mot_de_passe'] = 'Indiquez votre mot de passe actuel.';
+    if (!this.nouveauMotDePasse()) erreurs['nouveau_mot_de_passe'] = 'Choisissez un nouveau mot de passe.';
+    else if (this.nouveauMotDePasse().length < 6) erreurs['nouveau_mot_de_passe'] = 'Au moins 6 caractères.';
     if (this.nouveauMotDePasse() !== this.confirmationMotDePasse()) {
-      this.afficherMotDePasse('La confirmation ne correspond pas au nouveau mot de passe.', true);
+      erreurs['confirmation_mot_de_passe'] = 'Les deux mots de passe ne sont pas identiques.';
+    }
+    this.remplacerErreurs(CHAMPS_MOT_DE_PASSE, erreurs);
+    if (Object.keys(erreurs).length > 0) {
+      this.afficherMotDePasse(MESSAGE_CHAMPS_EN_ROUGE, true);
       return;
     }
     this.envoiMotDePasse.set(true);
+    this.afficherMotDePasse('', false);
     this.http
       .post<any>(`${this.urlCompte}changer-mot-de-passe/`, {
         ancien_mot_de_passe: this.ancienMotDePasse(),
@@ -206,20 +167,11 @@ export class FormulaireCompteComponent implements OnInit {
         },
         error: (erreur) => {
           this.envoiMotDePasse.set(false);
-          this.afficherMotDePasse(this.lireErreur(erreur, 'La modification a échoué. Vérifiez votre connexion.'), true);
+          const { message, champs } = lireErreursServeur(erreur, {}, 'La modification a échoué. Vérifiez votre connexion.');
+          this.remplacerErreurs(CHAMPS_MOT_DE_PASSE, champs);
+          this.afficherMotDePasse(message, true);
         }
       });
-  }
-
-  /** Message d'erreur du serveur : { message } ou { champ: [erreur] }. */
-  private lireErreur(erreur: any, parDefaut: string): string {
-    const corps = erreur?.error;
-    if (corps?.message) return corps.message;
-    if (corps && typeof corps === 'object') {
-      const premiere = Object.values(corps)[0];
-      if (Array.isArray(premiere) && premiere.length) return String(premiere[0]);
-    }
-    return parDefaut;
   }
 
   private afficherInformations(message: string, estErreur: boolean): void {

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RoleUtilisateur } from '../../../socle/modeles/utilisateur.modele';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import { ErreursChamps, estCourrielValide, lireErreursServeur } from '../../../socle/outils/erreurs-formulaire';
 
 export interface IndicatifPays {
   code: string;
@@ -27,6 +28,19 @@ export class ConnexionComponent {
   protected readonly courrielSaisi = signal<string>('');
   protected readonly motDePasseSaisi = signal<string>('');
   protected readonly motDePasseVisible = signal<boolean>(false);
+  // Erreurs affichées sous chaque champ (champ entouré en rouge)
+  protected readonly erreursChamps = signal<ErreursChamps>({});
+
+  protected erreur(champ: string): string | undefined {
+    return this.erreursChamps()[champ];
+  }
+
+  protected effacerErreur(champ: string): void {
+    if (!this.erreursChamps()[champ]) return;
+    const { [champ]: _, ...autres } = this.erreursChamps();
+    this.erreursChamps.set(autres);
+    this.serviceAuthentification.messageErreur.set(null);
+  }
 
   protected basculerVisibiliteMotDePasse(): void {
     this.motDePasseVisible.update((valeur) => !valeur);
@@ -36,10 +50,17 @@ export class ConnexionComponent {
     const courriel = this.courrielSaisi().trim();
     const motDePasse = this.motDePasseSaisi().trim();
 
-    if (!courriel || !motDePasse) {
-      this.serviceAuthentification.messageErreur.set(
-        'Veuillez renseigner votre adresse e-mail et votre mot de passe.'
-      );
+    // Le champ accepte l'e-mail ou le numéro de téléphone
+    const erreurs: ErreursChamps = {};
+    if (!courriel) {
+      erreurs['courriel'] = 'Indiquez votre adresse e-mail.';
+    } else if (courriel.includes('@') && !estCourrielValide(courriel)) {
+      erreurs['courriel'] = 'Adresse e-mail invalide (ex. : fatou@gmail.com).';
+    }
+    if (!motDePasse) erreurs['motDePasse'] = 'Indiquez votre mot de passe.';
+    this.erreursChamps.set(erreurs);
+    if (Object.keys(erreurs).length > 0) {
+      this.serviceAuthentification.messageErreur.set(null);
       return;
     }
 
@@ -54,21 +75,16 @@ export class ConnexionComponent {
           this.redirigerSelonRole(utilisateur.role);
         },
         error: (erreur) => {
-          if (erreur?.status === 0) {
-            this.serviceAuthentification.messageErreur.set(
-              'Impossible de contacter le serveur Django. Veuillez vérifier que le backend est démarré sur le port 8000.'
-            );
-          } else if (erreur?.status === 429) {
-            this.serviceAuthentification.messageErreur.set(
-              'Trop de tentatives de connexion. Veuillez patienter une minute avant de réessayer.'
-            );
-          } else {
-            const message =
-              erreur?.error?.message ||
-              erreur?.error?.detail ||
-              'Adresse e-mail ou mot de passe incorrect. Veuillez réessayer.';
-            this.serviceAuthentification.messageErreur.set(message);
-          }
+          const { message, champs } = lireErreursServeur(
+            erreur,
+            { identifiant: 'courriel', mot_de_passe: 'motDePasse' },
+            'Adresse e-mail ou mot de passe incorrect. Veuillez réessayer.'
+          );
+          // Identifiants refusés : les deux champs passent en rouge, le message reste dans le bandeau
+          this.erreursChamps.set(
+            erreur?.error?.code === 'identifiants_invalides' ? { courriel: ' ', motDePasse: ' ' } : champs
+          );
+          this.serviceAuthentification.messageErreur.set(message);
         }
       });
   }

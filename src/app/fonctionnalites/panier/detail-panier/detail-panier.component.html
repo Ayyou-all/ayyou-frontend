@@ -358,6 +358,11 @@
           </div>
         }
 
+        <!-- Pourquoi le bouton Payer est grisé : adresse manquante -->
+        @if (panier().lignes.length > 0 && !adresseLivraison().trim()) {
+          <p class="message-champ-erreur">Choisissez votre adresse de livraison (en haut de la page) pour pouvoir payer.</p>
+        }
+
         <!-- BOUTON ROUGE D'ACTION PRINCIPALE : Payer ... FCFA → -->
         <button
           type="button"
@@ -432,6 +437,7 @@
           type="text"
           [ngModel]="adresseLivraison()"
           (ngModelChange)="adresseLivraison.set($event)"
+          [class.champ-erreur]="latitudeLivraison() !== null && !adresseLivraison().trim()"
           placeholder="Ex : Parcelles Assainies, Unité 15"
           class="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white transition-all"
         />
@@ -445,6 +451,12 @@
           class="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white transition-all"
         />
       </div>
+
+      @if (latitudeLivraison() === null) {
+        <p class="message-champ-erreur">Placez votre position sur la carte ou touchez « Utiliser ma position actuelle ».</p>
+      } @else if (!adresseLivraison().trim()) {
+        <p class="message-champ-erreur">Indiquez l'adresse (quartier, rue) pour que le livreur vous trouve.</p>
+      }
 
       <button
         type="button"

@@ -46,13 +46,13 @@
             <label for="champ-email-mobile" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">
               Adresse e-mail
             </label>
-            <div class="relative flex items-center rounded-2xl border border-slate-200 bg-white py-3 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
+            <div [class.champ-erreur]="erreur('courriel')" class="relative flex items-center rounded-2xl border border-slate-200 bg-white py-3 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
               <i class="fa-solid fa-envelope text-slate-400 shrink-0 mr-3 text-sm"></i>
               <input
                 id="champ-email-mobile"
                 name="emailMobile"
                 [ngModel]="courrielSaisi()"
-                (ngModelChange)="courrielSaisi.set($event)"
+                (ngModelChange)="courrielSaisi.set($event); effacerErreur('courriel')"
                 type="text"
                 placeholder="votre@email.com"
                 autocomplete="email"
@@ -60,6 +60,7 @@
                 required
               />
             </div>
+            @if (erreur('courriel')?.trim()) { <p class="message-champ-erreur">{{ erreur('courriel') }}</p> }
           </div>
 
           <!-- Champ 2 : MOT DE PASSE avec icône FontAwesome cadenas et affichage/masquage -->
@@ -76,14 +77,14 @@
               </a>
             </div>
 
-            <div class="relative flex items-center rounded-2xl border border-slate-200 bg-white py-3 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
+            <div [class.champ-erreur]="erreur('motDePasse')" class="relative flex items-center rounded-2xl border border-slate-200 bg-white py-3 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
               <i class="fa-solid fa-lock text-slate-400 shrink-0 mr-3 text-sm"></i>
               
               <input
                 id="champ-mot-de-passe-mobile"
                 name="motDePasseMobile"
                 [ngModel]="motDePasseSaisi()"
-                (ngModelChange)="motDePasseSaisi.set($event)"
+                (ngModelChange)="motDePasseSaisi.set($event); effacerErreur('motDePasse')"
                 [type]="motDePasseVisible() ? 'text' : 'password'"
                 placeholder="Votre mot de passe"
                 autocomplete="current-password"
@@ -101,6 +102,7 @@
                 <i [class]="motDePasseVisible() ? 'fa-solid fa-eye text-sm' : 'fa-solid fa-eye-slash text-sm'"></i>
               </button>
             </div>
+            @if (erreur('motDePasse')?.trim()) { <p class="message-champ-erreur">{{ erreur('motDePasse') }}</p> }
           </div>
 
           <!-- Bouton Se connecter -->
@@ -237,13 +239,13 @@
               <label for="champ-email-desktop" class="block text-xs sm:text-sm font-semibold text-slate-800">
                 Adresse e-mail
               </label>
-              <div class="relative flex items-center rounded-xl border border-slate-200 bg-white py-0.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
+              <div [class.champ-erreur]="erreur('courriel')" class="relative flex items-center rounded-xl border border-slate-200 bg-white py-0.5 px-4 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
                 <i class="fa-solid fa-envelope text-slate-400 shrink-0 mr-3 text-sm"></i>
                 <input
                   id="champ-email-desktop"
                   name="emailDesktop"
                   [ngModel]="courrielSaisi()"
-                  (ngModelChange)="courrielSaisi.set($event)"
+                  (ngModelChange)="courrielSaisi.set($event); effacerErreur('courriel')"
                   type="text"
                   placeholder="votre@email.com"
                   autocomplete="email"
@@ -251,6 +253,7 @@
                   required
                 />
               </div>
+              @if (erreur('courriel')?.trim()) { <p class="message-champ-erreur">{{ erreur('courriel') }}</p> }
             </div>
 
             <!-- Champ : Mot de passe -->
@@ -267,12 +270,12 @@
                 </a>
               </div>
 
-              <div class="relative flex items-center rounded-xl border border-slate-200 bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
+              <div [class.champ-erreur]="erreur('motDePasse')" class="relative flex items-center rounded-xl border border-slate-200 bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 transition-all">
                 <input
                   id="champ-mot-de-passe-desktop"
                   name="motDePasseDesktop"
                   [ngModel]="motDePasseSaisi()"
-                  (ngModelChange)="motDePasseSaisi.set($event)"
+                  (ngModelChange)="motDePasseSaisi.set($event); effacerErreur('motDePasse')"
                   [type]="motDePasseVisible() ? 'text' : 'password'"
                   placeholder="Votre mot de passe"
                   autocomplete="current-password"
@@ -289,6 +292,7 @@
                   <i [class]="motDePasseVisible() ? 'fa-solid fa-eye text-xs' : 'fa-solid fa-eye-slash text-xs'"></i>
                 </button>
               </div>
+              @if (erreur('motDePasse')?.trim()) { <p class="message-champ-erreur">{{ erreur('motDePasse') }}</p> }
             </div>
 
             <!-- Bouton Se connecter -->

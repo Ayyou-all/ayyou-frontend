@@ -1,0 +1,202 @@
+<!-- Informations du compte -->
+<form
+  (ngSubmit)="enregistrerInformations()"
+  class="bg-white rounded-3xl border border-slate-100 p-5 md:p-7 space-y-4"
+>
+  <h2 class="text-base md:text-lg font-bold text-slate-900 font-['Outfit']">Mes informations</h2>
+
+  @if (avecPhoto) {
+    <div class="flex items-center gap-4">
+      <div
+        class="w-16 h-16 rounded-full overflow-hidden bg-[#FFF1F2] border border-slate-100 flex items-center justify-center shrink-0"
+      >
+        @if (apercuPhoto()) {
+          <img [src]="apercuPhoto()" alt="" class="w-full h-full object-cover" />
+        } @else {
+          <i class="fa-solid fa-user text-[#E51824]"></i>
+        }
+      </div>
+      <label
+        class="px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+      >
+        Changer la photo
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          class="hidden"
+          (change)="choisirPhoto($event)"
+        />
+      </label>
+    </div>
+  }
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <label class="block space-y-1.5">
+      <span class="text-sm font-semibold text-slate-700">Prénom</span>
+      <input
+        [class.champ-erreur]="erreur('prenom')"
+        name="prenom"
+        [ngModel]="prenom()"
+        (ngModelChange)="prenom.set($event); effacerErreur('prenom')"
+        required
+        autocomplete="given-name"
+        [class]="classeChamp"
+      />
+      @if (erreur('prenom')) {
+        <p class="message-champ-erreur">{{ erreur('prenom') }}</p>
+      }
+    </label>
+    <label class="block space-y-1.5">
+      <span class="text-sm font-semibold text-slate-700">Nom</span>
+      <input
+        [class.champ-erreur]="erreur('nom')"
+        name="nom"
+        [ngModel]="nom()"
+        (ngModelChange)="nom.set($event); effacerErreur('nom')"
+        required
+        autocomplete="family-name"
+        [class]="classeChamp"
+      />
+      @if (erreur('nom')) {
+        <p class="message-champ-erreur">{{ erreur('nom') }}</p>
+      }
+    </label>
+    <label class="block space-y-1.5">
+      <span class="text-sm font-semibold text-slate-700">E-mail</span>
+      <input
+        [class.champ-erreur]="erreur('courriel')"
+        name="courriel"
+        type="email"
+        [ngModel]="courriel()"
+        (ngModelChange)="courriel.set($event); effacerErreur('courriel')"
+        required
+        autocomplete="email"
+        [class]="classeChamp"
+      />
+      @if (erreur('courriel')) {
+        <p class="message-champ-erreur">{{ erreur('courriel') }}</p>
+      }
+    </label>
+    <label class="block space-y-1.5">
+      <span class="text-sm font-semibold text-slate-700">Téléphone</span>
+      <input
+        [class.champ-erreur]="erreur('telephone')"
+        name="telephone"
+        type="tel"
+        [ngModel]="telephone()"
+        (ngModelChange)="telephone.set($event); effacerErreur('telephone')"
+        required
+        autocomplete="tel"
+        [class]="classeChamp"
+      />
+      @if (erreur('telephone')) {
+        <p class="message-champ-erreur">{{ erreur('telephone') }}</p>
+      }
+    </label>
+    @if (avecAdresse) {
+      <label class="block space-y-1.5 sm:col-span-2">
+        <span class="text-sm font-semibold text-slate-700">Adresse de livraison habituelle</span>
+        <input
+          [class.champ-erreur]="erreur('adresse')"
+          name="adresse"
+          [ngModel]="adresse()"
+          (ngModelChange)="adresse.set($event); effacerErreur('adresse')"
+          autocomplete="street-address"
+          [class]="classeChamp"
+        />
+        @if (erreur('adresse')) {
+          <p class="message-champ-erreur">{{ erreur('adresse') }}</p>
+        }
+      </label>
+    }
+  </div>
+
+  @if (messageInformations()) {
+    <p
+      [class]="erreurInformations() ? 'text-red-600' : 'text-emerald-700'"
+      class="text-sm font-semibold"
+    >
+      {{ messageInformations() }}
+    </p>
+  }
+  <button
+    type="submit"
+    [disabled]="envoiInformations()"
+    class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-[#E51824] hover:bg-red-700 text-white text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
+  >
+    {{ envoiInformations() ? 'Enregistrement…' : 'Enregistrer' }}
+  </button>
+</form>
+
+<!-- Mot de passe -->
+<form
+  (ngSubmit)="changerMotDePasse()"
+  class="bg-white rounded-3xl border border-slate-100 p-5 md:p-7 space-y-4"
+>
+  <h2 class="text-base md:text-lg font-bold text-slate-900 font-['Outfit']">Mot de passe</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <label class="block space-y-1.5">
+      <span class="text-sm font-semibold text-slate-700">Mot de passe actuel</span>
+      <input
+        [class.champ-erreur]="erreur('ancien_mot_de_passe')"
+        name="ancien"
+        type="password"
+        [ngModel]="ancienMotDePasse()"
+        (ngModelChange)="ancienMotDePasse.set($event); effacerErreur('ancien_mot_de_passe')"
+        autocomplete="current-password"
+        [class]="classeChamp"
+      />
+      @if (erreur('ancien_mot_de_passe')) {
+        <p class="message-champ-erreur">{{ erreur('ancien_mot_de_passe') }}</p>
+      }
+    </label>
+    <label class="block space-y-1.5">
+      <span class="text-sm font-semibold text-slate-700">Nouveau</span>
+      <input
+        [class.champ-erreur]="erreur('nouveau_mot_de_passe')"
+        name="nouveau"
+        type="password"
+        [ngModel]="nouveauMotDePasse()"
+        (ngModelChange)="nouveauMotDePasse.set($event); effacerErreur('nouveau_mot_de_passe')"
+        autocomplete="new-password"
+        [class]="classeChamp"
+      />
+      @if (erreur('nouveau_mot_de_passe')) {
+        <p class="message-champ-erreur">{{ erreur('nouveau_mot_de_passe') }}</p>
+      }
+    </label>
+    <label class="block space-y-1.5">
+      <span class="text-sm font-semibold text-slate-700">Confirmation</span>
+      <input
+        [class.champ-erreur]="erreur('confirmation_mot_de_passe')"
+        name="confirmation"
+        type="password"
+        [ngModel]="confirmationMotDePasse()"
+        (ngModelChange)="
+          confirmationMotDePasse.set($event); effacerErreur('confirmation_mot_de_passe')
+        "
+        autocomplete="new-password"
+        [class]="classeChamp"
+      />
+      @if (erreur('confirmation_mot_de_passe')) {
+        <p class="message-champ-erreur">{{ erreur('confirmation_mot_de_passe') }}</p>
+      }
+    </label>
+  </div>
+  <p class="text-xs text-slate-400">6 caractères minimum.</p>
+  @if (messageMotDePasse()) {
+    <p
+      [class]="erreurMotDePasse() ? 'text-red-600' : 'text-emerald-700'"
+      class="text-sm font-semibold"
+    >
+      {{ messageMotDePasse() }}
+    </p>
+  }
+  <button
+    type="submit"
+    [disabled]="envoiMotDePasse() || !ancienMotDePasse() || !nouveauMotDePasse()"
+    class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-black text-white text-sm font-bold transition-colors cursor-pointer disabled:opacity-40"
+  >
+    {{ envoiMotDePasse() ? 'Modification…' : 'Changer le mot de passe' }}
+  </button>
+</form>
