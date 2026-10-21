@@ -9,6 +9,19 @@ import { Observable, catchError, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Plat } from '../modeles/plat.modele';
 
+/** Filtres compris par l'IA à partir d'une phrase dictée (recherche vocale). */
+export interface AnalyseRechercheVocale {
+  texte: string;
+  specialites: string[];
+  termes_recherche: string[];
+  mots_libres: string[];
+  budget_max_fcfa: number | null;
+  quartier: string | null;
+  tri: 'PRIX' | null;
+  ouvert_seulement: boolean;
+  source: 'FASTAPI_IA' | 'REPLI_LOCAL';
+}
+
 export interface CartePlatChatbot {
   id: number | string;
   nom: string;
@@ -165,6 +178,13 @@ export class ServiceIaService {
       }),
       catchError(() => of([]))
     );
+  }
+
+  /**
+   * Recherche vocale : transforme la phrase dictée en filtres (plats, budget, quartier, prix, ouverture).
+   */
+  analyserRechercheVocale(texte: string): Observable<AnalyseRechercheVocale> {
+    return this.http.post<AnalyseRechercheVocale>(`${environment.apiUrl}/ia/recherche-vocale/`, { texte });
   }
 
   /**

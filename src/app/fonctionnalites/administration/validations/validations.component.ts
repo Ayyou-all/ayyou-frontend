@@ -109,6 +109,11 @@ export class ValidationsComponent implements OnInit {
   readonly modaleVerificationOuverte = signal<boolean>(false);
   readonly notificationSucces = signal<string | null>(null);
 
+  // Refus d'un dossier : le motif est obligatoire, il est envoyé par e-mail au partenaire
+  readonly saisieMotifRejet = signal<boolean>(false);
+  readonly motifRejet = signal<string>('');
+  readonly decisionEnCours = signal<boolean>(false);
+
   // Modale d'inspection du document détaillé
   readonly documentEnConsultation = signal<DocumentPartenaire | null>(null);
   readonly indexDocumentEnCours = signal<number>(0);
@@ -523,6 +528,8 @@ export class ValidationsComponent implements OnInit {
   fermerVerification(): void {
     this.modaleVerificationOuverte.set(false);
     this.partenaireSelectionne.set(null);
+    this.saisieMotifRejet.set(false);
+    this.motifRejet.set('');
     this.fermerApercuDocument();
   }
 
@@ -695,59 +702,62 @@ export class ValidationsComponent implements OnInit {
 
   validerPartenaire(): void {
     const p = this.partenaireSelectionne();
-    if (!p) return;
-
-    const url =
-      p.type === 'RESTAURANT'
-        ? `${environment.apiUrl}/administration/etablissements/${p.identifiant}/decision/`
-        : `${environment.apiUrl}/administration/livreurs/${p.identifiant}/decision/`;
-
-    this.http.post(url, { nouveau_statut: 'ACTIF' }).subscribe({
-      next: () => {
-        this.listePartenaires.update((liste) =>
-          liste.map((item) => (item.identifiant === p.identifiant ? { ...item, statut: 'VALIDE' } : item))
-        );
-        this.notificationSucces.set(`Le compte de "${p.nom}" a été activé avec succès.`);
-        this.fermerVerification();
-        this.chargerPartenaires();
-        setTimeout(() => this.notificationSucces.set(null), 3000);
-      },
-      error: () => {
-        this.notificationSucces.set(`Erreur lors de l'activation de "${p.nom}".`);
-        setTimeout(() => this.notificationSucces.set(null), 3000);
-      }
-    });
+    if (!p || this.decisionEnCours()) return;
+    this.envoyerDecision(p, { nouveau_statut: 'ACTIF' }, 'VALIDE');
   }
 
+  /** Premier clic : affiche le champ du motif. Second clic : envoie le refus. */
   rejeterPartenaire(): void {
     const p = this.partenaireSelectionne();
-    if (!p) return;
+    if (!p || this.decisionEnCours()) return;
+    if (!this.saisieMotifRejet()) {
+      this.saisieMotifRejet.set(true);
+      return;
+    }
+    const motif = this.motifRejet().trim();
+    if (!motif) return;
+    this.envoyerDecision(p, { nouveau_statut: 'SUSPENDU', motif_decision: motif }, 'REJETE');
+  }
 
+  annulerRejet(): void {
+    this.saisieMotifRejet.set(false);
+    this.motifRejet.set('');
+  }
+
+  private envoyerDecision(
+    p: PartenaireAValider,
+    corps: { nouveau_statut: string; motif_decision?: string },
+    statutAffiche: 'VALIDE' | 'REJETE'
+  ): void {
     const url =
       p.type === 'RESTAURANT'
         ? `${environment.apiUrl}/administration/etablissements/${p.identifiant}/decision/`
         : `${environment.apiUrl}/administration/livreurs/${p.identifiant}/decision/`;
 
-    this.http
-      .post(url, {
-        nouveau_statut: 'SUSPENDU',
-        motif_decision: 'Dossier incomplet ou non conforme aux exigences réglementaires'
-      })
-      .subscribe({
-        next: () => {
-          this.listePartenaires.update((liste) =>
-            liste.map((item) => (item.identifiant === p.identifiant ? { ...item, statut: 'REJETE' } : item))
-          );
-          this.notificationSucces.set(`La demande de "${p.nom}" a été rejetée.`);
-          this.fermerVerification();
-          this.chargerPartenaires();
-          setTimeout(() => this.notificationSucces.set(null), 3000);
-        },
-        error: () => {
-          this.notificationSucces.set(`Erreur lors du traitement de "${p.nom}".`);
-          setTimeout(() => this.notificationSucces.set(null), 3000);
-        }
-      });
+    this.decisionEnCours.set(true);
+    this.http.post<{ emailEnvoye: boolean | null }>(url, corps).subscribe({
+      next: (reponse) => {
+        this.decisionEnCours.set(false);
+        this.listePartenaires.update((liste) =>
+          liste.map((item) => (item.identifiant === p.identifiant ? { ...item, statut: statutAffiche } : item))
+        );
+        const action = statutAffiche === 'VALIDE' ? `Le compte de "${p.nom}" a été activé.` : `La demande de "${p.nom}" a été rejetée.`;
+        const email =
+          reponse?.emailEnvoye === false
+            ? " Attention : l'e-mail au partenaire n'a pas pu partir."
+            : ' Le partenaire a été prévenu par e-mail.';
+        this.notificationSucces.set(action + email);
+        this.fermerVerification();
+        this.chargerPartenaires();
+        setTimeout(() => this.notificationSucces.set(null), 4000);
+      },
+      error: (erreur) => {
+        this.decisionEnCours.set(false);
+        const detail = erreur?.error?.motif_decision?.[0] || erreur?.error?.message;
+        this.notificationSucces.set(detail || `Erreur lors du traitement de "${p.nom}".`);
+        setTimeout(() => this.notificationSucces.set(null), 4000);
+      }
+    });
   }
 
   changerPage(page: number): void {

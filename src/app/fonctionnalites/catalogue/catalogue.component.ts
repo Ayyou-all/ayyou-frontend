@@ -5,6 +5,25 @@ import { Router, RouterModule } from '@angular/router';
 import { Plat } from '../../socle/modeles/plat.modele';
 import { CategorieRestaurant, Restaurant } from '../../socle/modeles/restaurant.modele';
 import { ServiceCatalogueService } from '../../socle/services/service-catalogue.service';
+import { AnalyseRechercheVocale, ServiceIaService } from '../../socle/services/service-ia.service';
+
+/** Minuscules, sans accents ni ponctuation (même règle que le service IA). */
+function normaliser(texte: string): string {
+  return (texte || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/['’-]/g, ' ')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Vrai si un des termes apparaît en début de mot dans le texte (« pastel » trouve « Pastels »). */
+function contientUnTerme(texte: string, termes: string[]): boolean {
+  const cible = ` ${normaliser(texte)}`;
+  return termes.some((terme) => cible.includes(` ${terme}`));
+}
 
 @Component({
   selector: 'app-catalogue',
@@ -14,6 +33,7 @@ import { ServiceCatalogueService } from '../../socle/services/service-catalogue.
 })
 export class CatalogueComponent {
   readonly serviceCatalogue = inject(ServiceCatalogueService);
+  private readonly serviceIa = inject(ServiceIaService);
   readonly routeur = inject(Router);
 
   // Recherche textuelle
@@ -22,17 +42,22 @@ export class CatalogueComponent {
   // Catégorie filtrée sélectionnée
   readonly categorieSelectionnee = signal<string | null>(null);
 
+  // Filtres compris par l'IA après une recherche vocale (remplacent la recherche textuelle)
+  readonly filtresVocaux = signal<AnalyseRechercheVocale | null>(null);
+
   // Liste filtrée des restaurants
   readonly listeRestaurantsFiltree = computed(() => {
     const recherche = this.texteRecherche().trim().toLowerCase();
     const cat = this.categorieSelectionnee();
+    const vocal = this.filtresVocaux();
 
-    return this.serviceCatalogue.restaurants().filter((resto) => {
-      const correspondRecherche =
-        !recherche ||
-        resto.nom.toLowerCase().includes(recherche) ||
-        resto.specialite.toLowerCase().includes(recherche) ||
-        resto.quartierVille.toLowerCase().includes(recherche);
+    const restaurants = this.serviceCatalogue.restaurants().filter((resto) => {
+      const correspondRecherche = vocal
+        ? this.correspondAuxFiltresVocaux(resto, vocal)
+        : !recherche ||
+          resto.nom.toLowerCase().includes(recherche) ||
+          resto.specialite.toLowerCase().includes(recherche) ||
+          resto.quartierVille.toLowerCase().includes(recherche);
 
       const correspondCategorie =
         !cat ||
@@ -41,6 +66,12 @@ export class CatalogueComponent {
 
       return correspondRecherche && correspondCategorie;
     });
+
+    // « Pas cher » : les restaurants dont le plat demandé est le moins cher d'abord
+    if (vocal?.tri === 'PRIX') {
+      return [...restaurants].sort((a, b) => this.prixMinimum(a, vocal) - this.prixMinimum(b, vocal));
+    }
+    return restaurants;
   });
 
   // Plats réels disponibles à la carte
@@ -68,22 +99,124 @@ export class CatalogueComponent {
     this.routeur.navigate(['/restaurant', identifiantRestaurant]);
   }
 
-  // Recherche vocale : seulement si le navigateur sait reconnaître la parole (Chrome, Edge, Safari)
+  /** Saisie au clavier : la recherche écrite remplace la recherche vocale. */
+  modifierTexteRecherche(texte: string): void {
+    this.filtresVocaux.set(null);
+    this.messageVocal.set(null);
+    this.texteRecherche.set(texte);
+  }
+
+  reinitialiserFiltres(): void {
+    this.texteRecherche.set('');
+    this.categorieSelectionnee.set(null);
+    this.filtresVocaux.set(null);
+    this.messageVocal.set(null);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Recherche vocale intelligente
+  // ---------------------------------------------------------------------------
+  // Reconnaissance de la parole : Chrome, Edge et Safari uniquement
   private readonly ReconnaissanceVocale =
     typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null;
-  readonly rechercheVocaleDisponible = Boolean(this.ReconnaissanceVocale);
   readonly ecouteEnCours = signal<boolean>(false);
+  readonly analyseEnCours = signal<boolean>(false);
+  readonly messageVocal = signal<string | null>(null);
 
-  /** Dicte la recherche : le texte reconnu remplit le champ de recherche. */
+  /** Écoute la phrase du client, puis l'IA la transforme en filtres de recherche. */
   lancerRechercheVocale(): void {
-    if (!this.ReconnaissanceVocale || this.ecouteEnCours()) return;
+    if (this.ecouteEnCours() || this.analyseEnCours()) return;
+    if (!this.ReconnaissanceVocale) {
+      this.messageVocal.set(
+        "Votre navigateur ne permet pas la recherche vocale. Utilisez Chrome, Edge ou Safari, ou tapez votre recherche."
+      );
+      return;
+    }
     const reconnaissance = new this.ReconnaissanceVocale();
     reconnaissance.lang = 'fr-FR';
-    reconnaissance.onresult = (evenement: any) => this.texteRecherche.set(evenement.results[0][0].transcript);
+    reconnaissance.interimResults = false;
+    reconnaissance.onresult = (evenement: any) => this.analyserPhrase(evenement.results[0][0].transcript);
     reconnaissance.onend = () => this.ecouteEnCours.set(false);
-    reconnaissance.onerror = () => this.ecouteEnCours.set(false);
+    reconnaissance.onerror = (evenement: any) => {
+      this.ecouteEnCours.set(false);
+      if (evenement?.error === 'not-allowed' || evenement?.error === 'service-not-allowed') {
+        this.messageVocal.set("L'accès au micro est refusé. Autorisez le micro dans votre navigateur pour parler.");
+      } else if (evenement?.error === 'no-speech') {
+        this.messageVocal.set("Je n'ai rien entendu. Appuyez sur le micro et dites par exemple « un yassa pas cher ».");
+      } else if (evenement?.error !== 'aborted') {
+        this.messageVocal.set("La reconnaissance vocale n'a pas fonctionné. Réessayez ou tapez votre recherche.");
+      }
+    };
+    this.messageVocal.set(null);
     this.ecouteEnCours.set(true);
     reconnaissance.start();
+  }
+
+  private analyserPhrase(phrase: string): void {
+    const texte = phrase.trim();
+    if (!texte) return;
+    this.texteRecherche.set(texte);
+    this.analyseEnCours.set(true);
+    this.serviceIa.analyserRechercheVocale(texte).subscribe({
+      next: (analyse) => {
+        this.analyseEnCours.set(false);
+        this.filtresVocaux.set(analyse);
+      },
+      error: () => {
+        // Sans réponse du serveur, la phrase reste une recherche écrite classique.
+        this.analyseEnCours.set(false);
+        this.messageVocal.set("La recherche intelligente est indisponible : recherche simple sur votre phrase.");
+      }
+    });
+  }
+
+  /** Libellés des filtres compris, affichés sous la barre de recherche. */
+  readonly etiquettesVocales = computed<string[]>(() => {
+    const vocal = this.filtresVocaux();
+    if (!vocal) return [];
+    const etiquettes = [...vocal.specialites, ...vocal.mots_libres];
+    if (vocal.quartier) etiquettes.push(`📍 ${vocal.quartier}`);
+    if (vocal.budget_max_fcfa) etiquettes.push(`≤ ${vocal.budget_max_fcfa.toLocaleString('fr-FR')} FCFA`);
+    if (vocal.tri === 'PRIX') etiquettes.push('Pas cher');
+    if (vocal.ouvert_seulement) etiquettes.push('Ouvert maintenant');
+    return etiquettes;
+  });
+
+  private termesVocaux(vocal: AnalyseRechercheVocale): string[] {
+    return [...vocal.termes_recherche, ...vocal.mots_libres].map(normaliser).filter(Boolean);
+  }
+
+  /** Plats du restaurant qui répondent à la demande (plat demandé et budget). */
+  private platsCorrespondants(resto: Restaurant, vocal: AnalyseRechercheVocale, restoCorrespond: boolean): Plat[] {
+    const termes = this.termesVocaux(vocal);
+    return (resto.plats ?? []).filter((plat) => {
+      const platCorrespond =
+        restoCorrespond || termes.length === 0 || contientUnTerme(`${plat.nom} ${plat.description} ${plat.categorie}`, termes);
+      const dansLeBudget = !vocal.budget_max_fcfa || plat.prixFcfa <= vocal.budget_max_fcfa;
+      return platCorrespond && dansLeBudget;
+    });
+  }
+
+  private restaurantCorrespondAuTexte(resto: Restaurant, vocal: AnalyseRechercheVocale): boolean {
+    const termes = this.termesVocaux(vocal);
+    return termes.length > 0 && contientUnTerme(`${resto.nom} ${resto.nomUtilisateur} ${resto.specialite} ${resto.description}`, termes);
+  }
+
+  private correspondAuxFiltresVocaux(resto: Restaurant, vocal: AnalyseRechercheVocale): boolean {
+    if (vocal.ouvert_seulement && !resto.estOuvert) return false;
+    if (vocal.quartier && !contientUnTerme(`${resto.quartierVille} ${resto.adresse}`, [normaliser(vocal.quartier)])) {
+      return false;
+    }
+    const termes = this.termesVocaux(vocal);
+    const restoCorrespond = this.restaurantCorrespondAuTexte(resto, vocal);
+    // Ni plat demandé ni budget : quartier / ouverture suffisent
+    if (termes.length === 0 && !vocal.budget_max_fcfa) return true;
+    return this.platsCorrespondants(resto, vocal, restoCorrespond).length > 0 || (restoCorrespond && !vocal.budget_max_fcfa);
+  }
+
+  private prixMinimum(resto: Restaurant, vocal: AnalyseRechercheVocale): number {
+    const plats = this.platsCorrespondants(resto, vocal, this.restaurantCorrespondAuTexte(resto, vocal));
+    return plats.length ? Math.min(...plats.map((p) => p.prixFcfa)) : Number.POSITIVE_INFINITY;
   }
 
   /**
