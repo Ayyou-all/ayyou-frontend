@@ -3,10 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { CATEGORIES_RESTAURANT } from '../../../socle/modeles/restaurant.modele';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import {
+  ErreursChamps,
+  estCourrielValide,
+  estTelephoneValide,
+  lireErreursServeur,
+  MESSAGE_CHAMPS_EN_ROUGE
+} from '../../../socle/outils/erreurs-formulaire';
 
 @Component({
   selector: 'app-gerant-profil',
@@ -24,6 +31,27 @@ export class GerantProfilComponent implements OnInit {
   readonly chargementAction = signal<boolean>(false);
   readonly messageSucces = signal<string | null>(null);
   readonly messageErreur = signal<string | null>(null);
+  // Erreurs affichées sous chaque champ (champ entouré en rouge)
+  readonly erreursChamps = signal<ErreursChamps>({});
+
+  erreur(champ: string): string | undefined {
+    return this.erreursChamps()[champ];
+  }
+
+  effacerErreur(champ: string): void {
+    if (!this.erreursChamps()[champ]) return;
+    const { [champ]: _, ...autres } = this.erreursChamps();
+    this.erreursChamps.set(autres);
+    if (Object.keys(autres).length === 0) this.messageErreur.set(null);
+  }
+
+  private afficherErreursChamps(erreurs: ErreursChamps, horsChamp: string[] = []): boolean {
+    this.erreursChamps.set(erreurs);
+    const messages = Object.values(erreurs);
+    if (messages.length === 0) return false;
+    this.messageErreur.set(messages.length === 1 ? messages[0] : [MESSAGE_CHAMPS_EN_ROUGE, ...horsChamp].join(' '));
+    return true;
+  }
 
   // Modale de confirmation de déconnexion
   readonly modaleDeconnexionOuverte = signal<boolean>(false);
@@ -207,39 +235,26 @@ export class GerantProfilComponent implements OnInit {
     this.messageSucces.set(null);
     this.messageErreur.set(null);
 
-    if (!this.nomRestaurant.trim()) {
-      this.messageErreur.set("Le nom de l'établissement est obligatoire.");
-      return;
-    }
-    if (!this.prenom.trim() || !this.nom.trim()) {
-      this.messageErreur.set('Le prénom et le nom sont obligatoires.');
-      return;
-    }
-    if (!this.telephone.trim()) {
-      this.messageErreur.set('Le numéro de téléphone est obligatoire.');
-      return;
-    }
-    if (!this.courriel.trim()) {
-      this.messageErreur.set("L'adresse e-mail est obligatoire.");
-      return;
-    }
+    const erreurs: ErreursChamps = {};
+    if (!this.nomRestaurant.trim()) erreurs['nomRestaurant'] = "Le nom de l'établissement est obligatoire.";
+    if (!this.prenom.trim()) erreurs['prenom'] = 'Le prénom est obligatoire.';
+    if (!this.nom.trim()) erreurs['nom'] = 'Le nom est obligatoire.';
+    if (!this.telephone.trim()) erreurs['telephone'] = 'Le numéro de téléphone est obligatoire.';
+    else if (!estTelephoneValide(this.telephone)) erreurs['telephone'] = 'Numéro invalide (ex. : +221 77 123 45 67).';
+    if (!this.courriel.trim()) erreurs['courriel'] = "L'adresse e-mail est obligatoire.";
+    else if (!estCourrielValide(this.courriel)) erreurs['courriel'] = 'Adresse e-mail invalide (ex. : resto@gmail.com).';
 
     // Validation mot de passe si l'utilisateur souhaite le modifier
     const souhaiteChangerMdp = !!(this.ancienMotDePasse || this.nouveauMotDePasse || this.confirmationMotDePasse);
     if (souhaiteChangerMdp) {
-      if (!this.ancienMotDePasse || !this.nouveauMotDePasse) {
-        this.messageErreur.set('Pour changer de mot de passe, renseignez votre ancien mot de passe et le nouveau.');
-        return;
-      }
-      if (this.nouveauMotDePasse.length < 8) {
-        this.messageErreur.set('Le nouveau mot de passe doit comporter au moins 8 caractères.');
-        return;
-      }
+      if (!this.ancienMotDePasse) erreurs['ancien_mot_de_passe'] = 'Indiquez votre mot de passe actuel.';
+      if (!this.nouveauMotDePasse) erreurs['nouveau_mot_de_passe'] = 'Choisissez un nouveau mot de passe.';
+      else if (this.nouveauMotDePasse.length < 6) erreurs['nouveau_mot_de_passe'] = 'Au moins 6 caractères.';
       if (this.nouveauMotDePasse !== this.confirmationMotDePasse) {
-        this.messageErreur.set('La confirmation ne correspond pas au nouveau mot de passe.');
-        return;
+        erreurs['confirmation_mot_de_passe'] = 'Les deux mots de passe ne sont pas identiques.';
       }
     }
+    if (this.afficherErreursChamps(erreurs)) return;
 
     this.chargementAction.set(true);
 
@@ -274,8 +289,13 @@ export class GerantProfilComponent implements OnInit {
       formEtab.append('couverture', this.fichierCouverture);
     }
 
-    const patchUser = this.http.patch<any>(`${environment.apiUrl}/utilisateurs/moi/`, formUser);
-    const patchEtab = this.http.patch<any>(`${environment.apiUrl}/etablissements/mon-etablissement/`, formEtab);
+    // Chaque requête indique sa source : « nom » désigne le gérant d'un côté, le restaurant de l'autre.
+    const patchUser = this.http
+      .patch<any>(`${environment.apiUrl}/utilisateurs/moi/`, formUser)
+      .pipe(catchError((erreur) => throwError(() => ({ source: 'utilisateur', erreur }))));
+    const patchEtab = this.http
+      .patch<any>(`${environment.apiUrl}/etablissements/mon-etablissement/`, formEtab)
+      .pipe(catchError((erreur) => throwError(() => ({ source: 'etablissement', erreur }))));
 
     forkJoin({ userRes: patchUser, etabRes: patchEtab }).subscribe({
       next: ({ userRes, etabRes }) => {
@@ -312,8 +332,9 @@ export class GerantProfilComponent implements OnInit {
             },
             error: (errMdp) => {
               this.chargementAction.set(false);
-              const msg = errMdp?.error?.message || 'Informations enregistrées, mais l\'ancien mot de passe était incorrect.';
-              this.messageErreur.set(msg);
+              const { message, champs } = lireErreursServeur(errMdp, {}, 'Le mot de passe n\'a pas été modifié.');
+              this.erreursChamps.set(champs);
+              this.messageErreur.set(`Informations enregistrées, mais le mot de passe n'a pas été modifié : ${message}`);
             }
           });
         } else {
@@ -322,16 +343,19 @@ export class GerantProfilComponent implements OnInit {
           setTimeout(() => this.messageSucces.set(null), 4000);
         }
       },
-      error: (err) => {
+      error: ({ source, erreur }) => {
         this.chargementAction.set(false);
-        let msg = 'Une erreur est survenue lors de l\'enregistrement.';
-        if (err?.error?.message) {
-          msg = err.error.message;
-        } else if (err?.error && typeof err.error === 'object') {
-          const firstKey = Object.keys(err.error)[0];
-          msg = `${firstKey} : ${Array.isArray(err.error[firstKey]) ? err.error[firstKey][0] : err.error[firstKey]}`;
-        }
-        this.messageErreur.set(msg);
+        const correspondance: Record<string, string> =
+          source === 'etablissement'
+            ? { nom: 'nomRestaurant', adresse: 'adresseRestaurant', heure_ouverture: 'heureOuverture', heure_fermeture: 'heureFermeture', latitude: 'localisation', longitude: 'localisation', jours_ouverture: 'jours' }
+            : {};
+        const { message, champs } = lireErreursServeur(erreur, correspondance, "Une erreur est survenue lors de l'enregistrement.");
+        this.erreursChamps.set(champs);
+        // Position GPS, jours et images n'ont pas de zone de saisie : leur message va dans le bandeau
+        const horsChamp = ['localisation', 'jours', 'logo', 'couverture', 'telephone_restaurant']
+          .filter((champ) => champs[champ])
+          .map((champ) => champs[champ]);
+        this.messageErreur.set(horsChamp.length ? horsChamp.join(' ') : message);
       }
     });
   }

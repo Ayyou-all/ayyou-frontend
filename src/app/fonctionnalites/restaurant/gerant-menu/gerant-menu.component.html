@@ -290,24 +290,26 @@
         <div class="space-y-4 text-sm">
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Nom du plat *</label>
-            <input
+            <input [class.champ-erreur]="erreur('nom')"
               type="text"
               [ngModel]="nouveauNom()"
-              (ngModelChange)="nouveauNom.set($event)"
+              (ngModelChange)="nouveauNom.set($event); effacerErreur('nom')"
               placeholder="Ex: C'Bon Thiakry Deluxe"
               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none"
             />
+            @if (erreur('nom')) { <p class="message-champ-erreur">{{ erreur('nom') }}</p> }
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-gray-700 mb-1">Prix (FCFA) *</label>
-              <input
+              <input [class.champ-erreur]="erreur('prix')"
                 type="number"
                 [ngModel]="nouveauPrix()"
-                (ngModelChange)="nouveauPrix.set($event)"
+                (ngModelChange)="nouveauPrix.set($event); effacerErreur('prix')"
                 class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none"
               />
+              @if (erreur('prix')) { <p class="message-champ-erreur">{{ erreur('prix') }}</p> }
             </div>
             <div>
               <label class="block text-xs font-bold text-gray-700 mb-1">Catégorie *</label>
@@ -325,13 +327,14 @@
 
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Description</label>
-            <textarea
+            <textarea [class.champ-erreur]="erreur('description')"
               [ngModel]="nouvelleDescription()"
-              (ngModelChange)="nouvelleDescription.set($event)"
+              (ngModelChange)="nouvelleDescription.set($event); effacerErreur('description')"
               rows="3"
               placeholder="Ingrédients, accompagnements..."
               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none"
             ></textarea>
+            @if (erreur('description')) { <p class="message-champ-erreur">{{ erreur('description') }}</p> }
           </div>
 
           <!-- Photo du plat (Upload d'image) -->
@@ -404,6 +407,12 @@
           </div>
         </div>
 
+        @if (messageFormulaire()) {
+          <p class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation mt-0.5"></i>{{ messageFormulaire() }}
+          </p>
+        }
+
         <div class="flex items-center justify-end gap-3 pt-4 border-t">
           <button
             type="button"
@@ -443,29 +452,32 @@
         <div class="space-y-4 text-sm">
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Nom du plat</label>
-            <input
+            <input [class.champ-erreur]="erreur('nom')"
               type="text"
-              [(ngModel)]="plat.nom"
+              [(ngModel)]="plat.nom" (ngModelChange)="effacerErreur('nom')"
               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 outline-none"
             />
+            @if (erreur('nom')) { <p class="message-champ-erreur">{{ erreur('nom') }}</p> }
           </div>
 
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Prix (FCFA)</label>
-            <input
+            <input [class.champ-erreur]="erreur('prix')"
               type="number"
-              [(ngModel)]="plat.prix"
+              [(ngModel)]="plat.prix" (ngModelChange)="effacerErreur('prix')"
               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 outline-none"
             />
+            @if (erreur('prix')) { <p class="message-champ-erreur">{{ erreur('prix') }}</p> }
           </div>
 
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Description</label>
-            <textarea
-              [(ngModel)]="plat.description"
+            <textarea [class.champ-erreur]="erreur('description')"
+              [(ngModel)]="plat.description" (ngModelChange)="effacerErreur('description')"
               rows="3"
               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-red-500 outline-none"
             ></textarea>
+            @if (erreur('description')) { <p class="message-champ-erreur">{{ erreur('description') }}</p> }
           </div>
 
           <!-- Photo du plat (Upload dans l'édition) -->
@@ -497,6 +509,12 @@
             </div>
           </div>
         </div>
+
+        @if (messageFormulaire()) {
+          <p class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation mt-0.5"></i>{{ messageFormulaire() }}
+          </p>
+        }
 
         <div class="flex items-center justify-end gap-3 pt-4 border-t">
           <button

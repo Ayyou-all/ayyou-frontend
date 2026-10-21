@@ -4,6 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { RoleUtilisateur } from '../../../socle/modeles/utilisateur.modele';
 import { ServiceAuthentification } from '../../../socle/services/service-authentification.service';
+import {
+  ErreursChamps,
+  estCourrielValide,
+  estTelephoneValide,
+  lireErreursServeur,
+  MESSAGE_CHAMPS_EN_ROUGE
+} from '../../../socle/outils/erreurs-formulaire';
 import { CATEGORIES_RESTAURANT } from '../../../socle/modeles/restaurant.modele';
 
 export type RoleInscription = 'CLIENT' | 'RESTAURANT' | 'LIVREUR';
@@ -23,6 +30,34 @@ export interface IndicatifPays {
   pays: string;
   drapeau: string;
 }
+
+/** Champs qui ont une zone de saisie (leur message s'affiche sous le champ, pas dans le bandeau). */
+const CHAMPS_AVEC_SAISIE = new Set([
+  'nomComplet', 'courriel', 'telephone', 'motDePasse', 'confirmation',
+  'nomRestaurant', 'adresseRestaurant', 'plaque', 'mobileMoney', 'adresseLivraison'
+]);
+
+/** Champs de l'étape 2 (informations personnelles) ; les autres sont à l'étape 3. */
+const CHAMPS_ETAPE_2 = new Set(['nomComplet', 'courriel', 'telephone', 'motDePasse', 'confirmation', 'conditions']);
+
+/** Nom du champ côté backend -> nom du champ dans ce formulaire. */
+const CORRESPONDANCE_CHAMPS_SERVEUR: Record<string, string> = {
+  prenom: 'nomComplet',
+  nom: 'nomComplet',
+  courriel: 'courriel',
+  telephone: 'telephone',
+  mot_de_passe: 'motDePasse',
+  confirmation_mot_de_passe: 'confirmation',
+  conditions_acceptees: 'conditions',
+  nom_etablissement: 'nomRestaurant',
+  adresse: 'adresseRestaurant',
+  latitude: 'localisation',
+  longitude: 'localisation',
+  jours_ouverture: 'jours',
+  immatriculation: 'plaque',
+  zone_principale: 'zone',
+  numero_reversement: 'mobileMoney'
+};
 
 @Component({
   selector: 'app-inscription',
@@ -135,6 +170,39 @@ export class InscriptionComponent {
 
   // Messages d'état
   readonly messageErreur = signal<string | null>(null);
+  // Erreurs affichées sous chaque champ (champ entouré en rouge)
+  readonly erreursChamps = signal<ErreursChamps>({});
+
+  erreur(champ: string): string | undefined {
+    return this.erreursChamps()[champ];
+  }
+
+  effacerErreur(champ: string): void {
+    if (!this.erreursChamps()[champ]) return;
+    const { [champ]: _, ...autres } = this.erreursChamps();
+    this.erreursChamps.set(autres);
+    if (Object.keys(autres).length === 0) this.messageErreur.set(null);
+  }
+
+  /**
+   * Affiche toutes les erreurs d'une étape d'un coup.
+   * Les erreurs des champs sans zone de saisie (GPS, jours, zone…) vont dans le bandeau.
+   */
+  private afficherErreurs(erreurs: ErreursChamps): boolean {
+    this.erreursChamps.set(erreurs);
+    const messages = Object.values(erreurs);
+    if (messages.length === 0) {
+      this.messageErreur.set(null);
+      return false;
+    }
+    const horsChamp = Object.entries(erreurs)
+      .filter(([champ]) => !CHAMPS_AVEC_SAISIE.has(champ))
+      .map(([, message]) => message);
+    this.messageErreur.set(
+      messages.length === 1 ? messages[0] : [MESSAGE_CHAMPS_EN_ROUGE, ...horsChamp].join(' ')
+    );
+    return true;
+  }
   readonly inscriptionReussie = signal<boolean>(false);
 
   // Liste des indicatifs
@@ -206,68 +274,14 @@ export class InscriptionComponent {
 
     // Étape 2 : Informations personnelles
     if (this.etapeActuelle() === 2) {
-      if (!this.nomCompletSaisi().trim()) {
-        this.messageErreur.set('Veuillez renseigner votre nom complet (Prénom et Nom).');
-        return;
-      }
-      if (!this.courrielSaisi().trim() || !this.courrielSaisi().includes('@')) {
-        this.messageErreur.set('Veuillez renseigner une adresse e-mail valide pour la sécurité et la vérification.');
-        return;
-      }
-      if (!this.motDePasseSaisi().trim()) {
-        this.messageErreur.set('Veuillez définir un mot de passe.');
-        return;
-      }
-      if (this.motDePasseSaisi().trim().length < 6) {
-        this.messageErreur.set('Le mot de passe doit comporter au moins 6 caractères.');
-        return;
-      }
-      if (this.motDePasseSaisi() !== this.confirmationMotDePasseSaisi()) {
-        this.messageErreur.set('Les mots de passe ne correspondent pas.');
-        return;
-      }
-      if (!this.conditionsAcceptees()) {
-        this.messageErreur.set('Veuillez accepter les conditions d’utilisation.');
-        return;
-      }
-
+      if (this.afficherErreurs(this.erreursEtapeInformations())) return;
       this.etapeActuelle.set(3);
       return;
     }
 
     // Étape 3 : Profil (Client) OU Infos Restaurant (Restaurant) OU Infos Livreur (Livreur)
     if (this.etapeActuelle() === 3) {
-      if (this.roleChoisi() === 'RESTAURANT') {
-        if (!this.nomRestaurantSaisi().trim()) {
-          this.messageErreur.set('Veuillez renseigner le nom de votre établissement.');
-          return;
-        }
-        if (!this.adresseCompleteRestaurantSaisie().trim()) {
-          this.messageErreur.set("Veuillez renseigner l'adresse complète de votre restaurant.");
-          return;
-        }
-        if (this.latitudeRestaurant() === null || this.longitudeRestaurant() === null) {
-          this.messageErreur.set('Touchez « Localiser » pour enregistrer la position GPS de votre restaurant.');
-          return;
-        }
-        if (!this.joursOuvertureEnTexte()) {
-          this.messageErreur.set("Sélectionnez au moins un jour d'ouverture.");
-          return;
-        }
-      } else if (this.roleChoisi() === 'LIVREUR') {
-        if (this.typeVehiculeChoisi() !== 'VELO' && !this.numeroPlaqueSaisi().trim()) {
-          this.messageErreur.set('Veuillez renseigner le numéro de plaque de votre véhicule.');
-          return;
-        }
-        if (!this.zoneActiviteSaisie().trim()) {
-          this.messageErreur.set("Veuillez sélectionner votre zone d'activité.");
-          return;
-        }
-        if (!this.numeroMobileMoneySaisi().trim()) {
-          this.messageErreur.set('Veuillez renseigner votre numéro Mobile Money pour recevoir vos paiements.');
-          return;
-        }
-      }
+      if (this.afficherErreurs(this.erreursEtapeProfil())) return;
       this.soumettreInscription();
       return;
     }
@@ -279,8 +293,82 @@ export class InscriptionComponent {
     }
   }
 
+  private erreursEtapeInformations(): ErreursChamps {
+    const erreurs: ErreursChamps = {};
+    const nomComplet = this.nomCompletSaisi().trim();
+    if (!nomComplet) {
+      erreurs['nomComplet'] = 'Indiquez votre prénom et votre nom.';
+    } else if (nomComplet.split(/\s+/).length < 2) {
+      erreurs['nomComplet'] = 'Indiquez votre prénom ET votre nom (ex. : Fatou Diop).';
+    }
+    if (!this.courrielSaisi().trim()) {
+      erreurs['courriel'] = "L'adresse e-mail est obligatoire : vous y recevrez un code de vérification.";
+    } else if (!estCourrielValide(this.courrielSaisi())) {
+      erreurs['courriel'] = 'Adresse e-mail invalide (ex. : fatou@gmail.com).';
+    }
+    if (!this.telephoneSaisi().trim()) {
+      erreurs['telephone'] = 'Le numéro de téléphone est obligatoire.';
+    } else if (!estTelephoneValide(this.telephoneSaisi())) {
+      erreurs['telephone'] = 'Numéro invalide : chiffres uniquement (ex. : 77 123 45 67).';
+    }
+    if (!this.motDePasseSaisi().trim()) {
+      erreurs['motDePasse'] = 'Choisissez un mot de passe.';
+    } else if (this.motDePasseSaisi().trim().length < 6) {
+      erreurs['motDePasse'] = 'Le mot de passe doit contenir au moins 6 caractères.';
+    }
+    if (!this.confirmationMotDePasseSaisi()) {
+      erreurs['confirmation'] = 'Retapez votre mot de passe.';
+    } else if (this.motDePasseSaisi() !== this.confirmationMotDePasseSaisi()) {
+      erreurs['confirmation'] = 'Les deux mots de passe ne sont pas identiques.';
+    }
+    if (!this.conditionsAcceptees()) {
+      erreurs['conditions'] = "Acceptez les conditions d'utilisation pour continuer.";
+    }
+    return erreurs;
+  }
+
+  private erreursEtapeProfil(): ErreursChamps {
+    const erreurs: ErreursChamps = {};
+    if (this.roleChoisi() === 'RESTAURANT') {
+      if (!this.nomRestaurantSaisi().trim()) erreurs['nomRestaurant'] = 'Le nom du restaurant est obligatoire.';
+      if (!this.adresseCompleteRestaurantSaisie().trim()) {
+        erreurs['adresseRestaurant'] = "L'adresse complète du restaurant est obligatoire.";
+      }
+      if (this.latitudeRestaurant() === null || this.longitudeRestaurant() === null) {
+        erreurs['localisation'] = 'Touchez « Localiser » pour enregistrer la position GPS du restaurant.';
+      }
+      if (!this.joursOuvertureEnTexte()) erreurs['jours'] = "Sélectionnez au moins un jour d'ouverture.";
+    } else if (this.roleChoisi() === 'LIVREUR') {
+      if (this.typeVehiculeChoisi() !== 'VELO' && !this.numeroPlaqueSaisi().trim()) {
+        erreurs['plaque'] = "Le numéro d'immatriculation est obligatoire pour une moto ou une voiture.";
+      }
+      if (!this.zoneActiviteSaisie().trim()) erreurs['zone'] = "Sélectionnez votre zone d'activité.";
+      if (!this.numeroMobileMoneySaisi().trim()) {
+        erreurs['mobileMoney'] = 'Le numéro Mobile Money est obligatoire pour recevoir vos gains.';
+      } else if (!estTelephoneValide(this.numeroMobileMoneySaisi())) {
+        erreurs['mobileMoney'] = 'Numéro Mobile Money invalide (ex. : 77 123 45 67).';
+      }
+    }
+    return erreurs;
+  }
+
+  /** Erreurs renvoyées par le serveur : affichées sous le bon champ, en revenant à l'étape concernée. */
+  private afficherErreursServeur(err: any, messageParDefaut: string): void {
+    const { message, champs } = lireErreursServeur(err, CORRESPONDANCE_CHAMPS_SERVEUR, messageParDefaut);
+    // Pour un client, « adresse » est son adresse de livraison
+    if (this.roleChoisi() !== 'RESTAURANT' && champs['adresseRestaurant']) {
+      champs['adresseLivraison'] = champs['adresseRestaurant'];
+      delete champs['adresseRestaurant'];
+    }
+    this.erreursChamps.set(champs);
+    this.messageErreur.set(message);
+    const etapes = Object.keys(champs).map((champ) => (CHAMPS_ETAPE_2.has(champ) ? 2 : 3));
+    if (etapes.length > 0) this.etapeActuelle.set(Math.min(...etapes));
+  }
+
   revenirEtapePrecedente(): void {
     this.messageErreur.set(null);
+    this.erreursChamps.set({});
     if (this.etapeActuelle() > 1 && this.etapeActuelle() <= 4) {
       this.etapeActuelle.update((etape) => etape - 1);
     } else {
@@ -458,8 +546,7 @@ export class InscriptionComponent {
       },
       error: (err) => {
         this.serviceAuthentification.chargementEnCours.set(false);
-        const msg = err?.error?.message || err?.error?.detail || "Impossible d'envoyer le code de vérification par e-mail. Veuillez vérifier votre adresse.";
-        this.messageErreur.set(msg);
+        this.afficherErreursServeur(err, "Impossible d'envoyer le code de vérification par e-mail. Vérifiez votre adresse.");
       }
     });
   }
@@ -629,18 +716,7 @@ export class InscriptionComponent {
             },
             error: (err) => {
               this.serviceAuthentification.chargementEnCours.set(false);
-              let detailErreur = '';
-              if (err?.error?.mot_de_passe) {
-                const mdpErr = Array.isArray(err.error.mot_de_passe) ? err.error.mot_de_passe.join(' ') : err.error.mot_de_passe;
-                detailErreur = `Mot de passe : ${mdpErr}`;
-              } else if (err?.error?.detail) {
-                detailErreur = err.error.detail;
-              } else if (err?.error?.message) {
-                detailErreur = err.error.message;
-              } else if (typeof err?.error === 'object' && err?.error !== null) {
-                detailErreur = Object.values(err.error).flat().join(' ');
-              }
-              this.messageErreur.set(detailErreur || "Échec de la création du compte. Veuillez vérifier vos informations.");
+              this.afficherErreursServeur(err, 'Échec de la création du compte. Vérifiez vos informations.');
             }
           });
       },

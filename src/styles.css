@@ -72,3 +72,39 @@ h1, h2, h3, h4, h5, h6 {
   transform-origin: top center;
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Champs de formulaire en erreur : bordure rouge et message en dessous */
+/* ------------------------------------------------------------------ */
+.champ-erreur,
+.champ-erreur:focus,
+.champ-erreur:focus-within {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+}
+
+.message-champ-erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.message-champ-erreur::before {
+  content: '!';
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border-radius: 9999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 15px;
+  text-align: center;
+}
