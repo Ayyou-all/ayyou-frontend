@@ -58,6 +58,7 @@ export class UtilisateursComponent implements OnInit {
   readonly utilisateurEnAlerte = signal<UtilisateurAdministration | null>(null);
   readonly modaleAlerteOuverte = signal<boolean>(false);
   readonly messageAlerte = signal<string>('');
+  readonly envoiAlerteEnCours = signal<boolean>(false);
 
   // Données dynamiques des utilisateurs connectées au backend
   readonly listeUtilisateurs = signal<UtilisateurAdministration[]>([]);
@@ -194,11 +195,25 @@ export class UtilisateursComponent implements OnInit {
 
   envoyerAlerte(): void {
     const u = this.utilisateurEnAlerte();
-    if (!u) return;
+    const message = this.messageAlerte().trim();
+    if (!u?.id || !message || this.envoiAlerteEnCours()) return;
 
-    this.notificationSucces.set(`Notification de conformité envoyée avec succès à ${u.email}.`);
-    this.fermerModaleAlerte();
-    setTimeout(() => this.notificationSucces.set(null), 3000);
+    this.envoiAlerteEnCours.set(true);
+    this.http
+      .post<{ message: string }>(`${environment.apiUrl}/administration/utilisateurs/${u.id}/alerter/`, { message })
+      .subscribe({
+        next: (reponse) => {
+          this.envoiAlerteEnCours.set(false);
+          this.notificationSucces.set(reponse.message);
+          this.fermerModaleAlerte();
+          setTimeout(() => this.notificationSucces.set(null), 4000);
+        },
+        error: (erreur) => {
+          this.envoiAlerteEnCours.set(false);
+          this.notificationSucces.set(erreur?.error?.message || `Échec de l'envoi de l'avertissement à "${u.nom}".`);
+          setTimeout(() => this.notificationSucces.set(null), 4000);
+        }
+      });
   }
 
   exporterCsv(): void {

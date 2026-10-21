@@ -17,6 +17,14 @@ export const routes: Routes = [
     title: 'Connexion — AYYOU'
   },
   {
+    path: 'reinitialisation-mot-de-passe',
+    loadComponent: () =>
+      import(
+        './fonctionnalites/authentification/reinitialisation-mot-de-passe/reinitialisation-mot-de-passe.component'
+      ).then((m) => m.ReinitialisationMotDePasseComponent),
+    title: 'Mot de passe oublié — AYYOU'
+  },
+  {
     path: 'inscription',
     loadComponent: () =>
       import(

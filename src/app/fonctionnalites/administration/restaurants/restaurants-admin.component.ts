@@ -66,6 +66,8 @@ export class RestaurantsAdminComponent implements OnInit {
 
   // Modale d'édition
   readonly restaurantEnEdition = signal<RestaurantAdministration | null>(null);
+  // Motif obligatoire quand le restaurant est suspendu : il est envoyé par e-mail au gérant
+  readonly motifSuspension = signal<string>('');
   readonly modaleEditionOuverte = signal<boolean>(false);
 
 
@@ -201,6 +203,7 @@ export class RestaurantsAdminComponent implements OnInit {
   }
 
   editerRestaurant(r: RestaurantAdministration): void {
+    this.motifSuspension.set('');
     this.restaurantEnEdition.set({ ...r });
     this.modaleEditionOuverte.set(true);
   }
@@ -215,33 +218,41 @@ export class RestaurantsAdminComponent implements OnInit {
     if (!r) return;
 
     const nouveauStatut = r.statut === 'ACTIF' ? 'ACTIF' : 'SUSPENDU';
-    this.http.post(`${environment.apiUrl}/administration/etablissements/${r.identifiant}/decision/`, {
-      nouveau_statut: nouveauStatut
+    const motif = this.motifSuspension().trim();
+    if (nouveauStatut === 'SUSPENDU' && !motif) {
+      this.notificationSucces.set('Indiquez le motif de la suspension : il est envoyé par e-mail au gérant.');
+      setTimeout(() => this.notificationSucces.set(null), 3000);
+      return;
+    }
+    this.http.post<{ message: string }>(`${environment.apiUrl}/administration/etablissements/${r.identifiant}/decision/`, {
+      nouveau_statut: nouveauStatut,
+      motif_decision: motif
     }).subscribe({
-      next: () => {
-        this.notificationSucces.set(`Le restaurant "${r.nom}" a été mis à jour avec succès.`);
+      next: (reponse) => {
+        this.notificationSucces.set(reponse?.message || `Le restaurant "${r.nom}" a été mis à jour avec succès.`);
         this.fermerModaleEdition();
         this.chargerRestaurants();
-        setTimeout(() => this.notificationSucces.set(null), 3000);
+        setTimeout(() => this.notificationSucces.set(null), 4000);
       },
-      error: () => {
-        this.notificationSucces.set(`Erreur lors de la mise à jour de "${r.nom}".`);
-        setTimeout(() => this.notificationSucces.set(null), 3000);
+      error: (erreur) => {
+        this.notificationSucces.set(erreur?.error?.message || `Erreur lors de la mise à jour de "${r.nom}".`);
+        setTimeout(() => this.notificationSucces.set(null), 4000);
       }
     });
   }
 
   supprimerRestaurant(r: RestaurantAdministration): void {
-    if (!confirm(`Confirmez-vous la suspension de "${r.nom}" ?`)) return;
+    const motif = prompt(`Motif de la suspension de "${r.nom}" (envoyé par e-mail au gérant) :`)?.trim();
+    if (!motif) return;
 
-    this.http.post(`${environment.apiUrl}/administration/etablissements/${r.identifiant}/decision/`, {
+    this.http.post<{ message: string }>(`${environment.apiUrl}/administration/etablissements/${r.identifiant}/decision/`, {
       nouveau_statut: 'SUSPENDU',
-      motif_decision: 'Suspendu par l\'administration'
+      motif_decision: motif
     }).subscribe({
-      next: () => {
-        this.notificationSucces.set(`Le restaurant "${r.nom}" a été suspendu.`);
+      next: (reponse) => {
+        this.notificationSucces.set(reponse?.message || `Le restaurant "${r.nom}" a été suspendu.`);
         this.chargerRestaurants();
-        setTimeout(() => this.notificationSucces.set(null), 3000);
+        setTimeout(() => this.notificationSucces.set(null), 4000);
       },
       error: () => {
         this.notificationSucces.set(`Erreur lors de la suspension de "${r.nom}".`);

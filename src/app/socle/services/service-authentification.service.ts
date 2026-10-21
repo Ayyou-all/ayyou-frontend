@@ -264,6 +264,37 @@ export class ServiceAuthentification {
   }
 
   /**
+   * Mot de passe oublié : demande l'envoi d'un code de réinitialisation par e-mail.
+   * La réponse est la même que l'adresse ait un compte ou non.
+   */
+  demanderReinitialisationMotDePasse(courriel: string): Observable<{ succes: boolean; message: string; expiration_minutes: number }> {
+    return this.http.post<{ succes: boolean; message: string; expiration_minutes: number }>(
+      `${environment.apiUrl}/authentification/mot-de-passe-oublie/`,
+      { courriel: courriel.trim().toLowerCase() }
+    );
+  }
+
+  /**
+   * Enregistre le nouveau mot de passe si le code reçu par e-mail est valide.
+   */
+  reinitialiserMotDePasse(
+    courriel: string,
+    code: string,
+    nouveauMotDePasse: string,
+    confirmation: string
+  ): Observable<{ succes: boolean; message: string }> {
+    return this.http.post<{ succes: boolean; message: string }>(
+      `${environment.apiUrl}/authentification/reinitialiser-mot-de-passe/`,
+      {
+        courriel: courriel.trim().toLowerCase(),
+        code: code.trim(),
+        nouveau_mot_de_passe: nouveauMotDePasse,
+        confirmation_mot_de_passe: confirmation
+      }
+    );
+  }
+
+  /**
    * Déconnexion complète auprès de Django et nettoyage du stockage local.
    */
   deconnecter(): void {

@@ -6,23 +6,55 @@
       <input
         type="search"
         [ngModel]="texteRecherche()"
-        (ngModelChange)="texteRecherche.set($event)"
-        placeholder="Plat, restaurant, quartier…"
+        (ngModelChange)="modifierTexteRecherche($event)"
+        placeholder="Plat, restaurant, quartier… ou dites-le au micro"
         aria-label="Rechercher un plat, un restaurant ou un quartier"
         class="w-full bg-transparent text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
       />
-      @if (rechercheVocaleDisponible) {
-        <button
-          type="button"
-          (click)="lancerRechercheVocale()"
-          [class]="ecouteEnCours() ? 'text-[#E51824]' : 'text-slate-500 hover:text-slate-800'"
-          class="ml-2 p-1 transition-colors cursor-pointer"
-          [title]="ecouteEnCours() ? 'Parlez maintenant…' : 'Rechercher à la voix'"
-        >
+      <button
+        type="button"
+        (click)="lancerRechercheVocale()"
+        [disabled]="analyseEnCours()"
+        [class]="ecouteEnCours() ? 'bg-[#E51824] text-white' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/70'"
+        class="ml-2 w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-60"
+        [title]="ecouteEnCours() ? 'Parlez maintenant…' : 'Rechercher à la voix'"
+        [attr.aria-label]="ecouteEnCours() ? 'Écoute en cours' : 'Rechercher à la voix'"
+      >
+        @if (analyseEnCours()) {
+          <i class="fa-solid fa-circle-notch fa-spin text-sm"></i>
+        } @else {
           <i [class]="ecouteEnCours() ? 'fa-solid fa-microphone fa-beat' : 'fa-solid fa-microphone'" class="text-base"></i>
-        </button>
-      }
+        }
+      </button>
     </div>
+
+    <!-- Recherche vocale : état de l'écoute, filtres compris par l'IA, messages -->
+    @if (ecouteEnCours()) {
+      <p class="mt-2 max-w-3xl text-xs sm:text-sm font-semibold text-[#E51824] flex items-center gap-2" aria-live="polite">
+        <i class="fa-solid fa-circle text-[8px] animate-pulse"></i>
+        Je vous écoute… Dites par exemple « un thiéboudienne pas cher à Médina ».
+      </p>
+    } @else if (analyseEnCours()) {
+      <p class="mt-2 max-w-3xl text-xs sm:text-sm text-slate-500" aria-live="polite">Je cherche ce qui correspond à votre demande…</p>
+    }
+    @if (filtresVocaux(); as vocal) {
+      <div class="mt-2 max-w-3xl flex flex-wrap items-center gap-2" aria-live="polite">
+        <span class="text-xs text-slate-500"><i class="fa-solid fa-wand-magic-sparkles text-[#E51824] mr-1"></i>Compris :</span>
+        @for (etiquette of etiquettesVocales(); track etiquette) {
+          <span class="px-2.5 py-1 rounded-full bg-red-50 text-[#E51824] text-xs font-bold">{{ etiquette }}</span>
+        } @empty {
+          <span class="text-xs text-slate-500">tous les restaurants</span>
+        }
+        <button type="button" (click)="reinitialiserFiltres()" class="text-xs font-bold text-slate-500 hover:text-slate-900 underline cursor-pointer">
+          Effacer
+        </button>
+      </div>
+    }
+    @if (messageVocal()) {
+      <p class="mt-2 max-w-3xl text-xs sm:text-sm text-amber-700 flex items-start gap-2" role="status">
+        <i class="fa-solid fa-circle-info mt-0.5"></i>{{ messageVocal() }}
+      </p>
+    }
   </div>
 </div>
 
@@ -155,7 +187,7 @@
           <div class="text-sm text-slate-500">Essayez une autre recherche ou affichez toutes les catégories.</div>
           <button
             type="button"
-            (click)="texteRecherche.set(''); categorieSelectionnee.set(null)"
+            (click)="reinitialiserFiltres()"
             class="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-black transition-colors cursor-pointer"
           >
             Réinitialiser les filtres
