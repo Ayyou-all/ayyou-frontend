@@ -29,3 +29,8 @@
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
+#zone-messages-chatbot {
+  scroll-behavior: smooth;
+}
+
