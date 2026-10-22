@@ -123,12 +123,78 @@ export class CatalogueComponent {
   readonly analyseEnCours = signal<boolean>(false);
   readonly messageVocal = signal<string | null>(null);
 
-  /** Écoute la phrase du client, puis l'IA la transforme en filtres de recherche. */
+  private mediaRecorderCatalogue: MediaRecorder | null = null;
+  private morceauxAudioCatalogue: Blob[] = [];
+
+  /** Écoute la phrase du client avec Whisper, puis l'IA la transforme en filtres de recherche. */
   lancerRechercheVocale(): void {
-    if (this.ecouteEnCours() || this.analyseEnCours()) return;
+    if (this.ecouteEnCours() || this.analyseEnCours()) {
+      this.arreterRechercheVocale();
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      this.messageVocal.set(null);
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((flux) => {
+        this.morceauxAudioCatalogue = [];
+        this.mediaRecorderCatalogue = new MediaRecorder(flux);
+
+        this.mediaRecorderCatalogue.ondataavailable = (evenement) => {
+          if (evenement.data && evenement.data.size > 0) {
+            this.morceauxAudioCatalogue.push(evenement.data);
+          }
+        };
+
+        this.mediaRecorderCatalogue.onstop = () => {
+          flux.getTracks().forEach((track) => track.stop());
+          const blob = new Blob(this.morceauxAudioCatalogue, { type: 'audio/webm' });
+          this.analyseEnCours.set(true);
+          this.serviceIa.transcrireAudio(blob).subscribe({
+            next: (res) => {
+              if (res.succes && res.texte) {
+                this.analyserPhrase(res.texte);
+              } else {
+                this.analyseEnCours.set(false);
+                this.messageVocal.set(res.message || "Je n'ai pas bien compris votre note vocale. Réessayez !");
+              }
+            },
+            error: () => {
+              this.analyseEnCours.set(false);
+              this.messageVocal.set("La transcription vocale Whisper a rencontré une difficulté. Réessayez !");
+            }
+          });
+        };
+
+        this.mediaRecorderCatalogue.start();
+        this.ecouteEnCours.set(true);
+
+        // Arrêt automatique après 6 secondes d'écoute max si l'utilisateur n'appuie pas sur stop
+        setTimeout(() => {
+          if (this.ecouteEnCours()) {
+            this.arreterRechercheVocale();
+          }
+        }, 6000);
+      }).catch((err) => {
+        console.warn("MediaRecorder indisponible, tentative Web Speech API...", err);
+        this.lancerRechercheVocaleNavigateur();
+      });
+      return;
+    }
+
+    this.lancerRechercheVocaleNavigateur();
+  }
+
+  arreterRechercheVocale(): void {
+    if (this.mediaRecorderCatalogue && this.mediaRecorderCatalogue.state !== 'inactive') {
+      this.mediaRecorderCatalogue.stop();
+      this.ecouteEnCours.set(false);
+    }
+  }
+
+  private lancerRechercheVocaleNavigateur(): void {
     if (!this.ReconnaissanceVocale) {
       this.messageVocal.set(
-        "Votre navigateur ne permet pas la recherche vocale. Utilisez Chrome, Edge ou Safari, ou tapez votre recherche."
+        "Votre navigateur ne permet pas la recherche vocale. Utilisez Chrome ou tapez votre recherche."
       );
       return;
     }

@@ -69,6 +69,7 @@ export class ServiceIaService {
       auteur: 'UTILISATEUR' | 'ASSISTANT';
       texte: string;
       cartesPlats?: CartePlatChatbot[];
+      budgetDetecte?: number | null;
       heure: string;
     }[]
   >([
@@ -101,6 +102,14 @@ export class ServiceIaService {
     const dateNow = new Date();
     const heureStr = `${dateNow.getHours().toString().padStart(2, '0')}:${dateNow.getMinutes().toString().padStart(2, '0')}`;
 
+    // Historique contextuel récent pour la session en cours
+    const historique = this.messagesChat()
+      .slice(-6)
+      .map((m) => ({
+        role: m.auteur === 'UTILISATEUR' ? 'user' : 'assistant',
+        contenu: m.texte
+      }));
+
     // Ajout du message utilisateur
     this.messagesChat.update((msgs) => [
       ...msgs,
@@ -111,7 +120,7 @@ export class ServiceIaService {
       }
     ]);
 
-    const payload: any = { message };
+    const payload: any = { message, historique };
     if (budgetFcfa) payload.budget_fcfa = budgetFcfa;
     if (quartier) payload.quartier = quartier;
 
@@ -120,19 +129,21 @@ export class ServiceIaService {
         this.chargementChatbot.set(false);
         const texte = reponse.reponse_texte || reponse.texteReponse || '';
         const cartes = reponse.cartes_plats || reponse.plats || [];
+        const budgetDetecte = reponse.budget_detecte_fcfa ?? null;
         this.messagesChat.update((msgs) => [
           ...msgs,
           {
             auteur: 'ASSISTANT',
             texte: texte,
             cartesPlats: cartes,
+            budgetDetecte: budgetDetecte,
             heure: heureStr
           }
         ]);
         return {
           reponse_texte: texte,
           cartes_plats: cartes,
-          budget_detecte_fcfa: reponse.budget_detecte_fcfa ?? reponse.budgetRespecte ?? null,
+          budget_detecte_fcfa: budgetDetecte,
           intention: reponse.intention || 'SUGGESTION',
           source: reponse.source || 'FASTAPI_IA'
         } as ReponseChatbotIA;
@@ -157,6 +168,26 @@ export class ServiceIaService {
           }
         ]);
         return of(reponseSecours);
+      })
+    );
+  }
+
+  /**
+   * Transcrit un flux audio (enregistré au micro) en texte via Whisper.
+   */
+  transcrireAudio(blob: Blob): Observable<{ succes: boolean; texte: string; message?: string }> {
+    const formData = new FormData();
+    formData.append('fichier', blob, 'audio.webm');
+    return this.http.post<{ succes: boolean; texte: string; message?: string }>(
+      `${environment.apiUrl}/ia/transcription-audio/`,
+      formData
+    ).pipe(
+      catchError((err) => {
+        return of({
+          succes: false,
+          texte: '',
+          message: err?.error?.message || 'Erreur lors de la transcription audio.'
+        });
       })
     );
   }
